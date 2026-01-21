@@ -2,7 +2,7 @@
 //  FastingApp.swift
 //  Fasting
 //
-//  应用入口
+//  App entry point
 //
 
 import SwiftUI
@@ -12,7 +12,6 @@ import SwiftData
 struct FastingApp: App {
     // MARK: - Properties
     
-    /// SwiftData 模型容器
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             FastingRecord.self,
@@ -21,7 +20,7 @@ struct FastingApp: App {
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic  // 启用 iCloud 同步
+            cloudKitDatabase: .automatic
         )
         
         do {
@@ -45,29 +44,34 @@ struct FastingApp: App {
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @State private var languageRefresh = UUID()
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // 计时器页面
+            // Timer
             TimerView()
                 .tabItem {
-                    Label("断食", systemImage: "timer")
+                    Label(L10n.Tab.timer, systemImage: "timer")
                 }
                 .tag(0)
             
-            // 历史记录页面
+            // History
             HistoryView()
                 .tabItem {
-                    Label("历史", systemImage: "calendar")
+                    Label(L10n.Tab.history, systemImage: "calendar")
                 }
                 .tag(1)
             
-            // 统计页面
+            // Insights
             StatisticsView()
                 .tabItem {
-                    Label("统计", systemImage: "chart.bar.fill")
+                    Label(L10n.Tab.insights, systemImage: "chart.bar.fill")
                 }
                 .tag(2)
+        }
+        .id(languageRefresh)
+        .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
+            languageRefresh = UUID()
         }
     }
 }

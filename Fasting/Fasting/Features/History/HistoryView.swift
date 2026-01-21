@@ -2,7 +2,7 @@
 //  HistoryView.swift
 //  Fasting
 //
-//  断食历史记录页面
+//  History page with calendar view
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ struct HistoryView: View {
     // MARK: - Properties
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
     @State private var selectedDate = Date()
     @State private var selectedRecord: FastingRecord?
@@ -20,20 +21,28 @@ struct HistoryView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 日历视图
-                    calendarSection
-                    
-                    // 月度统计
-                    monthlyStatsSection
-                    
-                    // 记录列表
-                    recordsListSection
+            ZStack {
+                GradientBackground()
+                
+                ScrollView {
+                    VStack(spacing: Spacing.xxl) {
+                        // Calendar
+                        calendarCard
+                            .padding(.horizontal, Spacing.lg)
+                        
+                        // Monthly stats
+                        monthlyStatsRow
+                            .padding(.horizontal, Spacing.lg)
+                        
+                        // Recent records
+                        recentRecordsSection
+                            .padding(.horizontal, Spacing.lg)
+                    }
+                    .padding(.vertical, Spacing.lg)
                 }
-                .padding()
             }
-            .navigationTitle("历史记录")
+            .navigationTitle(L10n.Tab.history)
+            .navigationBarTitleDisplayMode(.large)
             .sheet(item: $selectedRecord) { record in
                 RecordDetailSheet(record: record)
                     .presentationDetents([.medium])
@@ -41,15 +50,16 @@ struct HistoryView: View {
         }
     }
     
-    // MARK: - Views
+    // MARK: - Calendar Card
     
-    /// 日历区域
-    private var calendarSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 月份导航
+    private var calendarCard: some View {
+        VStack(spacing: Spacing.lg) {
+            // Month navigation
             HStack {
                 Button(action: previousMonth) {
                     Image(systemName: "chevron.left")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
@@ -61,22 +71,24 @@ struct HistoryView: View {
                 
                 Button(action: nextMonth) {
                     Image(systemName: "chevron.right")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, Spacing.sm)
             
-            // 星期标题
+            // Weekday headers
             HStack {
-                ForEach(["日", "一", "二", "三", "四", "五", "六"], id: \.self) { day in
+                ForEach(weekdaySymbols, id: \.self) { day in
                     Text(day)
-                        .font(.caption)
+                        .font(.caption2.weight(.medium))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
             }
             
-            // 日期网格
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+            // Calendar grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: Spacing.sm) {
                 ForEach(daysInMonth, id: \.self) { date in
                     if let date = date {
                         CalendarDayCell(
@@ -85,67 +97,75 @@ struct HistoryView: View {
                             isToday: Calendar.current.isDateInToday(date),
                             isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate)
                         ) {
-                            selectedDate = date
+                            withAnimation(.fastSpring) {
+                                selectedDate = date
+                            }
                         }
                     } else {
                         Color.clear
-                            .frame(height: 36)
+                            .frame(height: 40)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(Spacing.lg)
+        .glassCard(cornerRadius: CornerRadius.large)
     }
     
-    /// 月度统计区域
-    private var monthlyStatsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("本月统计")
-                .font(.headline)
+    // MARK: - Monthly Stats Row
+    
+    private var monthlyStatsRow: some View {
+        HStack(spacing: Spacing.md) {
+            MiniStatPill(
+                title: L10n.History.completed,
+                value: "\(monthlyCompletedCount)",
+                unit: L10n.History.times,
+                color: Color.fastingGreen
+            )
             
-            HStack(spacing: 12) {
-                MiniStatCard(
-                    title: "完成",
-                    value: "\(monthlyCompletedCount)",
-                    unit: "次",
-                    color: .green
-                )
-                
-                MiniStatCard(
-                    title: "总时长",
-                    value: "\(Int(monthlyTotalHours))",
-                    unit: "小时",
-                    color: .blue
-                )
-                
-                MiniStatCard(
-                    title: "连续",
-                    value: "7",  // TODO: 实际计算
-                    unit: "天",
-                    color: .orange
-                )
-            }
+            MiniStatPill(
+                title: L10n.History.totalHours,
+                value: "\(Int(monthlyTotalHours))",
+                unit: "h",
+                color: Color.fastingBlue
+            )
+            
+            MiniStatPill(
+                title: L10n.History.streak,
+                value: "\(currentStreak)",
+                unit: L10n.Timer.days,
+                color: Color.fastingOrange
+            )
         }
     }
     
-    /// 记录列表区域
-    private var recordsListSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("最近记录")
+    // MARK: - Recent Records Section
+    
+    private var recentRecordsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text(L10n.History.recentFasts)
                 .font(.headline)
+                .padding(.horizontal, Spacing.xs)
             
             if filteredRecords.isEmpty {
-                ContentUnavailableView(
-                    "暂无记录",
-                    systemImage: "calendar.badge.exclamationmark",
-                    description: Text("开始你的第一次断食吧")
-                )
-                .frame(height: 200)
+                // Empty state
+                VStack(spacing: Spacing.md) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.tertiary)
+                    Text(L10n.History.noRecords)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.History.noRecordsDesc)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.xxxl)
+                .glassCard()
             } else {
                 ForEach(filteredRecords.prefix(10)) { record in
-                    RecordRow(record: record) {
+                    RecordRowCard(record: record) {
                         selectedRecord = record
                     }
                 }
@@ -155,9 +175,15 @@ struct HistoryView: View {
     
     // MARK: - Computed Properties
     
+    private var weekdaySymbols: [String] {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.veryShortWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+    }
+    
     private var monthYearString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年M月"
+        formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: selectedDate)
     }
     
@@ -166,18 +192,14 @@ struct HistoryView: View {
         let interval = calendar.dateInterval(of: .month, for: selectedDate)!
         let firstDay = interval.start
         let lastDay = calendar.date(byAdding: .day, value: -1, to: interval.end)!
-        
-        // 获取月份第一天是星期几
         let firstWeekday = calendar.component(.weekday, from: firstDay)
         
         var days: [Date?] = []
         
-        // 添加空白天数
         for _ in 1..<firstWeekday {
             days.append(nil)
         }
         
-        // 添加实际天数
         var currentDate = firstDay
         while currentDate <= lastDay {
             days.append(currentDate)
@@ -204,6 +226,28 @@ struct HistoryView: View {
             .reduce(0, +) / 3600
     }
     
+    private var currentStreak: Int {
+        let calendar = Calendar.current
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: Date())
+        let completedRecords = records.filter { $0.status == .completed }
+        
+        while true {
+            let hasRecord = completedRecords.contains { record in
+                calendar.isDate(record.startTime, inSameDayAs: checkDate)
+            }
+            
+            if hasRecord {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else {
+                break
+            }
+        }
+        
+        return streak
+    }
+    
     // MARK: - Actions
     
     private func previousMonth() {
@@ -221,9 +265,8 @@ struct HistoryView: View {
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Calendar Day Cell
 
-/// 日历日期单元格
 struct CalendarDayCell: View {
     let date: Date
     let hasRecord: Bool
@@ -240,83 +283,91 @@ struct CalendarDayCell: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // 背景
+                // Background
                 if isSelected {
                     Circle()
-                        .fill(Color.accentColor)
+                        .fill(Color.fastingBlue)
                 } else if isToday {
                     Circle()
-                        .stroke(Color.accentColor, lineWidth: 2)
+                        .stroke(Color.fastingBlue, lineWidth: 2)
                 }
                 
                 VStack(spacing: 2) {
                     Text(dayNumber)
-                        .font(.subheadline)
+                        .font(.subheadline.weight(isToday ? .bold : .regular))
                         .foregroundStyle(isSelected ? .white : .primary)
                     
-                    // 记录指示点
-                    if hasRecord {
+                    // Record indicator
+                    if hasRecord && !isSelected {
                         Circle()
-                            .fill(isSelected ? .white : .green)
+                            .fill(Color.fastingGreen)
+                            .frame(width: 6, height: 6)
+                    } else if hasRecord && isSelected {
+                        Circle()
+                            .fill(Color.white)
                             .frame(width: 6, height: 6)
                     }
                 }
             }
-            .frame(height: 40)
+            .frame(height: 44)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
 }
 
-/// 迷你统计卡片
-struct MiniStatCard: View {
+// MARK: - Mini Stat Pill
+
+struct MiniStatPill: View {
     let title: String
     let value: String
     let unit: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
+        VStack(spacing: Spacing.xs) {
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
-                    .font(.title2.bold())
+                    .font(.title3.bold())
                 Text(unit)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, Spacing.md)
         .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .glassCard(cornerRadius: CornerRadius.medium)
     }
 }
 
-/// 记录行
-struct RecordRow: View {
+// MARK: - Record Row Card
+
+struct RecordRowCard: View {
     let record: FastingRecord
     let action: () -> Void
     
     private var dateString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "M月d日 HH:mm"
+        formatter.dateFormat = "MMM d, HH:mm"
         return formatter.string(from: record.startTime)
     }
     
     var body: some View {
         Button(action: action) {
-            HStack {
-                // 状态图标
+            HStack(spacing: Spacing.md) {
+                // Status icon
                 Image(systemName: statusIcon)
+                    .font(.title3)
                     .foregroundStyle(statusColor)
-                    .frame(width: 32, height: 32)
-                    .background(statusColor.opacity(0.15))
+                    .frame(width: 40, height: 40)
+                    .background(statusColor.opacity(0.12))
                     .clipShape(Circle())
                 
+                // Info
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.presetType.displayName)
                         .font(.subheadline.weight(.medium))
@@ -328,20 +379,19 @@ struct RecordRow: View {
                 
                 Spacer()
                 
-                // 时长
+                // Duration
                 Text(FastingRecord.formatShortDuration(record.actualDuration ?? record.currentDuration))
-                    .font(.subheadline)
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
-            .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(Spacing.md)
+            .glassCard(cornerRadius: CornerRadius.medium)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
     
     private var statusIcon: String {
@@ -354,14 +404,15 @@ struct RecordRow: View {
     
     private var statusColor: Color {
         switch record.status {
-        case .completed: return .green
-        case .inProgress: return .blue
+        case .completed: return Color.fastingGreen
+        case .inProgress: return Color.fastingBlue
         case .cancelled: return .gray
         }
     }
 }
 
-/// 记录详情 Sheet
+// MARK: - Record Detail Sheet
+
 struct RecordDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     let record: FastingRecord
@@ -370,33 +421,33 @@ struct RecordDetailSheet: View {
         NavigationStack {
             List {
                 Section {
-                    LabeledContent("方案", value: record.presetType.displayName)
-                    LabeledContent("状态", value: record.status.displayName)
+                    LabeledContent("Plan", value: record.presetType.displayName)
+                    LabeledContent("Status", value: record.status.displayName)
                 }
                 
-                Section("时间") {
-                    LabeledContent("开始时间", value: formatDate(record.startTime))
+                Section("Time") {
+                    LabeledContent("Started", value: formatDate(record.startTime))
                     if let endTime = record.endTime {
-                        LabeledContent("结束时间", value: formatDate(endTime))
+                        LabeledContent("Ended", value: formatDate(endTime))
                     }
-                    LabeledContent("目标时长", value: formatDuration(record.targetDuration))
+                    LabeledContent("Target", value: formatDuration(record.targetDuration))
                     if let actual = record.actualDuration {
-                        LabeledContent("实际时长", value: formatDuration(actual))
+                        LabeledContent("Actual", value: formatDuration(actual))
                     }
                 }
                 
                 if record.isGoalAchieved {
                     Section {
-                        Label("已达成目标", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
+                        Label(L10n.Timer.goalReached, systemImage: "checkmark.seal.fill")
+                            .foregroundStyle(Color.fastingGreen)
                     }
                 }
             }
-            .navigationTitle("断食详情")
+            .navigationTitle("Fast Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") {
+                    Button(L10n.General.done) {
                         dismiss()
                     }
                 }
@@ -406,14 +457,14 @@ struct RecordDetailSheet: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "M月d日 HH:mm"
+        formatter.dateFormat = "MMM d, HH:mm"
         return formatter.string(from: date)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = (Int(duration) % 3600) / 60
-        return "\(hours)小时\(minutes)分钟"
+        return "\(hours)h \(minutes)m"
     }
 }
 

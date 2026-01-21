@@ -2,7 +2,7 @@
 //  TimerView.swift
 //  Fasting
 //
-//  断食计时器主界面
+//  Main timer interface - Apple Health/Journal inspired design
 //
 
 import SwiftUI
@@ -12,6 +12,8 @@ struct TimerView: View {
     // MARK: - Properties
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
     @State private var fastingService = FastingService.shared
     @State private var showPresetSheet = false
     @State private var showConfirmEndSheet = false
@@ -22,29 +24,39 @@ struct TimerView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // 状态指示器
-                    statusIndicator
-                    
-                    // 进度环和计时器
-                    timerSection
-                    
-                    // 操作按钮
-                    actionSection
-                    
-                    // 快速统计
-                    quickStatsSection
+            ZStack {
+                // Gradient background with noise
+                GradientBackground()
+                
+                ScrollView {
+                    VStack(spacing: Spacing.xxl) {
+                        // Status pill
+                        statusPill
+                            .padding(.top, Spacing.md)
+                        
+                        // Main timer ring
+                        timerRingSection
+                        
+                        // Action button
+                        actionButton
+                            .padding(.horizontal, Spacing.xxxl)
+                        
+                        // Quick stats
+                        quickStatsSection
+                            .padding(.horizontal, Spacing.lg)
+                    }
+                    .padding(.bottom, Spacing.xxxl)
                 }
-                .padding()
             }
-            .navigationTitle("断食")
+            .navigationTitle(L10n.Tab.timer)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         SettingsView()
                     } label: {
                         Image(systemName: "gearshape")
+                            .symbolRenderingMode(.hierarchical)
                     }
                 }
             }
@@ -59,122 +71,164 @@ struct TimerView: View {
                 PresetSelectionSheet { preset, customDuration in
                     startFasting(preset: preset, customDuration: customDuration)
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
             .confirmationDialog(
-                "确认结束断食",
+                L10n.Timer.confirmEnd,
                 isPresented: $showConfirmEndSheet,
                 titleVisibility: .visible
             ) {
-                Button("结束断食", role: .destructive) {
+                Button(L10n.Timer.endFasting, role: .destructive) {
                     endFasting()
                 }
-                Button("取消", role: .cancel) {}
+                Button(L10n.Timer.cancel, role: .cancel) {}
             } message: {
-                Text("已断食 \(formattedCurrentDuration)，确定要结束吗？")
+                Text("\(L10n.Timer.confirmEndMessage) \(formattedCurrentDuration)")
             }
         }
     }
     
-    // MARK: - Views
+    // MARK: - Status Pill
     
-    /// 状态指示器
-    private var statusIndicator: some View {
-        HStack(spacing: 8) {
+    private var statusPill: some View {
+        HStack(spacing: Spacing.sm) {
             Circle()
-                .fill(fastingService.isFasting ? Color.green : Color.gray)
+                .fill(fastingService.isFasting ? Color.fastingGreen : Color.gray.opacity(0.5))
                 .frame(width: 8, height: 8)
+                .shadow(color: fastingService.isFasting ? Color.fastingGreen.opacity(0.5) : .clear, radius: 4)
             
             Text(statusText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(fastingService.isFasting ? .primary : .secondary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(Capsule())
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .background(.ultraThinMaterial, in: Capsule())
     }
     
-    /// 计时器区域
-    private var timerSection: some View {
-        ProgressRingWithContent(
-            progress: fastingService.progress,
-            lineWidth: 24,
-            gradientColors: fastingService.isFasting ? [.green, .blue] : [.gray.opacity(0.5), .gray.opacity(0.3)]
-        ) {
-            VStack(spacing: 8) {
-                // 主计时器
-                Text(formattedCurrentDuration)
-                    .font(.system(size: 48, weight: .light, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(fastingService.isFasting ? .primary : .secondary)
-                
-                // 方案名称
-                if let preset = fastingService.currentFast?.presetType {
-                    Text(preset.displayName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+    // MARK: - Timer Ring Section
+    
+    private var timerRingSection: some View {
+        VStack(spacing: Spacing.lg) {
+            // Main progress ring
+            ZStack {
+                // Outer glow when active
+                if fastingService.isFasting {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [.fastingGreen.opacity(0.15), .clear],
+                                center: .center,
+                                startRadius: 100,
+                                endRadius: 180
+                            )
+                        )
+                        .frame(width: 320, height: 320)
+                        .blur(radius: 20)
                 }
                 
-                // 剩余时间（如果正在断食）
-                if fastingService.isFasting && !fastingService.isGoalAchieved {
-                    Text("剩余 \(formattedRemainingDuration)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                // Progress ring
+                TimerProgressRing(
+                    progress: fastingService.progress,
+                    isActive: fastingService.isFasting
+                ) {
+                    // Center content
+                    VStack(spacing: Spacing.sm) {
+                        // Main time display
+                        Text(formattedCurrentDuration)
+                            .font(.system(size: 52, weight: .light, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(fastingService.isFasting ? .primary : .secondary)
+                            .contentTransition(.numericText())
+                        
+                        // Preset name
+                        if let preset = fastingService.currentFast?.presetType {
+                            Text(preset.displayName)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        // Remaining/Goal info
+                        if fastingService.isFasting {
+                            if fastingService.isGoalAchieved {
+                                Label(L10n.Timer.goalReached, systemImage: "checkmark.circle.fill")
+                                    .font(.callout.weight(.medium))
+                                    .foregroundStyle(Color.fastingGreen)
+                            } else {
+                                Text("\(formattedRemainingDuration) \(L10n.Timer.remaining)")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
                 }
-                
-                // 目标达成提示
-                if fastingService.isGoalAchieved {
-                    Label("已达成目标！", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
+                .frame(width: 280, height: 280)
             }
-        }
-        .frame(height: 280)
-        .padding(.vertical, 20)
-    }
-    
-    /// 操作按钮区域
-    private var actionSection: some View {
-        VStack(spacing: 16) {
-            if fastingService.isFasting {
-                // 结束按钮
-                PrimaryButton(
-                    title: "结束断食",
-                    action: { showConfirmEndSheet = true },
-                    icon: "stop.fill",
-                    isDestructive: true
-                )
-            } else {
-                // 开始按钮
-                PrimaryButton(
-                    title: "开始断食",
-                    action: { showPresetSheet = true },
-                    icon: "play.fill"
-                )
-            }
+            .frame(height: 320)
         }
     }
     
-    /// 快速统计区域
-    private var quickStatsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("快速统计")
-                .font(.headline)
+    // MARK: - Action Button
+    
+    private var actionButton: some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
             
-            HStack(spacing: 12) {
-                CompactStatCard(
-                    title: "连续天数",
-                    value: "7",  // TODO: 实际计算
+            if fastingService.isFasting {
+                showConfirmEndSheet = true
+            } else {
+                showPresetSheet = true
+            }
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: fastingService.isFasting ? "stop.fill" : "play.fill")
+                    .font(.headline)
+                Text(fastingService.isFasting ? L10n.Timer.endFasting : L10n.Timer.startFasting)
+                    .font(.headline)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(
+                fastingService.isFasting
+                    ? AnyShapeStyle(Color.red.gradient)
+                    : AnyShapeStyle(LinearGradient(colors: [.fastingGreen, .fastingTeal], startPoint: .leading, endPoint: .trailing))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .shadow(color: (fastingService.isFasting ? Color.red : Color.fastingGreen).opacity(0.3), radius: 12, x: 0, y: 6)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Quick Stats Section
+    
+    private var quickStatsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text(L10n.Timer.quickStats)
+                .font(.headline)
+                .padding(.horizontal, Spacing.xs)
+            
+            HStack(spacing: Spacing.md) {
+                // Streak card
+                QuickStatCard(
+                    title: L10n.Timer.currentStreak,
+                    value: "\(currentStreak)",
+                    unit: L10n.Timer.days,
                     icon: "flame.fill",
-                    color: .orange
+                    gradient: AppGradients.streakCard,
+                    iconColor: Color.fastingOrange
                 )
-                CompactStatCard(
-                    title: "本周完成",
-                    value: "5/7",  // TODO: 实际计算
+                
+                // This week card
+                QuickStatCard(
+                    title: L10n.Timer.thisWeek,
+                    value: "\(thisWeekCompleted)/7",
+                    unit: nil,
                     icon: "checkmark.circle.fill",
-                    color: .green
+                    gradient: AppGradients.progressCard,
+                    iconColor: Color.fastingGreen
                 )
             }
         }
@@ -184,9 +238,9 @@ struct TimerView: View {
     
     private var statusText: String {
         if fastingService.isFasting {
-            return fastingService.isGoalAchieved ? "目标已达成" : "断食进行中"
+            return fastingService.isGoalAchieved ? L10n.Timer.goalReached : L10n.Timer.fasting
         }
-        return "未在断食"
+        return L10n.Timer.notFasting
     }
     
     private var formattedCurrentDuration: String {
@@ -195,6 +249,38 @@ struct TimerView: View {
     
     private var formattedRemainingDuration: String {
         FastingRecord.formatShortDuration(fastingService.remainingDuration)
+    }
+    
+    private var currentStreak: Int {
+        let calendar = Calendar.current
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: Date())
+        let completedRecords = records.filter { $0.status == .completed }
+        
+        while true {
+            let hasRecord = completedRecords.contains { record in
+                calendar.isDate(record.startTime, inSameDayAs: checkDate)
+            }
+            
+            if hasRecord {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else {
+                break
+            }
+        }
+        
+        return streak
+    }
+    
+    private var thisWeekCompleted: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now)!
+        
+        return records.filter { record in
+            record.status == .completed && record.startTime >= weekAgo
+        }.count
     }
     
     // MARK: - Actions
@@ -206,8 +292,6 @@ struct TimerView: View {
     
     private func endFasting() {
         fastingService.endFasting()
-        
-        // 成功反馈
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
@@ -226,10 +310,114 @@ struct TimerView: View {
     }
 }
 
-// MARK: - Preset Selection Sheet
+// MARK: - Timer Progress Ring
+
+struct TimerProgressRing<Content: View>: View {
+    let progress: Double
+    let isActive: Bool
+    @ViewBuilder let content: () -> Content
+    
+    private let lineWidth: CGFloat = 20
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let size = min(geometry.size.width, geometry.size.height)
+            let radius = (size - lineWidth) / 2
+            
+            ZStack {
+                // Background ring
+                Circle()
+                    .stroke(
+                        Color.gray.opacity(0.15),
+                        lineWidth: lineWidth
+                    )
+                
+                // Progress ring with gradient
+                Circle()
+                    .trim(from: 0, to: min(progress, 1.0))
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: isActive ? [.fastingGreen, .fastingTeal, .fastingGreen] : [.gray.opacity(0.3), .gray.opacity(0.2), .gray.opacity(0.3)]),
+                            center: .center,
+                            startAngle: .degrees(-90),
+                            endAngle: .degrees(270)
+                        ),
+                        style: StrokeStyle(
+                            lineWidth: lineWidth,
+                            lineCap: .round
+                        )
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(.smoothSpring, value: progress)
+                
+                // End cap glow
+                if progress > 0.01 && isActive {
+                    Circle()
+                        .fill(Color.fastingTeal)
+                        .frame(width: lineWidth, height: lineWidth)
+                        .shadow(color: .fastingTeal.opacity(0.6), radius: 8)
+                        .offset(y: -radius)
+                        .rotationEffect(.degrees(360 * min(progress, 1.0) - 90))
+                        .animation(.smoothSpring, value: progress)
+                }
+                
+                // Center content
+                content()
+            }
+            .frame(width: size, height: size)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+        }
+    }
+}
+
+// MARK: - Quick Stat Card
+
+struct QuickStatCard: View {
+    let title: String
+    let value: String
+    let unit: String?
+    let icon: String
+    let gradient: LinearGradient
+    let iconColor: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            // Icon
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(iconColor)
+            
+            Spacer()
+            
+            // Value
+            HStack(alignment: .lastTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                if let unit = unit {
+                    Text(unit)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            // Title
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 120)
+        .background(gradient)
+        .glassCard(cornerRadius: CornerRadius.large)
+    }
+}
+
+// MARK: - Preset Selection Sheet (Updated)
 
 struct PresetSelectionSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     let onSelect: (FastingPreset, TimeInterval?) -> Void
     
     @State private var selectedPreset: FastingPreset = .sixteen8
@@ -237,50 +425,75 @@ struct PresetSelectionSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // 预设选项
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 12) {
-                    ForEach(FastingPreset.allCases) { preset in
-                        PresetCard(
-                            preset: preset,
-                            isSelected: selectedPreset == preset
-                        ) {
-                            selectedPreset = preset
+            ZStack {
+                GradientBackground(addNoise: false)
+                
+                ScrollView {
+                    VStack(spacing: Spacing.xxl) {
+                        // Preset grid
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: Spacing.md) {
+                            ForEach(FastingPreset.allCases) { preset in
+                                PresetCardView(
+                                    preset: preset,
+                                    isSelected: selectedPreset == preset
+                                ) {
+                                    withAnimation(.fastSpring) {
+                                        selectedPreset = preset
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-                
-                // 自定义时长滑块（当选择自定义时）
-                if selectedPreset == .custom {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("断食时长: \(Int(customHours)) 小时")
-                            .font(.headline)
                         
-                        Slider(value: $customHours, in: 1...72, step: 1)
-                            .tint(.accentColor)
+                        // Custom slider
+                        if selectedPreset == .custom {
+                            VStack(alignment: .leading, spacing: Spacing.md) {
+                                HStack {
+                                    Text(L10n.Preset.customDuration)
+                                        .font(.headline)
+                                    Spacer()
+                                    Text("\(Int(customHours)) \(L10n.Preset.hours)")
+                                        .font(.title3.bold())
+                                        .foregroundStyle(Color.fastingGreen)
+                                }
+                                
+                                Slider(value: $customHours, in: 1...72, step: 1)
+                                    .tint(Color.fastingGreen)
+                            }
+                            .padding(Spacing.lg)
+                            .glassCard()
+                        }
+                        
+                        // Start button
+                        Button {
+                            let customDuration = selectedPreset == .custom ? customHours * 3600 : nil
+                            onSelect(selectedPreset, customDuration)
+                        } label: {
+                            HStack(spacing: Spacing.sm) {
+                                Image(systemName: "play.fill")
+                                Text(L10n.Timer.startFasting)
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                LinearGradient(colors: [.fastingGreen, .fastingTeal], startPoint: .leading, endPoint: .trailing)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(Spacing.lg)
                 }
-                
-                Spacer()
-                
-                // 开始按钮
-                PrimaryButton(title: "开始断食", action: {
-                    let customDuration = selectedPreset == .custom ? customHours * 3600 : nil
-                    onSelect(selectedPreset, customDuration)
-                }, icon: "play.fill")
             }
-            .padding()
-            .navigationTitle("选择断食方案")
+            .navigationTitle(L10n.Preset.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("取消") {
+                    Button(L10n.Timer.cancel) {
                         dismiss()
                     }
                 }
@@ -289,55 +502,99 @@ struct PresetSelectionSheet: View {
     }
 }
 
-/// 预设卡片
-struct PresetCard: View {
+// MARK: - Preset Card View
+
+struct PresetCardView: View {
     let preset: FastingPreset
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: Spacing.sm) {
                 Text(preset.displayName)
-                    .font(.headline)
+                    .font(.title3.bold())
                 
-                Text("\(preset.fastingHours)小时断食")
+                Text("\(preset.fastingHours) \(L10n.Preset.hours)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                
+                // Badge
+                if preset == .sixteen8 {
+                    Text(L10n.Preset.popular)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.fastingGreen, in: Capsule())
+                }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .background(isSelected ? Color.accentColor.opacity(0.15) : Color(.secondarySystemGroupedBackground))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+            .padding(.vertical, Spacing.xl)
+            .background(
+                isSelected
+                    ? AnyShapeStyle(AppGradients.progressCard)
+                    : AnyShapeStyle(Color.clear)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    .stroke(isSelected ? Color.fastingGreen : Color.gray.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
 }
 
-// MARK: - Placeholder Views
+// MARK: - Settings View (Updated)
 
 struct SettingsView: View {
+    @State private var languageManager = LanguageManager.shared
+    
     var body: some View {
         List {
-            Section("断食设置") {
-                Text("默认方案")
-                Text("通知设置")
+            Section(L10n.Settings.fastingSettings) {
+                NavigationLink {
+                    Text(L10n.Settings.defaultPlan)
+                } label: {
+                    Label(L10n.Settings.defaultPlan, systemImage: "clock")
+                }
+                
+                NavigationLink {
+                    Text(L10n.Settings.notifications)
+                } label: {
+                    Label(L10n.Settings.notifications, systemImage: "bell")
+                }
             }
             
-            Section("数据") {
-                Text("Apple Health 同步")
-                Text("iCloud 同步")
+            Section(L10n.Settings.data) {
+                Label(L10n.Settings.healthSync, systemImage: "heart")
+                Label(L10n.Settings.iCloudSync, systemImage: "icloud")
             }
             
-            Section("关于") {
-                Text("版本 1.0.0")
+            Section {
+                Picker(selection: Binding(
+                    get: { languageManager.currentLanguage },
+                    set: { languageManager.currentLanguage = $0 }
+                )) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
+                    }
+                } label: {
+                    Label(L10n.Settings.language, systemImage: "globe")
+                }
+            }
+            
+            Section(L10n.Settings.about) {
+                HStack {
+                    Label(L10n.Settings.version, systemImage: "info.circle")
+                    Spacer()
+                    Text("1.0.0")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
-        .navigationTitle("设置")
+        .navigationTitle(L10n.Settings.title)
     }
 }
 
