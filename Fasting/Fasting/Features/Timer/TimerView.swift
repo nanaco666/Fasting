@@ -71,8 +71,7 @@ struct TimerView: View {
                 PresetSelectionSheet { preset, customDuration in
                     startFasting(preset: preset, customDuration: customDuration)
                 }
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .presentationDetents([.height(400)])
             }
             .confirmationDialog(
                 L10n.Timer.confirmEnd,
@@ -118,7 +117,7 @@ struct TimerView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [.fastingGreen.opacity(0.15), .clear],
+                                colors: [Color.fastingGreen.opacity(0.15), .clear],
                                 center: .center,
                                 startRadius: 100,
                                 endRadius: 180
@@ -130,12 +129,12 @@ struct TimerView: View {
                 
                 // Progress ring
                 TimerProgressRing(
-                    progress: fastingService.progress,
+                    progress: currentProgress,
                     isActive: fastingService.isFasting
                 ) {
                     // Center content
                     VStack(spacing: Spacing.sm) {
-                        // Main time display
+                        // Main time display - use computed property that depends on currentTime
                         Text(formattedCurrentDuration)
                             .font(.system(size: 52, weight: .light, design: .rounded))
                             .monospacedDigit()
@@ -151,7 +150,7 @@ struct TimerView: View {
                         
                         // Remaining/Goal info
                         if fastingService.isFasting {
-                            if fastingService.isGoalAchieved {
+                            if isGoalAchieved {
                                 Label(L10n.Timer.goalReached, systemImage: "checkmark.circle.fill")
                                     .font(.callout.weight(.medium))
                                     .foregroundStyle(Color.fastingGreen)
@@ -234,21 +233,57 @@ struct TimerView: View {
         }
     }
     
-    // MARK: - Computed Properties
+    // MARK: - Computed Properties (Time-dependent)
+    
+    /// Current duration - recalculates when currentTime changes
+    private var calculatedCurrentDuration: TimeInterval {
+        guard let startTime = fastingService.currentFast?.startTime,
+              fastingService.isFasting else {
+            return 0
+        }
+        // Use currentTime to ensure this recomputes on timer tick
+        return currentTime.timeIntervalSince(startTime)
+    }
+    
+    /// Current progress - recalculates when currentTime changes
+    private var currentProgress: Double {
+        guard fastingService.isFasting,
+              let targetDuration = fastingService.currentFast?.targetDuration,
+              targetDuration > 0 else {
+            return 0
+        }
+        return min(calculatedCurrentDuration / targetDuration, 1.0)
+    }
+    
+    /// Is goal achieved - based on currentTime
+    private var isGoalAchieved: Bool {
+        guard let targetDuration = fastingService.currentFast?.targetDuration else {
+            return false
+        }
+        return calculatedCurrentDuration >= targetDuration
+    }
+    
+    /// Remaining duration
+    private var remainingDuration: TimeInterval {
+        guard let targetDuration = fastingService.currentFast?.targetDuration else {
+            return 0
+        }
+        return max(targetDuration - calculatedCurrentDuration, 0)
+    }
     
     private var statusText: String {
         if fastingService.isFasting {
-            return fastingService.isGoalAchieved ? L10n.Timer.goalReached : L10n.Timer.fasting
+            return isGoalAchieved ? L10n.Timer.goalReached : L10n.Timer.fasting
         }
         return L10n.Timer.notFasting
     }
     
     private var formattedCurrentDuration: String {
-        FastingRecord.formatDuration(fastingService.currentDuration)
+        FastingRecord.formatDuration(calculatedCurrentDuration)
     }
     
     private var formattedRemainingDuration: String {
-        FastingRecord.formatShortDuration(fastingService.remainingDuration)
+        FastingRecord.formatShortDuration(remainingDuration)
     }
     
     private var currentStreak: Int {
@@ -355,7 +390,7 @@ struct TimerProgressRing<Content: View>: View {
                     Circle()
                         .fill(Color.fastingTeal)
                         .frame(width: lineWidth, height: lineWidth)
-                        .shadow(color: .fastingTeal.opacity(0.6), radius: 8)
+                        .shadow(color: Color.fastingTeal.opacity(0.6), radius: 8)
                         .offset(y: -radius)
                         .rotationEffect(.degrees(360 * min(progress, 1.0) - 90))
                         .animation(.smoothSpring, value: progress)
@@ -413,7 +448,7 @@ struct QuickStatCard: View {
     }
 }
 
-// MARK: - Preset Selection Sheet (Updated)
+// MARK: - Preset Selection Sheet (Updated with auto height)
 
 struct PresetSelectionSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -425,70 +460,65 @@ struct PresetSelectionSheet: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                GradientBackground(addNoise: false)
+            VStack(spacing: Spacing.xl) {
+                // Preset grid
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: Spacing.md) {
+                    ForEach(FastingPreset.allCases) { preset in
+                        PresetCardView(
+                            preset: preset,
+                            isSelected: selectedPreset == preset
+                        ) {
+                            withAnimation(.fastSpring) {
+                                selectedPreset = preset
+                            }
+                        }
+                    }
+                }
                 
-                ScrollView {
-                    VStack(spacing: Spacing.xxl) {
-                        // Preset grid
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: Spacing.md) {
-                            ForEach(FastingPreset.allCases) { preset in
-                                PresetCardView(
-                                    preset: preset,
-                                    isSelected: selectedPreset == preset
-                                ) {
-                                    withAnimation(.fastSpring) {
-                                        selectedPreset = preset
-                                    }
-                                }
-                            }
+                // Custom slider
+                if selectedPreset == .custom {
+                    VStack(alignment: .leading, spacing: Spacing.md) {
+                        HStack {
+                            Text(L10n.Preset.customDuration)
+                                .font(.headline)
+                            Spacer()
+                            Text("\(Int(customHours)) \(L10n.Preset.hours)")
+                                .font(.title3.bold())
+                                .foregroundStyle(Color.fastingGreen)
                         }
                         
-                        // Custom slider
-                        if selectedPreset == .custom {
-                            VStack(alignment: .leading, spacing: Spacing.md) {
-                                HStack {
-                                    Text(L10n.Preset.customDuration)
-                                        .font(.headline)
-                                    Spacer()
-                                    Text("\(Int(customHours)) \(L10n.Preset.hours)")
-                                        .font(.title3.bold())
-                                        .foregroundStyle(Color.fastingGreen)
-                                }
-                                
-                                Slider(value: $customHours, in: 1...72, step: 1)
-                                    .tint(Color.fastingGreen)
-                            }
-                            .padding(Spacing.lg)
-                            .glassCard()
-                        }
-                        
-                        // Start button
-                        Button {
-                            let customDuration = selectedPreset == .custom ? customHours * 3600 : nil
-                            onSelect(selectedPreset, customDuration)
-                        } label: {
-                            HStack(spacing: Spacing.sm) {
-                                Image(systemName: "play.fill")
-                                Text(L10n.Timer.startFasting)
-                            }
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(colors: [.fastingGreen, .fastingTeal], startPoint: .leading, endPoint: .trailing)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-                        }
-                        .buttonStyle(.plain)
+                        Slider(value: $customHours, in: 1...72, step: 1)
+                            .tint(Color.fastingGreen)
                     }
                     .padding(Spacing.lg)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
                 }
+                
+                // Start button
+                Button {
+                    let customDuration = selectedPreset == .custom ? customHours * 3600 : nil
+                    onSelect(selectedPreset, customDuration)
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "play.fill")
+                        Text(L10n.Timer.startFasting)
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(colors: [.fastingGreen, .fastingTeal], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+                }
+                .buttonStyle(.plain)
             }
+            .padding(Spacing.lg)
             .navigationTitle(L10n.Preset.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -530,7 +560,7 @@ struct PresetCardView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.xl)
+            .padding(.vertical, Spacing.lg)
             .background(
                 isSelected
                     ? AnyShapeStyle(AppGradients.progressCard)
@@ -589,7 +619,7 @@ struct SettingsView: View {
                 HStack {
                     Label(L10n.Settings.version, systemImage: "info.circle")
                     Spacer()
-                    Text("1.0.0")
+                    Text("1.1.0")
                         .foregroundStyle(.secondary)
                 }
             }
