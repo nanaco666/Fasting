@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] - 2026-01-22
+
+### 🐛 Bug Fixes
+
+**Timer Issues Fixed:**
+
+- ⏱️ **Real-time timer display** - The timer now updates every second when you start fasting (previously stayed at 00:00:00)
+- 📏 **Popup height fixed** - The "Start Fast" button is now fully visible when selecting a fasting plan
+
+**Statistics Improvements:**
+
+- ✅ **Success rate now accurate** - Only counts fasts where you actually reached your goal
+- ⏰ **Better time display** - Shows minutes (45m) when fasting less than an hour, no more "0h" frustration!
+
+### 🎨 Insights Page Redesign
+
+Completely redesigned based on Apple Journal's beautiful Insights page:
+
+- 🎯 **Solid color cards** - Rich, vibrant colors (dark blue, coral, purple) instead of plain white
+- 📐 **Bigger corners** - 20pt rounded corners for that modern Apple look
+- 🔤 **White text on cards** - Clear, readable text that pops against colored backgrounds
+- 📊 **Better visual hierarchy** - Streaks, Stats, and Charts in clear sections
+
+### 📁 Added
+
+- UI/UX reference images for design consistency
+
+---
+
 ## [1.1.0] - 2026-01-21
 
 ### ✨ New Look & Feel
