@@ -64,7 +64,7 @@ struct StatisticsView: View {
     
     private var streaksSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Streaks")
+            Text("Streaks".localized)
                 .font(.headline)
                 .foregroundStyle(.secondary)
             
@@ -109,7 +109,7 @@ struct StatisticsView: View {
                 }
                 .foregroundStyle(.white)
                 
-                Text("Day Streak")
+                Text("Day Streak".localized)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 
@@ -122,11 +122,11 @@ struct StatisticsView: View {
                 // No streak
                 Spacer()
                 
-                Text("No Current Streak")
+                Text("No Current Streak".localized)
                     .font(.headline)
                     .foregroundStyle(.white)
                 
-                Text("Fast at least once a day\nto build a streak.")
+                Text("Fast at least once a day\nto build a streak.".localized)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.7))
                     .multilineTextAlignment(.leading)
@@ -173,7 +173,7 @@ struct StatisticsView: View {
     
     private var statsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Stats")
+            Text("Stats".localized)
                 .font(.headline)
                 .foregroundStyle(.secondary)
             
@@ -183,11 +183,11 @@ struct StatisticsView: View {
                     .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Fasts")
+                Text("Fasts".localized)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 
-                Text("This Year")
+                Text("This Year".localized)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.6))
                 
@@ -314,7 +314,7 @@ struct StatisticsView: View {
                     Text(formattedPeriodTotal)
                         .font(.title2.bold())
                         .foregroundStyle(Color.fastingBlue)
-                    Text("total")
+                    Text("total".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -497,9 +497,9 @@ struct StatisticsView: View {
     
     private var periodDescription: String {
         switch selectedPeriod {
-        case .week: return "Last 7 days"
-        case .month: return "Last 4 weeks"
-        case .year: return "Last 12 months"
+        case .week: return "Last 7 days".localized
+        case .month: return "Last 4 weeks".localized
+        case .year: return "Last 12 months".localized
         }
     }
     

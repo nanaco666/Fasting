@@ -22,9 +22,10 @@ struct PrimaryButton: View {
     
     var body: some View {
         Button(action: {
-            // 触觉反馈
+            #if canImport(UIKit)
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
+            #endif
             action()
         }) {
             HStack(spacing: 8) {
@@ -97,9 +98,10 @@ struct CircularActionButton: View {
     
     var body: some View {
         Button(action: {
-            // 触觉反馈
+            #if canImport(UIKit)
             let generator = UIImpactFeedbackGenerator(style: .heavy)
             generator.impactOccurred()
+            #endif
             action()
         }) {
             ZStack {

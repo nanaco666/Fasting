@@ -15,7 +15,9 @@ struct FastingApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             FastingRecord.self,
-            UserSettings.self
+            UserSettings.self,
+            UserProfile.self,
+            FastingPlan.self
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
@@ -62,10 +64,10 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            // Insights
-            StatisticsView()
+            // Plan
+            PlanView()
                 .tabItem {
-                    Label(L10n.Tab.insights, systemImage: "chart.bar.fill")
+                    Label("Plan".localized, systemImage: "target")
                 }
                 .tag(2)
         }
@@ -80,5 +82,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [FastingRecord.self, UserSettings.self], inMemory: true)
+        .modelContainer(for: [FastingRecord.self, UserSettings.self, UserProfile.self, FastingPlan.self], inMemory: true)
 }

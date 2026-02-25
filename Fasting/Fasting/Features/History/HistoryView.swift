@@ -2,22 +2,16 @@
 //  HistoryView.swift
 //  Fasting
 //
-//  History page with calendar view
-//
 
 import SwiftUI
 import SwiftData
 
 struct HistoryView: View {
-    // MARK: - Properties
-    
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
-    @State private var selectedDate = Date()
+    @State private var displayedMonth = Date()
+    @State private var selectedDate: Date?
     @State private var selectedRecord: FastingRecord?
-    
-    // MARK: - Body
     
     var body: some View {
         NavigationStack {
@@ -25,17 +19,14 @@ struct HistoryView: View {
                 GradientBackground()
                 
                 ScrollView {
-                    VStack(spacing: Spacing.xxl) {
-                        // Calendar
-                        calendarCard
+                    VStack(spacing: Spacing.xl) {
+                        calendarSection
                             .padding(.horizontal, Spacing.lg)
                         
-                        // Monthly stats
-                        monthlyStatsRow
+                        statsRow
                             .padding(.horizontal, Spacing.lg)
                         
-                        // Recent records
-                        recentRecordsSection
+                        dayDetailSection
                             .padding(.horizontal, Spacing.lg)
                     }
                     .padding(.vertical, Spacing.lg)
@@ -50,13 +41,13 @@ struct HistoryView: View {
         }
     }
     
-    // MARK: - Calendar Card
+    // MARK: - Calendar
     
-    private var calendarCard: some View {
+    private var calendarSection: some View {
         VStack(spacing: Spacing.lg) {
-            // Month navigation
+            // Month nav
             HStack {
-                Button(action: previousMonth) {
+                Button { changeMonth(-1) } label: {
                     Image(systemName: "chevron.left")
                         .font(.headline)
                         .foregroundStyle(.secondary)
@@ -64,46 +55,36 @@ struct HistoryView: View {
                 
                 Spacer()
                 
-                Text(monthYearString)
-                    .font(.headline)
+                Text(monthTitle)
+                    .font(.title3.bold())
                 
                 Spacer()
                 
-                Button(action: nextMonth) {
+                Button { changeMonth(1) } label: {
                     Image(systemName: "chevron.right")
                         .font(.headline)
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, Spacing.sm)
             
             // Weekday headers
-            HStack {
-                ForEach(weekdaySymbols, id: \.self) { day in
-                    Text(day)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
+            weekdayHeader
             
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: Spacing.sm) {
-                ForEach(daysInMonth, id: \.self) { date in
-                    if let date = date {
-                        CalendarDayCell(
+            // Day grid with rings
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: Spacing.md) {
+                ForEach(daysInMonth, id: \.self) { item in
+                    if let date = item {
+                        DayRingCell(
                             date: date,
-                            hasRecord: hasRecord(on: date),
+                            progress: dayProgress(date),
                             isToday: Calendar.current.isDateInToday(date),
-                            isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                            isSelected: selectedDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false,
+                            holiday: HolidayService.holiday(on: date)
                         ) {
-                            withAnimation(.fastSpring) {
-                                selectedDate = date
-                            }
+                            withAnimation(.fastSpring) { selectedDate = date }
                         }
                     } else {
-                        Color.clear
-                            .frame(height: 40)
+                        Color.clear.frame(height: 48)
                     }
                 }
             }
@@ -112,218 +93,43 @@ struct HistoryView: View {
         .glassCard(cornerRadius: CornerRadius.large)
     }
     
-    // MARK: - Monthly Stats Row
+    private var weekdayHeader: some View {
+        HStack {
+            ForEach(weekdaySymbols, id: \.self) { sym in
+                Text(sym)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
     
-    private var monthlyStatsRow: some View {
+    // MARK: - Stats
+    
+    private var statsRow: some View {
         HStack(spacing: Spacing.md) {
-            MiniStatPill(
-                title: L10n.History.completed,
-                value: "\(monthlyCompletedCount)",
+            statCard(
+                title: "Completed".localized,
+                value: "\(monthCompleted)",
                 unit: L10n.History.times,
-                color: Color.fastingGreen
+                color: .fastingGreen
             )
-            
-            MiniStatPill(
-                title: L10n.History.totalHours,
-                value: "\(Int(monthlyTotalHours))",
-                unit: "h",
-                color: Color.fastingBlue
-            )
-            
-            MiniStatPill(
-                title: L10n.History.streak,
+            statCard(
+                title: "Current Streak".localized,
                 value: "\(currentStreak)",
                 unit: L10n.Timer.days,
-                color: Color.fastingOrange
+                color: .fastingOrange
+            )
+            statCard(
+                title: "Longest Streak".localized,
+                value: "\(longestStreak)",
+                unit: L10n.Timer.days,
+                color: .fastingBlue
             )
         }
     }
     
-    // MARK: - Recent Records Section
-    
-    private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text(L10n.History.recentFasts)
-                .font(.headline)
-                .padding(.horizontal, Spacing.xs)
-            
-            if filteredRecords.isEmpty {
-                // Empty state
-                VStack(spacing: Spacing.md) {
-                    Image(systemName: "calendar.badge.exclamationmark")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.tertiary)
-                    Text(L10n.History.noRecords)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text(L10n.History.noRecordsDesc)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.xxxl)
-                .glassCard()
-            } else {
-                ForEach(filteredRecords.prefix(10)) { record in
-                    RecordRowCard(record: record) {
-                        selectedRecord = record
-                    }
-                }
-            }
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var weekdaySymbols: [String] {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        return formatter.veryShortWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
-    }
-    
-    private var monthYearString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: selectedDate)
-    }
-    
-    private var daysInMonth: [Date?] {
-        let calendar = Calendar.current
-        let interval = calendar.dateInterval(of: .month, for: selectedDate)!
-        let firstDay = interval.start
-        let lastDay = calendar.date(byAdding: .day, value: -1, to: interval.end)!
-        let firstWeekday = calendar.component(.weekday, from: firstDay)
-        
-        var days: [Date?] = []
-        
-        for _ in 1..<firstWeekday {
-            days.append(nil)
-        }
-        
-        var currentDate = firstDay
-        while currentDate <= lastDay {
-            days.append(currentDate)
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
-        }
-        
-        return days
-    }
-    
-    private var filteredRecords: [FastingRecord] {
-        let calendar = Calendar.current
-        return records.filter { record in
-            calendar.isDate(record.startTime, equalTo: selectedDate, toGranularity: .month)
-        }
-    }
-    
-    private var monthlyCompletedCount: Int {
-        filteredRecords.filter { $0.status == .completed }.count
-    }
-    
-    private var monthlyTotalHours: Double {
-        filteredRecords
-            .compactMap { $0.actualDuration }
-            .reduce(0, +) / 3600
-    }
-    
-    private var currentStreak: Int {
-        let calendar = Calendar.current
-        var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
-        let completedRecords = records.filter { $0.status == .completed }
-        
-        while true {
-            let hasRecord = completedRecords.contains { record in
-                calendar.isDate(record.startTime, inSameDayAs: checkDate)
-            }
-            
-            if hasRecord {
-                streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else {
-                break
-            }
-        }
-        
-        return streak
-    }
-    
-    // MARK: - Actions
-    
-    private func previousMonth() {
-        selectedDate = Calendar.current.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
-    }
-    
-    private func nextMonth() {
-        selectedDate = Calendar.current.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
-    }
-    
-    private func hasRecord(on date: Date) -> Bool {
-        records.contains { record in
-            Calendar.current.isDate(record.startTime, inSameDayAs: date)
-        }
-    }
-}
-
-// MARK: - Calendar Day Cell
-
-struct CalendarDayCell: View {
-    let date: Date
-    let hasRecord: Bool
-    let isToday: Bool
-    let isSelected: Bool
-    let action: () -> Void
-    
-    private var dayNumber: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: date)
-    }
-    
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Background
-                if isSelected {
-                    Circle()
-                        .fill(Color.fastingBlue)
-                } else if isToday {
-                    Circle()
-                        .stroke(Color.fastingBlue, lineWidth: 2)
-                }
-                
-                VStack(spacing: 2) {
-                    Text(dayNumber)
-                        .font(.subheadline.weight(isToday ? .bold : .regular))
-                        .foregroundStyle(isSelected ? .white : .primary)
-                    
-                    // Record indicator
-                    if hasRecord && !isSelected {
-                        Circle()
-                            .fill(Color.fastingGreen)
-                            .frame(width: 6, height: 6)
-                    } else if hasRecord && isSelected {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 6, height: 6)
-                    }
-                }
-            }
-            .frame(height: 44)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Mini Stat Pill
-
-struct MiniStatPill: View {
-    let title: String
-    let value: String
-    let unit: String
-    let color: Color
-    
-    var body: some View {
+    private func statCard(title: String, value: String, unit: String, color: Color) -> some View {
         VStack(spacing: Spacing.xs) {
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
@@ -332,15 +138,258 @@ struct MiniStatPill: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.md)
-        .background(color.opacity(0.1))
         .glassCard(cornerRadius: CornerRadius.medium)
+    }
+    
+    // MARK: - Day Detail
+    
+    private var dayDetailSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            if let date = selectedDate {
+                let dayRecords = recordsOn(date)
+                
+                Text(dayTitle(date))
+                    .font(.headline)
+                    .padding(.horizontal, Spacing.xs)
+                
+                // Holiday advice card
+                if let h = HolidayService.holiday(on: date) {
+                    holidayAdviceCard(h)
+                }
+                
+                if dayRecords.isEmpty {
+                    emptyDayCard
+                } else {
+                    ForEach(dayRecords) { record in
+                        RecordRowCard(record: record) {
+                            selectedRecord = record
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func holidayAdviceCard(_ h: Holiday) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text(h.fastingAdvice.emoji)
+                    .font(.title2)
+                Text(h.localizedName)
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                presetBadge(h.fastingAdvice.suggestedPreset)
+            }
+            
+            Text(h.fastingAdvice.localizedDetail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(Spacing.lg)
+        .glassCard(cornerRadius: CornerRadius.medium)
+    }
+    
+    private func presetBadge(_ preset: SuggestedPreset) -> some View {
+        let (text, color): (String, Color) = switch preset {
+        case .normal: ("Normal".localized, .fastingGreen)
+        case .shorter: ("14:10", .fastingOrange)
+        case .skip: ("Skip".localized, .gray)
+        case .flexible: ("Flexible".localized, .fastingBlue)
+        case .extended: ("Extended".localized, .purple)
+        }
+        return Text(text)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color, in: Capsule())
+    }
+    
+    private var emptyDayCard: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "moon.zzz")
+                .font(.title2)
+                .foregroundStyle(.tertiary)
+            Text("No fasts this day".localized)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xl)
+        .glassCard(cornerRadius: CornerRadius.medium)
+    }
+    
+    // MARK: - Data
+    
+    private var weekdaySymbols: [String] {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        return f.veryShortWeekdaySymbols ?? ["S","M","T","W","T","F","S"]
+    }
+    
+    private var monthTitle: String {
+        let f = DateFormatter()
+        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMM yyyy", options: 0, locale: .current)
+        return f.string(from: displayedMonth)
+    }
+    
+    private var daysInMonth: [Date?] {
+        let cal = Calendar.current
+        let interval = cal.dateInterval(of: .month, for: displayedMonth)!
+        let firstWeekday = cal.component(.weekday, from: interval.start)
+        let lastDay = cal.date(byAdding: .day, value: -1, to: interval.end)!
+        
+        var days: [Date?] = Array(repeating: nil, count: firstWeekday - 1)
+        var d = interval.start
+        while d <= lastDay {
+            days.append(d)
+            d = cal.date(byAdding: .day, value: 1, to: d)!
+        }
+        return days
+    }
+    
+    private func dayProgress(_ date: Date) -> Double {
+        let cal = Calendar.current
+        let dayRecords = records.filter {
+            $0.status == .completed && cal.isDate($0.startTime, inSameDayAs: date)
+        }
+        guard let best = dayRecords.max(by: { ($0.actualDuration ?? 0) < ($1.actualDuration ?? 0) }) else {
+            return 0
+        }
+        guard best.targetDuration > 0 else { return 0 }
+        return min((best.actualDuration ?? 0) / best.targetDuration, 1.0)
+    }
+    
+    private func recordsOn(_ date: Date) -> [FastingRecord] {
+        let cal = Calendar.current
+        return records.filter { cal.isDate($0.startTime, inSameDayAs: date) }
+    }
+    
+    private func dayTitle(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) { return "Today".localized }
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday".localized }
+        let f = DateFormatter()
+        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMd EEEE", options: 0, locale: .current)
+        return f.string(from: date)
+    }
+    
+    private var monthCompleted: Int {
+        let cal = Calendar.current
+        return records.filter {
+            $0.status == .completed
+            && ($0.actualDuration ?? 0) >= $0.targetDuration
+            && cal.isDate($0.startTime, equalTo: displayedMonth, toGranularity: .month)
+        }.count
+    }
+    
+    private var currentStreak: Int {
+        let cal = Calendar.current
+        var streak = 0
+        var check = cal.startOfDay(for: Date())
+        while true {
+            let has = records.contains {
+                $0.status == .completed
+                && ($0.actualDuration ?? 0) >= $0.targetDuration
+                && cal.isDate($0.startTime, inSameDayAs: check)
+            }
+            if has {
+                streak += 1
+                check = cal.date(byAdding: .day, value: -1, to: check)!
+            } else { break }
+        }
+        return streak
+    }
+    
+    private var longestStreak: Int {
+        let cal = Calendar.current
+        let completedDays = Set(records.filter {
+            $0.status == .completed && ($0.actualDuration ?? 0) >= $0.targetDuration
+        }.map { cal.startOfDay(for: $0.startTime) })
+        
+        guard !completedDays.isEmpty else { return 0 }
+        let sorted = completedDays.sorted()
+        var longest = 1, current = 1
+        for i in 1..<sorted.count {
+            if cal.date(byAdding: .day, value: 1, to: sorted[i-1]) == sorted[i] {
+                current += 1
+                longest = max(longest, current)
+            } else {
+                current = 1
+            }
+        }
+        return longest
+    }
+    
+    private func changeMonth(_ delta: Int) {
+        withAnimation(.fastSpring) {
+            displayedMonth = Calendar.current.date(byAdding: .month, value: delta, to: displayedMonth) ?? displayedMonth
+            selectedDate = nil
+        }
+    }
+}
+
+// MARK: - Day Ring Cell
+
+struct DayRingCell: View {
+    let date: Date
+    let progress: Double
+    let isToday: Bool
+    let isSelected: Bool
+    let holiday: Holiday?
+    let onTap: () -> Void
+    
+    private var day: String {
+        "\(Calendar.current.component(.day, from: date))"
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 1) {
+                Text(day)
+                    .font(.caption2.weight(isToday ? .bold : .regular))
+                    .foregroundStyle(isSelected ? Color.fastingGreen : isToday ? .primary : .secondary)
+                
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.15), lineWidth: 3)
+                    
+                    if progress > 0 {
+                        Circle()
+                            .trim(from: 0, to: progress)
+                            .stroke(
+                                progress >= 1.0 ? Color.fastingGreen : Color.fastingOrange,
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                    }
+                    
+                    if progress >= 1.0 {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.fastingGreen)
+                    } else if let h = holiday {
+                        Text(h.fastingAdvice.emoji)
+                            .font(.system(size: 12))
+                    }
+                }
+                .frame(width: 32, height: 32)
+                
+                // Holiday name — fixed space, always present
+                Text(holiday?.localizedName ?? " ")
+                    .font(.system(size: 7))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(height: 58)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -350,37 +399,27 @@ struct RecordRowCard: View {
     let record: FastingRecord
     let action: () -> Void
     
-    private var dateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, HH:mm"
-        return formatter.string(from: record.startTime)
-    }
-    
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.md) {
-                // Status icon
                 Image(systemName: statusIcon)
                     .font(.title3)
                     .foregroundStyle(statusColor)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 36, height: 36)
                     .background(statusColor.opacity(0.12))
                     .clipShape(Circle())
                 
-                // Info
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.presetType.displayName)
                         .font(.subheadline.weight(.medium))
-                    
-                    Text(dateString)
+                    Text(timeString)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
                 
-                // Duration
-                Text(FastingRecord.formatShortDuration(record.actualDuration ?? record.currentDuration))
+                Text(durationString)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 
@@ -394,6 +433,20 @@ struct RecordRowCard: View {
         .buttonStyle(.plain)
     }
     
+    private var timeString: String {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        var s = f.string(from: record.startTime)
+        if let end = record.endTime {
+            s += " → " + f.string(from: end)
+        }
+        return s
+    }
+    
+    private var durationString: String {
+        FastingRecord.formatShortDuration(record.actualDuration ?? record.currentDuration)
+    }
+    
     private var statusIcon: String {
         switch record.status {
         case .completed: return "checkmark.circle.fill"
@@ -404,8 +457,8 @@ struct RecordRowCard: View {
     
     private var statusColor: Color {
         switch record.status {
-        case .completed: return Color.fastingGreen
-        case .inProgress: return Color.fastingBlue
+        case .completed: return .fastingGreen
+        case .inProgress: return .fastingBlue
         case .cancelled: return .gray
         }
     }
@@ -421,21 +474,19 @@ struct RecordDetailSheet: View {
         NavigationStack {
             List {
                 Section {
-                    LabeledContent("Plan", value: record.presetType.displayName)
-                    LabeledContent("Status", value: record.status.displayName)
+                    LabeledContent("Plan".localized, value: record.presetType.displayName)
+                    LabeledContent("Status".localized, value: record.status.displayName)
                 }
-                
-                Section("Time") {
-                    LabeledContent("Started", value: formatDate(record.startTime))
-                    if let endTime = record.endTime {
-                        LabeledContent("Ended", value: formatDate(endTime))
+                Section("Time".localized) {
+                    LabeledContent("Started".localized, value: formatDate(record.startTime))
+                    if let end = record.endTime {
+                        LabeledContent("Ended".localized, value: formatDate(end))
                     }
-                    LabeledContent("Target", value: formatDuration(record.targetDuration))
+                    LabeledContent("Target".localized, value: formatDur(record.targetDuration))
                     if let actual = record.actualDuration {
-                        LabeledContent("Actual", value: formatDuration(actual))
+                        LabeledContent("Actual".localized, value: formatDur(actual))
                     }
                 }
-                
                 if record.isGoalAchieved {
                     Section {
                         Label(L10n.Timer.goalReached, systemImage: "checkmark.seal.fill")
@@ -443,32 +494,26 @@ struct RecordDetailSheet: View {
                     }
                 }
             }
-            .navigationTitle("Fast Details")
+            .navigationTitle("Fast Details".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.General.done) {
-                        dismiss()
-                    }
+                    Button(L10n.General.done) { dismiss() }
                 }
             }
         }
     }
     
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, HH:mm"
-        return formatter.string(from: date)
+    private func formatDate(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, HH:mm"
+        return f.string(from: d)
     }
     
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        return "\(hours)h \(minutes)m"
+    private func formatDur(_ t: TimeInterval) -> String {
+        "\(Int(t) / 3600)h \((Int(t) % 3600) / 60)m"
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     HistoryView()
