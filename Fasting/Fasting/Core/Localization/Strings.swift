@@ -472,5 +472,12 @@ static let all: [String: [String: String]] = [
     "Skip": ["en": "Skip", "zh-Hans": "跳过"],
     "Flexible": ["en": "Flexible", "zh-Hans": "弹性"],
     "Extended": ["en": "Extended", "zh-Hans": "加长"],
+    "week_number": ["en": "Week %d", "zh-Hans": "第 %d 周"],
+    "week_progress": ["en": "%d/%d weeks", "zh-Hans": "%d/%d 周"],
+    "Half Way! 💪": ["en": "Half Way! 💪", "zh-Hans": "已过半！💪"],
+    "halfway_body": ["en": "You're halfway through your %@ fast. Keep going!", "zh-Hans": "%@ 断食已过半，继续坚持！"],
+    "Goal Reached! 🎉": ["en": "Goal Reached! 🎉", "zh-Hans": "目标达成！🎉"],
+    "complete_body": ["en": "Your %@ fast is complete! Well done.", "zh-Hans": "%@ 断食完成！干得漂亮。"],
+    "Connect": ["en": "Connect", "zh-Hans": "连接"],
 ]
 }

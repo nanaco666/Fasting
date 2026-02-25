@@ -153,25 +153,66 @@ extension View {
     }
 }
 
+// MARK: - Tinted Card Style
+
+struct TintedCard: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    var tint: Color = .clear
+    var cornerRadius: CGFloat = 20
+    
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(tint.opacity(colorScheme == .dark ? 0.15 : 0.08))
+                    }
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.06), radius: 12, x: 0, y: 6)
+            }
+    }
+}
+
+extension View {
+    func tintedCard(_ tint: Color = .clear, cornerRadius: CGFloat = 20) -> some View {
+        modifier(TintedCard(tint: tint, cornerRadius: cornerRadius))
+    }
+}
+
+// MARK: - Typography
+
+enum AppFont {
+    static func hero(_ size: CGFloat = 56) -> Font {
+        .system(size: size, weight: .light, design: .rounded)
+    }
+    static func stat(_ size: CGFloat = 34) -> Font {
+        .system(size: size, weight: .semibold, design: .rounded)
+    }
+    static func label() -> Font {
+        .caption.weight(.medium)
+    }
+}
+
 // MARK: - Spacing Constants
 
 enum Spacing {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
-    static let md: CGFloat = 12
-    static let lg: CGFloat = 16
-    static let xl: CGFloat = 20
-    static let xxl: CGFloat = 24
-    static let xxxl: CGFloat = 32
+    static let md: CGFloat = 16   // was 12
+    static let lg: CGFloat = 24   // was 16
+    static let xl: CGFloat = 32   // was 20
+    static let xxl: CGFloat = 40  // was 24
+    static let xxxl: CGFloat = 56 // was 32
 }
 
 // MARK: - Corner Radius Constants
 
 enum CornerRadius {
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 12
-    static let large: CGFloat = 16
-    static let extraLarge: CGFloat = 20
+    static let small: CGFloat = 10
+    static let medium: CGFloat = 16
+    static let large: CGFloat = 20
+    static let extraLarge: CGFloat = 28
     static let full: CGFloat = 9999
 }
 

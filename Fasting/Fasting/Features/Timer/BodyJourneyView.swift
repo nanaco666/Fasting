@@ -46,7 +46,10 @@ struct BodyJourneyCard: View {
                 journeyTimeline
                     .padding(.top, Spacing.md)
                     .padding(.bottom, Spacing.lg)
-                    .transition(.opacity)
+                    .transition(.asymmetric(
+                        insertion: .push(from: .bottom),
+                        removal: .push(from: .top)
+                    ))
             }
         }
         .glassCard(cornerRadius: CornerRadius.large)
@@ -71,7 +74,7 @@ struct BodyJourneyCard: View {
                     .animation(.smoothSpring, value: phaseProgress)
                 
                 Image(systemName: currentPhase.icon)
-                    .font(.body.weight(.semibold))
+                    .font(.system(size: 28).weight(.semibold))
                     .foregroundStyle(currentPhase.color)
             }
             
@@ -107,6 +110,9 @@ struct BodyJourneyCard: View {
                 .rotationEffect(.degrees(isExpanded ? 180 : 0))
         }
         .padding(Spacing.lg)
+        .background(
+            isFasting ? currentPhase.color.opacity(0.08) : Color.clear
+        )
     }
     
     // MARK: - Journey Timeline
@@ -193,7 +199,7 @@ struct PhaseTimelineRow: View {
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: Spacing.sm) {
                             Text(phase.name)
-                                .font(.subheadline.weight(isCurrent ? .bold : isUnlocked ? .medium : .regular))
+                                .font(.body.weight(.semibold))
                                 .foregroundStyle(isUnlocked ? .primary : .tertiary)
                             
                             if isCurrent {
@@ -229,7 +235,7 @@ struct PhaseTimelineRow: View {
                 
                 // Subtitle
                 Text(phase.subtitle)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(isUnlocked ? .secondary : .quaternary)
                 
                 // Expanded detail

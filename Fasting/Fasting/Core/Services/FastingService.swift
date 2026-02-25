@@ -61,6 +61,7 @@ final class FastingService {
     func configure(with modelContext: ModelContext) {
         self.modelContext = modelContext
         loadCurrentFast()
+        syncToWidget()
     }
     
     // MARK: - Public Methods
@@ -101,6 +102,16 @@ final class FastingService {
         // 持久化当前断食 ID（防止应用被杀）
         saveCurrentFastId(record.id)
         
+        // 同步到 Widget
+        syncToWidget()
+        
+        // 通知
+        NotificationService.scheduleFastingNotifications(
+            startTime: record.startTime,
+            targetDuration: duration,
+            presetName: preset.displayName
+        )
+        
         return record
     }
     
@@ -114,6 +125,8 @@ final class FastingService {
         // 清除当前断食
         currentFast = nil
         clearCurrentFastId()
+        syncToWidget()
+        NotificationService.cancelAll()
     }
     
     /// 取消当前断食
@@ -126,6 +139,8 @@ final class FastingService {
         // 清除当前断食
         currentFast = nil
         clearCurrentFastId()
+        syncToWidget()
+        NotificationService.cancelAll()
     }
     
     /// 刷新当前断食状态（用于从后台恢复）
@@ -180,6 +195,22 @@ final class FastingService {
     
     private func clearCurrentFastId() {
         UserDefaults.standard.removeObject(forKey: currentFastIdKey)
+    }
+    
+    // MARK: - Widget Sync
+    
+    private func syncToWidget() {
+        if let fast = currentFast, fast.status == .inProgress {
+            SharedFastingData.save(SharedFastingState(
+                isFasting: true,
+                startTime: fast.startTime,
+                targetDuration: fast.targetDuration,
+                presetName: fast.presetType.displayName,
+                lastUpdated: Date()
+            ))
+        } else {
+            SharedFastingData.save(.idle)
+        }
     }
 }
 

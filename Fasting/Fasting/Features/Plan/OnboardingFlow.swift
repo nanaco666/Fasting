@@ -28,35 +28,46 @@ struct OnboardingFlow: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Progress bar
-                ProgressView(value: Double(step + 1), total: Double(totalSteps))
-                    .tint(Color.fastingGreen)
-                    .padding(.horizontal)
-                    .padding(.top, Spacing.md)
+                // Step indicator dots
+                HStack(spacing: 8) {
+                    ForEach(0..<totalSteps, id: \.self) { index in
+                        Circle()
+                            .fill(index <= step ? Color.fastingGreen : Color.gray.opacity(0.3))
+                            .frame(width: 10, height: 10)
+                            .scaleEffect(index == step ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: step)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, Spacing.md)
                 
                 // Step content
                 TabView(selection: $step) {
                     bodyInfoStep.tag(0)
+                        .transition(.slide.combined(with: .opacity))
                     activityStep.tag(1)
+                        .transition(.slide.combined(with: .opacity))
                     goalStep.tag(2)
+                        .transition(.slide.combined(with: .opacity))
                     summaryStep.tag(3)
+                        .transition(.slide.combined(with: .opacity))
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.smoothSpring, value: step)
                 
                 // Navigation buttons
-                HStack(spacing: Spacing.lg) {
+                VStack(spacing: Spacing.md) {
                     if step > 0 {
                         Button("Back") {
                             withAnimation { step -= 1 }
                         }
                         .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    
-                    Spacer()
                     
                     if step < totalSteps - 1 {
                         Button {
+                            Haptic.selection()
                             withAnimation { step += 1 }
                         } label: {
                             HStack(spacing: Spacing.xs) {
@@ -65,12 +76,20 @@ struct OnboardingFlow: View {
                             }
                             .font(.headline)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, Spacing.xxl)
-                            .padding(.vertical, Spacing.md)
-                            .background(Color.fastingGreen, in: Capsule())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 20)
+                            )
                         }
                     } else {
                         Button {
+                            Haptic.success()
                             createPlan()
                         } label: {
                             HStack(spacing: Spacing.xs) {
@@ -79,9 +98,16 @@ struct OnboardingFlow: View {
                             }
                             .font(.headline)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, Spacing.xxl)
-                            .padding(.vertical, Spacing.md)
-                            .background(Color.fastingGreen, in: Capsule())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 20)
+                            )
                         }
                     }
                 }

@@ -56,7 +56,7 @@ struct HistoryView: View {
                 Spacer()
                 
                 Text(monthTitle)
-                    .font(.title3.bold())
+                    .font(.title2.bold())
                 
                 Spacer()
                 
@@ -72,7 +72,7 @@ struct HistoryView: View {
             
             // Day grid with rings
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: Spacing.md) {
-                ForEach(daysInMonth, id: \.self) { item in
+                ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, item in
                     if let date = item {
                         DayRingCell(
                             date: date,
@@ -133,7 +133,7 @@ struct HistoryView: View {
         VStack(spacing: Spacing.xs) {
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
-                    .font(.title3.bold())
+                    .font(.title2.bold())
                 Text(unit)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -143,7 +143,7 @@ struct HistoryView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.md)
+        .padding(.vertical, Spacing.lg)
         .glassCard(cornerRadius: CornerRadius.medium)
     }
     
@@ -155,7 +155,7 @@ struct HistoryView: View {
                 let dayRecords = recordsOn(date)
                 
                 Text(dayTitle(date))
-                    .font(.headline)
+                    .font(.title3.bold())
                     .padding(.horizontal, Spacing.xs)
                 
                 // Holiday advice card
@@ -182,7 +182,7 @@ struct HistoryView: View {
                 Text(h.fastingAdvice.emoji)
                     .font(.title2)
                 Text(h.localizedName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                 Spacer()
                 presetBadge(h.fastingAdvice.suggestedPreset)
             }
@@ -353,19 +353,19 @@ struct DayRingCell: View {
         Button(action: onTap) {
             VStack(spacing: 1) {
                 Text(day)
-                    .font(.caption2.weight(isToday ? .bold : .regular))
+                    .font(.caption.weight(isToday ? .bold : .medium))
                     .foregroundStyle(isSelected ? Color.fastingGreen : isToday ? .primary : .secondary)
                 
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 3)
+                        .stroke(Color.gray.opacity(0.15), lineWidth: 4)
                     
                     if progress > 0 {
                         Circle()
                             .trim(from: 0, to: progress)
                             .stroke(
                                 progress >= 1.0 ? Color.fastingGreen : Color.fastingOrange,
-                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
                             )
                             .rotationEffect(.degrees(-90))
                     }
@@ -379,7 +379,7 @@ struct DayRingCell: View {
                             .font(.system(size: 12))
                     }
                 }
-                .frame(width: 32, height: 32)
+                .frame(width: 36, height: 36)
                 
                 // Holiday name — fixed space, always present
                 Text(holiday?.localizedName ?? " ")
@@ -387,7 +387,7 @@ struct DayRingCell: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .frame(height: 58)
+            .frame(height: 62)
         }
         .buttonStyle(.plain)
     }
@@ -405,13 +405,13 @@ struct RecordRowCard: View {
                 Image(systemName: statusIcon)
                     .font(.title3)
                     .foregroundStyle(statusColor)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
                     .background(statusColor.opacity(0.12))
                     .clipShape(Circle())
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.presetType.displayName)
-                        .font(.subheadline.weight(.medium))
+                        .font(.body.weight(.semibold))
                     Text(timeString)
                         .font(.caption)
                         .foregroundStyle(.secondary)

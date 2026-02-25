@@ -34,6 +34,10 @@ struct FastingApp: App {
     
     // MARK: - Body
     
+    init() {
+        NotificationService.requestPermission()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -71,9 +75,16 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
+        .tint(Color.fastingGreen)
+        .symbolRenderingMode(.hierarchical)
         .id(languageRefresh)
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
             languageRefresh = UUID()
+        }
+        .onOpenURL { url in
+            if url.host == "timer" { selectedTab = 0 }
+            else if url.host == "history" { selectedTab = 1 }
+            else if url.host == "plan" { selectedTab = 2 }
         }
     }
 }

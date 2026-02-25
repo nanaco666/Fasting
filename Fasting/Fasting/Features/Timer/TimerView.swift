@@ -15,6 +15,7 @@ struct TimerView: View {
     @State private var showConfirmEnd = false
     @State private var showEditStart = false
     @State private var editedStartTime = Date()
+    @State private var hasShownGoalCelebration = false
     
     private var timer: Timer { Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in } }
     
@@ -24,19 +25,30 @@ struct TimerView: View {
                 GradientBackground()
                 
                 ScrollView {
-                    VStack(spacing: Spacing.xxl) {
-                        timerSection
+                    VStack(spacing: 28) {
+                        // Week strip (moved to top, like Zero)
+                        weekStrip
+                            .padding(.horizontal, 20)
+                        
+                        // Timer card
+                        timerCard
+                            .padding(.horizontal, 20)
+                        
+                        // Time info + action
+                        if fastingService.isFasting {
+                            timeInfoRow
+                                .padding(.horizontal, 20)
+                        }
                         actionButton
-                            .padding(.horizontal, Spacing.xl)
+                            .padding(.horizontal, 20)
+                        
                         bodyJourneySection
-                            .padding(.horizontal, Spacing.lg)
+                            .padding(.horizontal, 20)
                         upcomingHolidaySection
-                            .padding(.horizontal, Spacing.lg)
-                        planProgressSection
-                            .padding(.horizontal, Spacing.lg)
+                            .padding(.horizontal, 20)
                     }
-                    .padding(.bottom, Spacing.xxxl)
-                    .padding(.top, Spacing.md)
+                    .padding(.bottom, 40)
+                    .padding(.top, 8)
                 }
             }
             .navigationTitle(L10n.Tab.timer)
@@ -83,22 +95,75 @@ struct TimerView: View {
         }
     }
     
-    // MARK: - Timer Section
+    // MARK: - Week Strip (Zero-style top bar)
     
-    private var timerSection: some View {
-        VStack(spacing: Spacing.lg) {
-            // Status pill
-            statusPill
-            
-            // Ring + time
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let _ = context.date // force refresh
-                ZStack {
-                    // Background ring
-                    Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 16)
+    private var weekStrip: some View {
+        HStack(spacing: 0) {
+            ForEach(weekStripDays, id: \.self) { day in
+                let isToday = Calendar.current.isDateInToday(day)
+                let completed = dayCompleted(day)
+                
+                VStack(spacing: 6) {
+                    Text(weekdayLabel(day))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(isToday ? .primary : .tertiary)
                     
-                    // Progress arc
+                    ZStack {
+                        Circle()
+                            .stroke(Color.gray.opacity(0.12), lineWidth: 3)
+                        
+                        if completed {
+                            Circle()
+                                .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        } else if isToday && fastingService.isFasting {
+                            Circle()
+                                .trim(from: 0, to: progress)
+                                .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                        }
+                    }
+                    .frame(width: 32, height: 32)
+                }
+                .frame(maxWidth: .infinity)
+                .onTapGesture {
+                    Haptic.selection()
+                    // Future: Navigate to day details
+                }
+            }
+        }
+    }
+    
+    private var weekStripDays: [Date] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return (-6...0).compactMap { cal.date(byAdding: .day, value: $0, to: today) }
+    }
+    
+    private func weekdayLabel(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE"
+        return f.string(from: date).uppercased()
+    }
+    
+    private func dayCompleted(_ date: Date) -> Bool {
+        let cal = Calendar.current
+        return records.contains {
+            $0.status == .completed
+            && ($0.actualDuration ?? 0) >= $0.targetDuration
+            && cal.isDate($0.startTime, inSameDayAs: date)
+        }
+    }
+    
+    // MARK: - Timer Card
+    
+    private var timerCard: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let _ = context.date
+            VStack(spacing: 0) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.08), lineWidth: 16)
+                    
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
@@ -106,14 +171,12 @@ struct TimerView: View {
                             style: StrokeStyle(lineWidth: 16, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.5), value: progress)
+                        .animation(.easeInOut(duration: 0.8), value: progress)
                     
-                    // Center content
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Text(formattedElapsed)
-                            .font(.system(size: 48, weight: .light, design: .rounded))
+                            .font(.system(size: 52, weight: .bold, design: .rounded))
                             .monospacedDigit()
-                            .foregroundStyle(fastingService.isFasting ? .primary : .secondary)
                             .contentTransition(.numericText())
                             .onTapGesture {
                                 if fastingService.isFasting, let start = fastingService.currentFast?.startTime {
@@ -122,51 +185,68 @@ struct TimerView: View {
                                 }
                             }
                         
-                        if fastingService.isFasting, let preset = fastingService.currentFast?.presetType {
-                            Text(preset.displayName)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        } else if let last = lastCompleted {
-                            Text(last.presetType.displayName)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        
                         if fastingService.isFasting {
-                            if isGoalAchieved {
-                                Label(L10n.Timer.goalReached, systemImage: "checkmark.circle.fill")
-                                    .font(.callout.weight(.medium))
-                                    .foregroundStyle(Color.fastingGreen)
-                            } else {
-                                Text("\(formattedRemaining) \(L10n.Timer.remaining)")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
+                            Text(isGoalAchieved
+                                 ? "COMPLETED ✓"
+                                 : "ELAPSED (\(Int(progress * 100))%)")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .tracking(1)
+                        } else if lastCompleted != nil {
+                            Text("LAST FAST")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .tracking(1)
                         }
                     }
                 }
-                .frame(width: 260, height: 260)
+                .frame(height: 280)
+                .padding(20)
+            }
+            .glassCard(cornerRadius: 24)
+            .onChange(of: isGoalAchieved) { _, achieved in
+                if achieved && !hasShownGoalCelebration {
+                    hasShownGoalCelebration = true
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
             }
         }
     }
     
-    // MARK: - Status Pill
+    // MARK: - Time Info Row (STARTED / GOAL)
     
-    private var statusPill: some View {
-        HStack(spacing: Spacing.sm) {
-            Circle()
-                .fill(fastingService.isFasting ? Color.fastingGreen : Color.gray.opacity(0.5))
-                .frame(width: 8, height: 8)
-            
-            Text(fastingService.isFasting
-                 ? (isGoalAchieved ? L10n.Timer.goalReached : L10n.Timer.fasting)
-                 : L10n.Timer.notFasting)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(fastingService.isFasting ? .primary : .secondary)
+    private var timeInfoRow: some View {
+        HStack(spacing: 12) {
+            if let start = fastingService.currentFast?.startTime {
+                timeInfoPill(label: "STARTED", value: formatTimeShort(start))
+            }
+            if let start = fastingService.currentFast?.startTime,
+               let target = fastingService.currentFast?.targetDuration {
+                let preset = fastingService.currentFast?.presetType.displayName ?? ""
+                timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(target)))
+            }
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
-        .background(.ultraThinMaterial, in: Capsule())
+    }
+    
+    private func timeInfoPill(label: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .tracking(0.5)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.fastingGreen)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+    }
+    
+    private func formatTimeShort(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE, HH:mm"
+        return f.string(from: date).uppercased()
     }
     
     // MARK: - Action Button
@@ -183,17 +263,23 @@ struct TimerView: View {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: fastingService.isFasting ? "stop.fill" : "play.fill")
                 Text(fastingService.isFasting ? L10n.Timer.endFasting : L10n.Timer.startFasting)
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(fastingService.isFasting ? .primary : .white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(
-                fastingService.isFasting
-                    ? AnyShapeStyle(Color.red.gradient)
-                    : AnyShapeStyle(Color.fastingGreen.gradient)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .padding(.vertical, 18)
+            .background {
+                if fastingService.isFasting {
+                    // Subtle outline for "End Fast" (like Zero)
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.gray.opacity(0.06))
+                } else {
+                    // Bold green for "Start"
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.fastingGreen.gradient)
+                        .shadow(color: Color.fastingGreen.opacity(0.3), radius: 12, y: 6)
+                }
+            }
         }
         .buttonStyle(.plain)
     }
@@ -244,7 +330,7 @@ struct TimerView: View {
     private var bodyJourneySection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Body Journey".localized)
-                .font(.headline)
+                .font(.title3.weight(.bold))
                 .padding(.horizontal, Spacing.xs)
             
             if fastingService.isFasting {
@@ -262,7 +348,7 @@ struct TimerView: View {
             if let plan = activePlans.first {
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     Text("Plan Progress".localized)
-                        .font(.headline)
+                        .font(.title3.weight(.bold))
                         .padding(.horizontal, Spacing.xs)
                     
                     PlanWeekTimeline(plan: plan, records: records)
@@ -342,12 +428,12 @@ struct PlanWeekTimeline: View {
         VStack(spacing: Spacing.lg) {
             // Week indicator
             HStack {
-                Text("Week \(currentWeek)".localized)
-                    .font(.subheadline.weight(.semibold))
+                Text(String(format: "week_number".localized, currentWeek))
+                    .font(.headline)
                 
                 Spacer()
                 
-                Text("\(currentWeek)/\(plan.durationWeeks) " + "weeks".localized)
+                Text(String(format: "week_progress".localized, currentWeek, plan.durationWeeks))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -364,7 +450,7 @@ struct PlanWeekTimeline: View {
                         .animation(.easeInOut, value: currentWeek)
                 }
             }
-            .frame(height: 6)
+            .frame(height: 8)
             
             // This week's days
             HStack(spacing: 0) {
@@ -380,16 +466,16 @@ struct PlanWeekTimeline: View {
                         ZStack {
                             Circle()
                                 .fill(completed ? Color.fastingGreen : Color.gray.opacity(0.1))
-                                .frame(width: 32, height: 32)
+                                .frame(width: 36, height: 36)
                             
                             if completed {
                                 Image(systemName: "checkmark")
-                                    .font(.caption.bold())
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(.white)
                             } else if isToday {
                                 Circle()
                                     .stroke(Color.fastingGreen, lineWidth: 2)
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 36, height: 36)
                             }
                         }
                     }
@@ -454,6 +540,7 @@ struct PresetSelectionSheet: View {
                     preset: preset,
                     isSelected: selectedPreset == preset
                 ) {
+                    Haptic.selection()
                     withAnimation { selectedPreset = preset }
                 }
             }
@@ -553,25 +640,57 @@ private struct PresetRow: View {
 
 struct SettingsView: View {
     @State private var languageManager = LanguageManager.shared
+    @State private var healthService = HealthKitService.shared
+    
+    @AppStorage("defaultPreset") private var defaultPreset: String = "sixteen8"
+    @AppStorage("notificationsOn") private var notificationsOn = true
     
     var body: some View {
         List {
             Section(L10n.Settings.fastingSettings) {
-                NavigationLink {
-                    Text(L10n.Settings.defaultPlan)
+                // Default preset
+                Picker(selection: $defaultPreset) {
+                    ForEach(FastingPreset.allCases) { preset in
+                        Text(preset.displayName).tag(preset.rawValue)
+                    }
                 } label: {
                     Label(L10n.Settings.defaultPlan, systemImage: "clock")
                 }
-                NavigationLink {
-                    Text(L10n.Settings.notifications)
-                } label: {
+                
+                // Notifications
+                Toggle(isOn: $notificationsOn) {
                     Label(L10n.Settings.notifications, systemImage: "bell")
                 }
+                .tint(Color.fastingGreen)
             }
             
             Section(L10n.Settings.data) {
-                Label(L10n.Settings.healthSync, systemImage: "heart")
-                Label(L10n.Settings.iCloudSync, systemImage: "icloud")
+                // HealthKit
+                Button {
+                    Task { await healthService.requestAuthorization() }
+                } label: {
+                    HStack {
+                        Label(L10n.Settings.healthSync, systemImage: "heart")
+                        Spacer()
+                        if healthService.isAuthorized {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color.fastingGreen)
+                        } else {
+                            Text("Connect".localized)
+                                .font(.caption)
+                                .foregroundStyle(Color.fastingGreen)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+                
+                // iCloud
+                HStack {
+                    Label(L10n.Settings.iCloudSync, systemImage: "icloud")
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.fastingGreen)
+                }
             }
             
             Section {
@@ -591,7 +710,7 @@ struct SettingsView: View {
                 HStack {
                     Label(L10n.Settings.version, systemImage: "info.circle")
                     Spacer()
-                    Text("1.1.0").foregroundStyle(.secondary)
+                    Text("1.2.0").foregroundStyle(.secondary)
                 }
             }
         }

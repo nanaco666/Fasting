@@ -61,38 +61,40 @@ struct PlanView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: Spacing.xl) {
+        VStack(spacing: 28) {
             Spacer()
             
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 56))
-                .foregroundStyle(.tertiary)
+            Image(systemName: "target")
+                .font(.system(size: 64))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.fastingGreen)
             
             Text("No Plan Yet".localized)
-                .font(.title2.bold())
+                .font(.title.bold())
             
             Text("Create a personalized fasting plan\nbased on your body and goals.".localized)
-                .font(.subheadline)
+                .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             
             Button {
                 showOnboarding = true
             } label: {
-                HStack(spacing: Spacing.sm) {
+                HStack(spacing: 10) {
                     Image(systemName: "plus")
                     Text("Create Plan".localized)
                 }
-                .font(.headline)
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, Spacing.xxxl)
-                .padding(.vertical, Spacing.lg)
+                .padding(.horizontal, 48)
+                .padding(.vertical, 18)
                 .background(
                     LinearGradient(colors: [Color.fastingGreen, .fastingTeal], startPoint: .leading, endPoint: .trailing),
                     in: Capsule()
                 )
+                .shadow(color: Color.fastingGreen.opacity(0.3), radius: 16, y: 8)
             }
-            .padding(.top, Spacing.md)
+            .padding(.top, 12)
             
             Spacer()
         }
@@ -136,70 +138,78 @@ struct PlanView: View {
     // MARK: - Overview Card
     
     private func overviewCard(plan: FastingPlan) -> some View {
-        VStack(spacing: Spacing.lg) {
-            // Progress ring
+        VStack(spacing: 24) {
+            // Progress ring — larger, bolder
             ZStack {
                 Circle()
-                    .stroke(Color.fastingGreen.opacity(0.15), lineWidth: 8)
-                    .frame(width: 100, height: 100)
+                    .stroke(Color.fastingGreen.opacity(0.12), lineWidth: 12)
+                    .frame(width: 120, height: 120)
                 
                 Circle()
                     .trim(from: 0, to: plan.progress)
-                    .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .frame(width: 100, height: 100)
+                    .stroke(
+                        AngularGradient(colors: [.fastingGreen, .fastingTeal, .fastingGreen], center: .center),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .frame(width: 120, height: 120)
                     .rotationEffect(.degrees(-90))
+                    .shadow(color: .fastingGreen.opacity(0.3), radius: 8)
                 
                 VStack(spacing: 0) {
-                    Text("Week \(min(plan.weeksElapsed + 1, plan.durationWeeks))")
-                        .font(.headline)
+                    Text(String(format: "week_number".localized, min(plan.weeksElapsed + 1, plan.durationWeeks)))
+                        .font(.title3.bold())
                     Text("of \(plan.durationWeeks)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .animation(.smoothSpring, value: plan.progress)
             
-            // Plan info
-            HStack(spacing: Spacing.xxl) {
-                VStack(spacing: 2) {
+            // Plan info — bigger numbers
+            HStack(spacing: 0) {
+                VStack(spacing: 4) {
                     Text(plan.recommendedPreset.displayName)
-                        .font(.title3.bold())
+                        .font(.title2.bold())
                     Text("Fasting Plan".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
                 
                 if plan.expectedWeeklyLossKg > 0 {
-                    VStack(spacing: 2) {
+                    VStack(spacing: 4) {
                         Text(String(format: "%.1f kg", plan.expectedWeeklyLossKg))
-                            .font(.title3.bold())
+                            .font(.title2.bold())
                             .foregroundStyle(Color.fastingGreen)
                         Text("per week".localized)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 
-                VStack(spacing: 2) {
+                VStack(spacing: 4) {
                     let remaining = max(plan.durationWeeks - plan.weeksElapsed, 0)
                     Text("\(remaining)")
-                        .font(.title3.bold())
+                        .font(.title2.bold())
                     Text("weeks left".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
             }
         }
-        .padding(Spacing.xl)
+        .padding(28)
         .frame(maxWidth: .infinity)
-        .glassCard(cornerRadius: CornerRadius.large)
+        .glassCard(cornerRadius: 24)
     }
     
     // MARK: - Nutrition Card
     
     private func nutritionCard(plan: FastingPlan, profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Daily Nutrition".localized)
-                .font(.headline)
+                .font(.title3.bold())
             
             HStack(spacing: Spacing.md) {
                 nutritionPill(
@@ -236,23 +246,23 @@ struct PlanView: View {
     }
     
     private func nutritionPill(label: String, value: String, unit: String, color: Color) -> some View {
-        VStack(spacing: Spacing.xs) {
+        VStack(spacing: 6) {
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
-                    .font(.title3.bold())
+                    .font(.title2.bold())
                 Text(unit)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             
             Text(label)
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.md)
-        .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(.vertical, 16)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Activity Section
@@ -260,7 +270,7 @@ struct PlanView: View {
     private func activitySection(plan: FastingPlan, profile: UserProfile) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Today's Activity".localized)
-                .font(.headline)
+                .font(.title3.bold())
             
             if healthService.isAuthorized {
                 // Today's stats
@@ -383,7 +393,7 @@ struct PlanView: View {
         
         return VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Fitness Advice".localized)
-                .font(.headline)
+                .font(.title3.bold())
             
             ForEach(recommendations) { rec in
                 HStack(alignment: .top, spacing: Spacing.md) {
@@ -433,22 +443,23 @@ struct PlanView: View {
     private func milestonesSection(plan: FastingPlan) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Milestones".localized)
-                .font(.headline)
+                .font(.title3.bold())
             
             ForEach(plan.milestones) { milestone in
                 let isReached = plan.weeksElapsed >= milestone.weekNumber
                 
-                HStack(alignment: .top, spacing: Spacing.md) {
+                HStack(alignment: .top, spacing: 16) {
                     // Icon
                     Image(systemName: isReached ? "checkmark.circle.fill" : milestone.icon)
-                        .font(.title3)
+                        .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(isReached ? Color.fastingGreen : .secondary)
-                        .frame(width: 30)
+                        .frame(width: 36)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
                             Text(milestone.title.localized)
-                                .font(.subheadline.weight(.semibold))
+                                .font(.body.weight(.semibold))
                                 .foregroundStyle(isReached ? .primary : .secondary)
                             
                             Spacer()
@@ -459,7 +470,7 @@ struct PlanView: View {
                         }
                         
                         Text(milestone.localizedDescription)
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(isReached ? .secondary : .tertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
