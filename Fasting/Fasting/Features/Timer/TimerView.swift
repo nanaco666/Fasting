@@ -804,13 +804,29 @@ struct PresetSelectionSheet: View {
                 if selectedPreset == .custom {
                     customDurationSection
                 }
-                startSection
             }
             .navigationTitle(L10n.Preset.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Timer.cancel) { dismiss() }
+                    Button {
+                        let custom = selectedPreset == .custom
+                            ? Double(customHours * 3600 + customMinutes * 60)
+                            : nil
+                        onSelect(selectedPreset, custom)
+                    } label: {
+                        Image(systemName: "checkmark.circle.fill")
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(Color.fastingGreen)
+                            .font(.title3)
+                    }
                 }
             }
         }
@@ -855,25 +871,7 @@ struct PresetSelectionSheet: View {
         }
     }
     
-    private var startSection: some View {
-        Section {
-            Button {
-                let custom = selectedPreset == .custom
-                    ? Double(customHours * 3600 + customMinutes * 60)
-                    : nil
-                onSelect(selectedPreset, custom)
-            } label: {
-                HStack {
-                    Spacer()
-                    Image(systemName: "play.fill")
-                    Text(L10n.Timer.startFasting).font(.headline)
-                    Spacer()
-                }
-            }
-            .listRowBackground(Color.fastingGreen)
-            .foregroundStyle(.white)
-        }
-    }
+
 }
 
 // MARK: - Preset Row
