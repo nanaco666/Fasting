@@ -32,7 +32,7 @@ struct TimerView: View {
             ZStack {
                 GradientBackground()
                 
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
                         // Week strip
                         weekStrip
