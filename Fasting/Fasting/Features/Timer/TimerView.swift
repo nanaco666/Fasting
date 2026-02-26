@@ -20,6 +20,11 @@ struct TimerView: View {
     @State private var showRefeedGuide = false
     @State private var lastFastDuration: TimeInterval = 0
     @State private var lastFastGoalMet = false
+    @AppStorage("timerDialStyle") private var dialStyleRaw: String = TimerDialStyle.simple.rawValue
+    
+    private var dialStyle: TimerDialStyle {
+        TimerDialStyle(rawValue: dialStyleRaw) ?? .simple
+    }
     
     
     var body: some View {
@@ -187,8 +192,9 @@ struct TimerView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
             VStack(spacing: 16) {
-                // Watch-dial timer
-                WatchDialView(
+                // Timer dial (switchable styles)
+                TimerDial(
+                    style: dialStyle,
                     progress: progress,
                     elapsed: fastingService.isFasting ? elapsed : (lastCompleted?.actualDuration ?? 0),
                     target: fastingService.currentFast?.targetDuration ?? (lastCompleted?.targetDuration ?? 0),
@@ -199,6 +205,7 @@ struct TimerView: View {
                 .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)
+                .onLongPressGesture(perform: switchDialStyle)
                 
                 // STARTED / GOAL row — always visible
                 HStack(spacing: 12) {
@@ -287,6 +294,13 @@ struct TimerView: View {
         let f = DateFormatter()
         f.dateFormat = "EEE, HH:mm"
         return f.string(from: date).uppercased()
+    }
+    
+    private func switchDialStyle() {
+        Haptic.medium()
+        withAnimation(.fastSpring) {
+            dialStyleRaw = dialStyle.next.rawValue
+        }
     }
     
     // MARK: - Action Button
