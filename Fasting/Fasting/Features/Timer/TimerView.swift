@@ -389,33 +389,47 @@ struct TimerView: View {
     // MARK: - Mood Card (standalone)
     
     private var moodCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Health-style header: icon + title + time
-            HStack {
-                Image(systemName: "face.smiling")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.fastingOrange)
-                Text("Mood".localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.fastingOrange)
-                
-                Spacer()
-                
-                if let record = recentMoodRecord {
-                    Text(formatTime(record.timestamp))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        Button {
+            showMoodCheckIn = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                // Header
+                HStack(alignment: .firstTextBaseline) {
+                    Image(systemName: "heart.text.clipboard")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.fastingOrange)
+                    Text("mood_checkin_title".localized)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.fastingOrange)
+                    
+                    Spacer()
+                    
+                    if let record = recentMoodRecord {
+                        Text(formatTime(record.timestamp))
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                     Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.quaternary)
+                }
+                
+                // Content
+                if let record = recentMoodRecord {
+                    Text(record.mood.localizedLabel)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("mood_checkin_subtitle".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
-            
-            // Content
-            moodCheckInContent
+            .padding(16)
+            .glassCard(cornerRadius: CornerRadius.large)
         }
-        .padding(16)
-        .glassCard(cornerRadius: CornerRadius.large)
+        .buttonStyle(.plain)
     }
     
     // MARK: - Body Phase Card (standalone, with expand/collapse)
@@ -426,10 +440,10 @@ struct TimerView: View {
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
         
         return VStack(alignment: .leading, spacing: 0) {
-            // Health-style header: icon + title + next phase time
-            HStack {
+            // Header
+            HStack(alignment: .firstTextBaseline) {
                 Image(systemName: phase.icon)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.subheadline)
                     .foregroundStyle(phase.color)
                 Text("Body Journey".localized)
                     .font(.subheadline.weight(.semibold))
@@ -438,14 +452,13 @@ struct TimerView: View {
                 Spacer()
                 
                 if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
-                    Text("timer_next_phase".localized + " \(formatShortInterval(timeToNext))")
+                    Text(formatShortInterval(timeToNext))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.tertiary)
                 }
-                
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.quaternary)
                     .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
             }
             .padding(16)
@@ -457,23 +470,19 @@ struct TimerView: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
             
-            // Phase content: emoji + name + companion
-            HStack(spacing: 10) {
-                Text(phase.emoji)
-                    .font(.title2)
+            // Phase name (hero) + companion message
+            VStack(alignment: .leading, spacing: 6) {
+                Text(phase.name)
+                    .font(.title2.weight(.bold))
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(phase.name)
-                        .font(.headline)
-                    Text(phase.companionMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(isPhaseExpanded ? nil : 2)
-                }
+                Text(phase.companionMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(isPhaseExpanded ? nil : 2)
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+            .padding(.bottom, 14)
             
             // Expanded: science detail + events + timeline
             if isPhaseExpanded {
@@ -552,50 +561,7 @@ struct TimerView: View {
         return moodRecords.first { $0.timestamp >= start }
     }
     
-    @ViewBuilder
-    private var moodCheckInContent: some View {
-        if let record = recentMoodRecord {
-            // Recorded state — big emoji + label
-            Button {
-                showMoodCheckIn = true
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            } label: {
-                HStack(spacing: 10) {
-                    Text(record.mood.emoji)
-                        .font(.title2)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(record.mood.localizedLabel)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text("mood_update".localized)
-                            .font(.caption)
-                            .foregroundStyle(Color.fastingGreen)
-                    }
-                    
-                    Spacer()
-                }
-            }
-            .buttonStyle(.plain)
-        } else {
-            // Prompt — tap to record
-            Button {
-                showMoodCheckIn = true
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            } label: {
-                HStack {
-                    Text("mood_checkin_subtitle".localized)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("Record".localized)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.fastingGreen)
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
+
     
     private func formatTime(_ date: Date) -> String {
         let f = DateFormatter()
