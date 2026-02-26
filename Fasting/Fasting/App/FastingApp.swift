@@ -76,10 +76,12 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            // Insights
-            StatisticsView()
+            // Calendar (文化日历)
+            // TODO: CalendarView() — cultural calendar + adaptive fasting plans
+            // Placeholder until CalendarView is built
+            Text("Calendar")
                 .tabItem {
-                    Label(L10n.Tab.insights, systemImage: "chart.bar")
+                    Label("Calendar".localized, systemImage: "calendar")
                 }
                 .tag(3)
         }
