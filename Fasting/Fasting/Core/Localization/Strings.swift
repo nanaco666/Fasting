@@ -904,7 +904,6 @@ static let all: [String: [String: String]] = [
     "Smart Schedule": ["en": "Smart Schedule", "zh-Hans": "智能排期"],
     "Connect your calendar for personalized daily suggestions.": ["en": "Connect your calendar for personalized daily suggestions.", "zh-Hans": "连接日历，获取个性化的每日断食建议。"],
     "Connect Calendar": ["en": "Connect Calendar", "zh-Hans": "连接日历"],
-    "Skip": ["en": "Skip", "zh-Hans": "跳过"],
     "Free": ["en": "Free", "zh-Hans": "空闲"],
     "No events this week": ["en": "No events this week", "zh-Hans": "本周没有事件"],
     "events": ["en": "events", "zh-Hans": "个事件"],
