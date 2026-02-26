@@ -265,7 +265,7 @@ struct TimerView: View {
                 Text(fastingService.isFasting ? L10n.Timer.endFasting : L10n.Timer.startFasting)
                     .font(.title3.weight(.semibold))
             }
-            .foregroundStyle(fastingService.isFasting ? .primary : .white)
+            .foregroundStyle(fastingService.isFasting ? AnyShapeStyle(.primary) : AnyShapeStyle(.white))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
             .background {
@@ -328,10 +328,10 @@ struct TimerView: View {
     // MARK: - Body Journey
     
     private var bodyJourneySection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Body Journey".localized)
                 .font(.title3.weight(.bold))
-                .padding(.horizontal, Spacing.xs)
+                .padding(.horizontal, 4)
             
             if fastingService.isFasting {
                 BodyJourneyCard(duration: elapsed, isFasting: true)
