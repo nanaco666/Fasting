@@ -79,8 +79,9 @@ struct ContentView: View {
             
 
         }
-        .tint(Color.fastingGreen)
-        .symbolRenderingMode(.hierarchical)
+        .onAppear {
+            UITabBar.appearance().tintColor = UIColor(Color.fastingGreen)
+        }
         .id(languageRefresh)
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
             languageRefresh = UUID()
