@@ -16,6 +16,10 @@ struct TimerView: View {
     @State private var showEditStart = false
     @State private var editedStartTime = Date()
     @State private var hasShownGoalCelebration = false
+    @State private var showMoodCheckIn = false
+    @State private var showRefeedGuide = false
+    @State private var lastFastDuration: TimeInterval = 0
+    @State private var lastFastGoalMet = false
     
     private var timer: Timer { Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in } }
     
@@ -41,6 +45,18 @@ struct TimerView: View {
                         }
                         actionButton
                             .padding(.horizontal, 20)
+                        
+                        // Mood check-in button (when fasting)
+                        if fastingService.isFasting {
+                            moodCheckInButton
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        // Companion message + mood check-in
+                        if fastingService.isFasting {
+                            companionSection
+                                .padding(.horizontal, 20)
+                        }
                         
                         bodyJourneySection
                             .padding(.horizontal, 20)
@@ -78,12 +94,26 @@ struct TimerView: View {
                 isPresented: $showConfirmEnd
             ) {
                 Button(L10n.Timer.endFasting, role: .destructive) {
+                    lastFastDuration = elapsed
+                    lastFastGoalMet = isGoalAchieved
                     fastingService.endFasting()
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    // Show refeed guide after a brief delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showRefeedGuide = true
+                    }
                 }
                 Button(L10n.Timer.cancel, role: .cancel) {}
             } message: {
                 Text("\(L10n.Timer.confirmEndMessage) \(formattedElapsed)")
+            }
+            .sheet(isPresented: $showMoodCheckIn) {
+                MoodCheckInView(fastingHours: elapsed / 3600)
+                    .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showRefeedGuide) {
+                RefeedGuideView(duration: lastFastDuration, wasGoalMet: lastFastGoalMet)
+                    .presentationDetents([.large])
             }
             .sheet(isPresented: $showEditStart) {
                 EditStartTimeSheet(startTime: $editedStartTime) {
@@ -323,6 +353,63 @@ struct TimerView: View {
         if days == 0 { return "Today".localized }
         if days == 1 { return "Tomorrow".localized }
         return "\(days) " + "days away".localized
+    }
+    
+    // MARK: - Mood Check-in
+    
+    private var moodCheckInButton: some View {
+        Button {
+            Haptic.medium()
+            showMoodCheckIn = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "heart.text.clipboard")
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.title3)
+                    .foregroundStyle(Color.fastingGreen)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("How are you feeling?".localized)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("companion_checkin_subtitle".localized)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .background(Color.gray.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Companion
+    
+    private var companionSection: some View {
+        let msg = CompanionEngine.phaseMessage(hours: elapsed / 3600)
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "sparkles")
+                .font(.title3)
+                .foregroundStyle(Color.fastingGreen)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(msg.title)
+                    .font(.subheadline.weight(.semibold))
+                Text(msg.body)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.fastingGreen.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Body Journey

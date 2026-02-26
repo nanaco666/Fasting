@@ -17,7 +17,8 @@ struct FastingApp: App {
             FastingRecord.self,
             UserSettings.self,
             UserProfile.self,
-            FastingPlan.self
+            FastingPlan.self,
+            MoodRecord.self
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
