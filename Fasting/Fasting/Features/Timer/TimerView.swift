@@ -345,7 +345,26 @@ struct TimerView: View {
             }
             .buttonStyle(.plain)
         }
-        // No start button in idle — user taps GOAL pill instead
+        } else {
+            // Start button in idle
+            Button {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                let preset = FastingPreset(rawValue: idleDefaultPreset) ?? .sixteen8
+                fastingService.startFasting(preset: preset, customDuration: nil)
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "play.fill")
+                    Text(L10n.Timer.startFasting)
+                        .font(.title3.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+                .background(Color.fastingGreen.gradient, in: RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color.fastingGreen.opacity(0.3), radius: 12, y: 6)
+            }
+            .buttonStyle(.plain)
+        }
     }
     
     // MARK: - Upcoming Holiday
