@@ -782,4 +782,3 @@ static let all: [String: [String: String]] = [
     "refeed_reason_rebuild": ["en": "Your body is ready for substantial protein to rebuild and recover.", "zh-Hans": "身体准备好接受大量蛋白质来重建和恢复了。"],
 ]
 }
-}
