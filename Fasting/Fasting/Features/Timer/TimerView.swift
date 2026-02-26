@@ -227,17 +227,17 @@ struct TimerView: View {
                             showPresetSheet = true
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         } label: {
-                            VStack(spacing: 3) {
+                            VStack(spacing: 4) {
                                 Text("GOAL")
-                                    .font(.caption2.weight(.semibold))
+                                    .font(.caption.weight(.semibold))
                                     .foregroundStyle(.tertiary)
                                     .tracking(0.5)
                                 HStack(spacing: 4) {
                                     Text(idlePresetLabel)
-                                        .font(.subheadline.weight(.semibold))
+                                        .font(.callout.weight(.semibold))
                                         .foregroundStyle(Color.fastingGreen)
                                     Image(systemName: "chevron.down")
-                                        .font(.caption2)
+                                        .font(.caption)
                                         .foregroundStyle(Color.fastingGreen.opacity(0.6))
                                 }
                             }
@@ -266,13 +266,13 @@ struct TimerView: View {
     }
     
     private func timeInfoPill(label: String, value: String) -> some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 4) {
             Text(label)
-                .font(.caption2.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
                 .tracking(0.5)
             Text(value)
-                .font(.subheadline.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.fastingGreen)
         }
         .frame(maxWidth: .infinity)
@@ -407,11 +407,11 @@ struct TimerView: View {
                     
                     if let record = recentMoodRecord {
                         Text(formatTime(record.timestamp))
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
                     Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.quaternary)
                 }
                 
@@ -453,11 +453,11 @@ struct TimerView: View {
                 
                 if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
                     Text(formatShortInterval(timeToNext))
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.tertiary)
                 }
                 Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.quaternary)
                     .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
             }
@@ -509,7 +509,7 @@ struct TimerView: View {
                                     Text(event.title)
                                         .font(.caption.weight(.semibold))
                                     Text(event.description)
-                                        .font(.caption2)
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -700,7 +700,7 @@ struct PlanWeekTimeline: View {
                     
                     VStack(spacing: 6) {
                         Text(dayLabel(day))
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundStyle(isToday ? .primary : .secondary)
                         
                         ZStack {
