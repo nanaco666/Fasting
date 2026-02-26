@@ -76,14 +76,7 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            // Calendar (文化日历)
-            // TODO: CalendarView() — cultural calendar + adaptive fasting plans
-            // Placeholder until CalendarView is built
-            Text("Calendar")
-                .tabItem {
-                    Label("Calendar".localized, systemImage: "calendar")
-                }
-                .tag(3)
+
         }
         .tint(Color.fastingGreen)
         .symbolRenderingMode(.hierarchical)
@@ -95,7 +88,7 @@ struct ContentView: View {
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "history" { selectedTab = 1 }
             else if url.host == "plan" { selectedTab = 2 }
-            else if url.host == "insights" { selectedTab = 3 }
+
         }
     }
 }
