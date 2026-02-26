@@ -546,11 +546,6 @@ struct TimerView: View {
         return f.string(from: date)
     }
 
-    // MARK: - Body Journey (standalone, for non-fasting state only)
-    
-    // Used by idle state via BodyJourneyIdleCard in the main scroll
-    }
-    
     // MARK: - Plan Progress (Week Timeline)
     
     private var planProgressSection: some View {
