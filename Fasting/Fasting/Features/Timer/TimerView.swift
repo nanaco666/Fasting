@@ -381,9 +381,9 @@ struct TimerView: View {
                 ZStack {
                     Circle()
                         .fill(phase.color.opacity(0.12))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                     Image(systemName: phase.icon)
-                        .font(.system(size: 20))
+                        .font(.system(size: 18))
                         .foregroundStyle(phase.color)
                 }
                 
@@ -409,7 +409,7 @@ struct TimerView: View {
                 }
                 
                 Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.tertiary)
                     .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
             }
@@ -423,21 +423,28 @@ struct TimerView: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
             
-            Divider().opacity(0.5)
+            Divider().opacity(0.3)
+            
+            // Mood check-in — above content so expand doesn't push it off screen
+            moodCheckInRow
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            
+            Divider().opacity(0.3)
             
             // What's happening — current phase info
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
                         .font(.caption)
                         .foregroundStyle(phase.color)
                         .padding(.top, 2)
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(phaseMsg.title)
                             .font(.subheadline.weight(.semibold))
                         Text(phaseMsg.body)
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -452,11 +459,11 @@ struct TimerView: View {
                                 .frame(width: 16)
                                 .padding(.top, 2)
                             
-                            VStack(alignment: .leading, spacing: 1) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(event.title)
-                                    .font(.caption.weight(.semibold))
+                                    .font(.subheadline.weight(.medium))
                                 Text(event.description)
-                                    .font(.caption2)
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -468,7 +475,7 @@ struct TimerView: View {
             
             // Expanded: full phase timeline
             if isPhaseExpanded {
-                Divider().opacity(0.5)
+                Divider().opacity(0.3)
                 
                 VStack(spacing: 0) {
                     ForEach(FastingPhaseManager.phases) { p in
@@ -485,16 +492,14 @@ struct TimerView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
-            
-            Divider().opacity(0.5)
-            
-            // Mood check-in / recorded state
-            moodCheckInRow
-                .padding(16)
         }
-        .glassCard(cornerRadius: CornerRadius.extraLarge)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.extraLarge))
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.extraLarge)
+                .fill(.ultraThinMaterial)
+        )
         .animation(.spring(response: 0.35), value: isPhaseExpanded)
     }
     
