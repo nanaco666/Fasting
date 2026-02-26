@@ -2,14 +2,15 @@
 //  WatchDialView.swift
 //  Fasting
 //
-//  Watch-dial inspired timer — 24h clock face with progress arc
-//  Inspired by Apple Watch California/Solar Dial
+//  24h clock dial — shows REAL time of day
+//  0(midnight) at top, 12(noon) at bottom, clockwise
+//  Fasting arc fills between start time and current real time
 //
 
 import SwiftUI
 
 struct WatchDialView: View {
-    let progress: Double        // 0.0 - 1.0
+    let progress: Double
     let elapsed: TimeInterval
     let target: TimeInterval
     let startTime: Date?
@@ -21,20 +22,28 @@ struct WatchDialView: View {
     
     private let dialSize: CGFloat = 280
     private let ringWidth: CGFloat = 18
-    private let majorHours = [0, 3, 6, 9, 12, 15, 18, 21]
+    
+    // Current real time
+    private var now: Date { Date() }
     
     var body: some View {
         ZStack {
-            // Dial face
+            // Dial face with real hour positions
             dialFace
             
-            // Progress arc
-            progressArc
+            // Fasting arc (real time positions)
+            if isFasting || (!isFasting && startTime == nil) {
+                fastingArc
+            }
             
-            // Markers
-            if isFasting, let start = startTime {
-                startMarker(start: start)
-                goalMarker(start: start)
+            // Current time hand
+            if isFasting {
+                currentTimeHand
+            }
+            
+            // Start & goal markers
+            if let start = startTime {
+                timeMarkers(start: start)
             }
             
             // Center
@@ -45,65 +54,82 @@ struct WatchDialView: View {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                 breathePhase = 1
             }
-            withAnimation(.smoothSpring.delay(0.2)) {
+            withAnimation(.smoothSpring.delay(0.1)) {
                 appeared = true
             }
         }
     }
     
+    // MARK: - Hour → Angle (real 24h clock)
+    // 0h (midnight) = top (-90°), 6h = right, 12h = bottom, 18h = left
+    
+    private func hourToAngle(_ hour: Double) -> Angle {
+        .degrees(hour / 24 * 360 - 90)
+    }
+    
+    private func hourToRadians(_ hour: Double) -> Double {
+        hour / 24 * 2 * .pi - .pi / 2
+    }
+    
+    private func dateToHour(_ date: Date) -> Double {
+        let cal = Calendar.current
+        return Double(cal.component(.hour, from: date)) + Double(cal.component(.minute, from: date)) / 60.0
+    }
+    
     // MARK: - Dial Face
     
     private var dialFace: some View {
-        let outerR = dialSize / 2
-        let trackR = outerR - ringWidth / 2
+        let trackR = dialSize / 2 - ringWidth / 2
         
         return ZStack {
-            // Subtle outer ring
+            // Outer rim
             Circle()
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                .stroke(Color.gray.opacity(0.12), lineWidth: 1)
                 .frame(width: dialSize, height: dialSize)
             
-            // Track
+            // Track ring
             Circle()
                 .stroke(Color.gray.opacity(0.06), lineWidth: ringWidth)
                 .frame(width: trackR * 2, height: trackR * 2)
             
-            // Tick marks + labels
+            // Hour ticks + labels
             ForEach(0..<24, id: \.self) { hour in
-                let isMajor = majorHours.contains(hour)
-                let angle = hourAngle(hour)
+                let isMajor = hour % 3 == 0
                 
-                // Tick
-                tick(hour: hour, isMajor: isMajor)
-                    .rotationEffect(angle)
+                // Tick mark
+                tickMark(hour: hour, isMajor: isMajor)
                 
-                // Label (major hours only)
+                // Label (every 3 hours)
                 if isMajor {
-                    hourLabel(hour: hour, radius: outerR - ringWidth - 20)
+                    hourLabelView(hour: hour, radius: dialSize / 2 - ringWidth - 18)
                 }
             }
+            
+            // Night/day subtle background
+            nightDayOverlay
         }
     }
     
-    private func tick(hour: Int, isMajor: Bool) -> some View {
-        let outerR = dialSize / 2
+    private func tickMark(hour: Int, isMajor: Bool) -> some View {
+        let outerR = dialSize / 2 - ringWidth
         let len: CGFloat = isMajor ? 10 : 5
         let width: CGFloat = isMajor ? 1.5 : 0.8
-        let inFastedRange = isHourInFastedRange(hour)
+        let inRange = isHourInFastedRange(Double(hour))
         
         return Rectangle()
-            .fill(inFastedRange && isFasting ? Color.primary.opacity(0.6) : Color.gray.opacity(isMajor ? 0.3 : 0.15))
+            .fill(inRange && isFasting ? Color.primary.opacity(0.6) : Color.gray.opacity(isMajor ? 0.3 : 0.15))
             .frame(width: width, height: len)
-            .offset(y: -(outerR - ringWidth - len / 2 - 1))
+            .offset(y: -(outerR - len / 2))
+            .rotationEffect(hourToAngle(Double(hour)))
     }
     
-    private func hourLabel(hour: Int, radius: CGFloat) -> some View {
+    private func hourLabelView(hour: Int, radius: CGFloat) -> some View {
         let center = dialSize / 2
-        let a = CGFloat(hour) / 24 * 2 * .pi - .pi / 2
-        let inRange = isHourInFastedRange(hour)
+        let a = hourToRadians(Double(hour))
+        let inRange = isHourInFastedRange(Double(hour))
         
-        return Text("\(hour)")
-            .font(.system(size: 12, weight: .medium, design: .rounded))
+        return Text(formatHourLabel(hour))
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
             .foregroundStyle(inRange && isFasting ? Color.primary : Color.secondary.opacity(0.4))
             .position(
                 x: center + radius * Foundation.cos(a),
@@ -111,137 +137,155 @@ struct WatchDialView: View {
             )
     }
     
-    private func isHourInFastedRange(_ hour: Int) -> Bool {
+    private func formatHourLabel(_ hour: Int) -> String {
+        // Show as clock hours: 0, 3, 6, 9, 12, 15, 18, 21
+        return "\(hour)"
+    }
+    
+    private func isHourInFastedRange(_ hour: Double) -> Bool {
         guard isFasting, let start = startTime else { return false }
-        let cal = Calendar.current
-        let startH = Double(cal.component(.hour, from: start)) + Double(cal.component(.minute, from: start)) / 60
-        let h = Double(hour)
-        let elapsedH = elapsed / 3600
-        let diff = (h - startH + 24).truncatingRemainder(dividingBy: 24)
-        return diff <= elapsedH
+        let startH = dateToHour(start)
+        let diff = (hour - startH + 24).truncatingRemainder(dividingBy: 24)
+        return diff <= elapsed / 3600
     }
     
-    private func hourAngle(_ hour: Int) -> Angle {
-        .degrees(Double(hour) / 24 * 360 - 90)
+    // Night/day subtle overlay (dark top half = night, lighter bottom = day)
+    private var nightDayOverlay: some View {
+        let trackR = dialSize / 2 - ringWidth / 2
+        return ZStack {
+            // Very subtle night indicator (top half: 0-12)
+            Circle()
+                .trim(from: 0, to: 0.5)
+                .stroke(Color.primary.opacity(0.03), lineWidth: ringWidth - 4)
+                .frame(width: trackR * 2, height: trackR * 2)
+                .rotationEffect(.degrees(-90))
+        }
     }
     
-    // MARK: - Progress Arc
+    // MARK: - Fasting Arc
     
-    private var progressArc: some View {
+    private var fastingArc: some View {
         let trackR = dialSize / 2 - ringWidth / 2
         let arcProgress = appeared ? min(progress, 1.0) : 0
         
         return ZStack {
-            // Main arc — draw manually via Canvas for proper gradient along path
             Canvas { ctx, size in
+                guard let start = startTime else { return }
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let radius = trackR
-                let startA = startAngleRadians
-                let sweepA = arcProgress * 2 * .pi
+                let startA = hourToRadians(dateToHour(start))
+                let sweepA = arcProgress * (target / 3600) / 24 * 2 * .pi
+                // Actually: the arc covers (elapsed hours / 24) of the circle
+                let realSweep = (elapsed / 3600) / 24 * 2 * .pi
                 
-                guard sweepA > 0.001 else { return }
+                guard realSweep > 0.001 else { return }
                 
-                // Draw arc as series of small segments with interpolated color
-                let segments = max(Int(sweepA / 0.02), 2)
+                let segments = max(Int(realSweep / 0.02), 2)
                 for i in 0..<segments {
                     let t0 = Double(i) / Double(segments)
                     let t1 = Double(i + 1) / Double(segments)
-                    let a0 = startA + t0 * sweepA
-                    let a1 = startA + t1 * sweepA
+                    let a0 = startA + t0 * realSweep
+                    let a1 = startA + t1 * realSweep
                     
                     var path = Path()
                     path.addArc(center: center, radius: radius, startAngle: .radians(a0), endAngle: .radians(a1), clockwise: false)
                     
-                    // Color: green at leading (current), orange at trailing (start)
+                    // Green at current end, orange at start
                     let color = arcColor(at: 1.0 - t0)
                     ctx.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
                 }
             }
             .frame(width: dialSize, height: dialSize)
-            .animation(.smoothSpring, value: progress)
             
-            // Glow at leading edge
-            if isFasting && !isGoalAchieved && arcProgress > 0.01 {
-                let endA = startAngleRadians + arcProgress * 2 * .pi
+            // Glow at current time position
+            if isFasting && !isGoalAchieved {
+                let currentA = hourToRadians(dateToHour(now))
                 Circle()
                     .fill(Color.fastingGreen.opacity(0.25 + breathePhase * 0.15))
                     .frame(width: ringWidth + 10, height: ringWidth + 10)
                     .blur(radius: 8)
                     .offset(
-                        x: trackR * Foundation.cos(endA),
-                        y: trackR * Foundation.sin(endA)
+                        x: trackR * Foundation.cos(currentA),
+                        y: trackR * Foundation.sin(currentA)
                     )
             }
         }
     }
     
     private func arcColor(at t: Double) -> Color {
-        // t=0 → leading edge (green), t=1 → trailing edge (orange)
         if isGoalAchieved {
             return Color.fastingGreen
         }
-        // Interpolate orange → green
         return Color(
-            red: 0.2 + t * 0.8,      // 0.2 (green) → 1.0 (orange)
-            green: 0.78 - t * 0.13,    // 0.78 (green) → 0.65 (orange)
-            blue: 0.35 - t * 0.15      // 0.35 → 0.2
+            red: 0.2 + t * 0.8,
+            green: 0.78 - t * 0.13,
+            blue: 0.35 - t * 0.15
         )
     }
     
-    private var startAngleRadians: Double {
-        guard let start = startTime else { return -.pi / 2 }
-        let cal = Calendar.current
-        let h = Double(cal.component(.hour, from: start))
-        let m = Double(cal.component(.minute, from: start))
-        let fraction = (h + m / 60) / 24
-        return fraction * 2 * .pi - .pi / 2
-    }
+    // MARK: - Current Time Hand
     
-    // MARK: - Markers
-    
-    private func startMarker(start: Date) -> some View {
-        let trackR = dialSize / 2 - ringWidth / 2
-        let a = dateAngleRadians(start)
+    private var currentTimeHand: some View {
+        let innerR = dialSize / 2 - ringWidth - 30
+        let outerR = dialSize / 2 - ringWidth + 2
+        let currentA = hourToRadians(dateToHour(now))
         
-        return Circle()
-            .fill(Color.white)
-            .frame(width: 6, height: 6)
-            .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
-            .offset(
-                x: trackR * Foundation.cos(a),
-                y: trackR * Foundation.sin(a)
-            )
-    }
-    
-    private func goalMarker(start: Date) -> some View {
-        let trackR = dialSize / 2 + 4
-        let goalDate = start.addingTimeInterval(target)
-        let a = dateAngleRadians(goalDate)
-        
-        return Group {
-            if isGoalAchieved {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.fastingGreen)
-            } else {
-                // Small triangle pointing inward
-                Image(systemName: "arrowtriangle.down.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.secondary.opacity(0.5))
-                    .rotationEffect(.radians(a + .pi / 2))
-            }
+        return ZStack {
+            // Thin hand line
+            Rectangle()
+                .fill(Color.fastingGreen)
+                .frame(width: 2, height: outerR - innerR / 2)
+                .offset(y: -(innerR / 2 + (outerR - innerR / 2) / 2))
+                .rotationEffect(hourToAngle(dateToHour(now)))
+            
+            // Dot at the tip on the ring
+            Circle()
+                .fill(Color.white)
+                .frame(width: 7, height: 7)
+                .shadow(color: Color.fastingGreen.opacity(0.5), radius: 3)
+                .offset(
+                    x: (dialSize / 2 - ringWidth / 2) * Foundation.cos(currentA),
+                    y: (dialSize / 2 - ringWidth / 2) * Foundation.sin(currentA)
+                )
         }
-        .offset(
-            x: trackR * Foundation.cos(a),
-            y: trackR * Foundation.sin(a)
-        )
     }
     
-    private func dateAngleRadians(_ date: Date) -> Double {
-        let cal = Calendar.current
-        let h = Double(cal.component(.hour, from: date))
-        let m = Double(cal.component(.minute, from: date))
-        return (h + m / 60) / 24 * 2 * .pi - .pi / 2
+    // MARK: - Time Markers (start + goal)
+    
+    private func timeMarkers(start: Date) -> some View {
+        let trackR = dialSize / 2
+        let startA = hourToRadians(dateToHour(start))
+        let goalDate = start.addingTimeInterval(target)
+        let goalA = hourToRadians(dateToHour(goalDate))
+        
+        return ZStack {
+            // Start: small orange dot on outer edge
+            Circle()
+                .fill(Color.fastingOrange)
+                .frame(width: 6, height: 6)
+                .offset(
+                    x: (trackR - ringWidth / 2) * Foundation.cos(startA),
+                    y: (trackR - ringWidth / 2) * Foundation.sin(startA)
+                )
+            
+            // Goal: triangle or checkmark on outer edge
+            Group {
+                if isGoalAchieved {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.fastingGreen)
+                } else {
+                    Image(systemName: "arrowtriangle.down.fill")
+                        .font(.system(size: 7))
+                        .foregroundStyle(Color.gray.opacity(0.4))
+                        .rotationEffect(.radians(goalA + .pi / 2))
+                }
+            }
+            .offset(
+                x: (trackR + 6) * Foundation.cos(goalA),
+                y: (trackR + 6) * Foundation.sin(goalA)
+            )
+        }
     }
     
     // MARK: - Center Content
@@ -296,7 +340,7 @@ struct WatchDialView: View {
 
 // MARK: - Preview
 
-#Preview("Fasting - 10h into 16:8") {
+#Preview("16:8 started 20:00, now 06:00 (+10h)") {
     ZStack {
         Color(.systemGroupedBackground).ignoresSafeArea()
         WatchDialView(
@@ -310,7 +354,7 @@ struct WatchDialView: View {
     }
 }
 
-#Preview("Fasting - 2h into 16:8 (afternoon start)") {
+#Preview("Started 13:43, 2h in") {
     ZStack {
         Color(.systemGroupedBackground).ignoresSafeArea()
         WatchDialView(
@@ -319,34 +363,6 @@ struct WatchDialView: View {
             target: 16 * 3600,
             startTime: Calendar.current.date(bySettingHour: 13, minute: 43, second: 0, of: Date()),
             isFasting: true,
-            isGoalAchieved: false
-        )
-    }
-}
-
-#Preview("Goal Achieved") {
-    ZStack {
-        Color(.systemGroupedBackground).ignoresSafeArea()
-        WatchDialView(
-            progress: 1.0,
-            elapsed: 17 * 3600,
-            target: 16 * 3600,
-            startTime: Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: Date().addingTimeInterval(-17 * 3600)),
-            isFasting: true,
-            isGoalAchieved: true
-        )
-    }
-}
-
-#Preview("Idle") {
-    ZStack {
-        Color(.systemGroupedBackground).ignoresSafeArea()
-        WatchDialView(
-            progress: 1.0,
-            elapsed: 16.5 * 3600,
-            target: 16 * 3600,
-            startTime: nil,
-            isFasting: false,
             isGoalAchieved: false
         )
     }
