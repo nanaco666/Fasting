@@ -16,101 +16,69 @@ struct SettingsView: View {
     var body: some View {
         List {
             // MARK: - Fasting
-            Section {
-                Picker(selection: $defaultPreset) {
+            Section("Fasting".localized) {
+                Picker(L10n.Settings.defaultPlan, selection: $defaultPreset) {
                     ForEach(FastingPreset.allCases) { preset in
                         Text(preset.displayName).tag(preset.rawValue)
                     }
-                } label: {
-                    Label(L10n.Settings.defaultPlan, systemImage: "clock")
-                        .foregroundStyle(.primary)
                 }
                 
-                Toggle(isOn: $notificationsOn) {
-                    Label(L10n.Settings.notifications, systemImage: "bell")
-                        .foregroundStyle(.primary)
-                }
-                .tint(Color.fastingGreen)
-            } header: {
-                Text(L10n.Settings.fastingSettings)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                Toggle(L10n.Settings.notifications, isOn: $notificationsOn)
             }
             
             // MARK: - Appearance
-            Section {
-                Picker(selection: $appearanceMode) {
+            Section("Appearance".localized) {
+                Picker("Appearance".localized, selection: $appearanceMode) {
                     Text("System".localized).tag(0)
                     Text("Light".localized).tag(1)
                     Text("Dark".localized).tag(2)
-                } label: {
-                    Label("Appearance".localized, systemImage: "circle.lefthalf.filled")
-                        .foregroundStyle(.primary)
                 }
                 
-                Picker(selection: Binding(
+                Picker(L10n.Settings.language, selection: Binding(
                     get: { languageManager.currentLanguage },
                     set: { languageManager.currentLanguage = $0 }
                 )) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(language.displayName).tag(language)
                     }
-                } label: {
-                    Label(L10n.Settings.language, systemImage: "globe")
-                        .foregroundStyle(.primary)
                 }
-            } header: {
-                Text("Appearance".localized)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
             }
             
             // MARK: - Data
-            Section {
+            Section(L10n.Settings.data) {
                 Button {
                     Task { await healthService.requestAuthorization() }
                 } label: {
                     HStack {
-                        Label(L10n.Settings.healthSync, systemImage: "heart")
+                        Text(L10n.Settings.healthSync)
                             .foregroundStyle(.primary)
                         Spacer()
                         if healthService.isAuthorized {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Color.fastingGreen)
+                                .foregroundStyle(.green)
                         } else {
                             Text("Connect".localized)
-                                .font(.subheadline)
-                                .foregroundStyle(Color.fastingTeal)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
                 
                 HStack {
-                    Label(L10n.Settings.iCloudSync, systemImage: "icloud")
-                        .foregroundStyle(.primary)
+                    Text(L10n.Settings.iCloudSync)
                     Spacer()
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.fastingGreen)
+                        .foregroundStyle(.green)
                 }
-            } header: {
-                Text(L10n.Settings.data)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
             }
             
             // MARK: - About
-            Section {
+            Section(L10n.Settings.about) {
                 HStack {
-                    Label(L10n.Settings.version, systemImage: "info.circle")
-                        .foregroundStyle(.primary)
+                    Text(L10n.Settings.version)
                     Spacer()
                     Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                         .foregroundStyle(.secondary)
                 }
-            } header: {
-                Text(L10n.Settings.about)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle(L10n.Settings.title)
