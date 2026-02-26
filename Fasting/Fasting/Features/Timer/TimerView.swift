@@ -344,7 +344,6 @@ struct TimerView: View {
                 .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 20))
             }
             .buttonStyle(.plain)
-        }
         } else {
             // Start button in idle
             Button {
