@@ -2,11 +2,14 @@
 //  OnboardingFlow.swift
 //  Fasting
 //
-//  用户资料收集 — 分步引导
+//  用户资料收集 — 7步引导
+//  1: Body Info  2: Health Screening  3: Activity & Diet
+//  4: Mood & Stress  5: Goal  6: Smart Schedule (EventKit)  7: Summary
 //
 
 import SwiftUI
 import SwiftData
+import EventKit
 
 struct OnboardingFlow: View {
     @Environment(\.dismiss) private var dismiss
@@ -14,104 +17,61 @@ struct OnboardingFlow: View {
     
     let onComplete: (UserProfile, FastingPlan) -> Void
     
+    // MARK: - State
+    
     @State private var step = 0
+    
+    // Step 1: Body
     @State private var age: Double = 30
-    @State private var sex: BiologicalSex = .male
-    @State private var heightCm: Double = 170
-    @State private var weightKg: Double = 70
+    @State private var sex: BiologicalSex = .female
+    @State private var heightCm: Double = 165
+    @State private var weightKg: Double = 58
+    
+    // Step 2: Health
+    @State private var selectedConditions: Set<HealthCondition> = []
+    @State private var showSafetyAlert = false
+    @State private var safetyBlockReason = ""
+    
+    // Step 3: Activity & Diet
     @State private var activityLevel: ActivityLevel = .sedentary
-    @State private var goal: FastingGoal = .fatLoss
     @State private var dietPreference: DietPreference = .omnivore
     
-    private let totalSteps = 4
+    // Step 4: Mood & Stress
+    @State private var stressLevel: StressLevel = .moderate
+    @State private var sleepQuality: SleepQuality = .fair
+    
+    // Step 5: Goal
+    @State private var goal: FastingGoal = .fatLoss
+    
+    // Step 6: Calendar
+    @State private var calendarAuthorized = false
+    @State private var weekEvents: [[EKEvent]] = []
+    
+    private let totalSteps = 7
+    private let eventStore = EKEventStore()
+    
+    // MARK: - Body
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Step indicator dots
-                HStack(spacing: 8) {
-                    ForEach(0..<totalSteps, id: \.self) { index in
-                        Circle()
-                            .fill(index <= step ? Color.fastingGreen : Color.gray.opacity(0.3))
-                            .frame(width: 10, height: 10)
-                            .scaleEffect(index == step ? 1.2 : 1.0)
-                            .animation(.smoothSpring, value: step)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, Spacing.md)
+                // Progress bar
+                progressBar
                 
                 // Step content
                 TabView(selection: $step) {
                     bodyInfoStep.tag(0)
-                        .transition(.slide.combined(with: .opacity))
-                    activityStep.tag(1)
-                        .transition(.slide.combined(with: .opacity))
-                    goalStep.tag(2)
-                        .transition(.slide.combined(with: .opacity))
-                    summaryStep.tag(3)
-                        .transition(.slide.combined(with: .opacity))
+                    healthStep.tag(1)
+                    activityStep.tag(2)
+                    moodStep.tag(3)
+                    goalStep.tag(4)
+                    calendarStep.tag(5)
+                    summaryStep.tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.smoothSpring, value: step)
                 
-                // Navigation buttons
-                VStack(spacing: Spacing.md) {
-                    if step > 0 {
-                        Button("Back".localized) {
-                            withAnimation { step -= 1 }
-                        }
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
-                    if step < totalSteps - 1 {
-                        Button {
-                            Haptic.selection()
-                            withAnimation { step += 1 }
-                        } label: {
-                            HStack(spacing: Spacing.xs) {
-                                Text("Next".localized)
-                                Image(systemName: "arrow.right")
-                            }
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                in: RoundedRectangle(cornerRadius: 20)
-                            )
-                        }
-                    } else {
-                        Button {
-                            Haptic.success()
-                            createPlan()
-                        } label: {
-                            HStack(spacing: Spacing.xs) {
-                                Image(systemName: "checkmark")
-                                Text("Create Plan".localized)
-                            }
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                in: RoundedRectangle(cornerRadius: 20)
-                            )
-                        }
-                    }
-                }
-                .padding(Spacing.lg)
+                navigationButtons
             }
             .navigationTitle("Your Plan".localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -120,7 +80,106 @@ struct OnboardingFlow: View {
                     Button("Cancel".localized) { dismiss() }
                 }
             }
+            .alert("safety_blocked_title".localized, isPresented: $showSafetyAlert) {
+                Button("OK".localized) { dismiss() }
+            } message: {
+                Text(safetyBlockReason.localized)
+            }
         }
+    }
+    
+    // MARK: - Progress Bar
+    
+    private var progressBar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.fastingGreen.opacity(0.12))
+                    .frame(height: 4)
+                Capsule()
+                    .fill(Color.fastingGreen)
+                    .frame(width: geo.size.width * CGFloat(step + 1) / CGFloat(totalSteps), height: 4)
+                    .animation(.smoothSpring, value: step)
+            }
+        }
+        .frame(height: 4)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.sm)
+    }
+    
+    // MARK: - Navigation Buttons
+    
+    private var navigationButtons: some View {
+        VStack(spacing: Spacing.md) {
+            if step > 0 {
+                Button("Back".localized) {
+                    withAnimation { step -= 1 }
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            if step < totalSteps - 1 {
+                Button {
+                    Haptic.selection()
+                    advanceStep()
+                } label: {
+                    HStack(spacing: Spacing.xs) {
+                        Text(step == 5 ? "Skip".localized : "Next".localized)
+                        Image(systemName: "arrow.right")
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 20)
+                    )
+                }
+            } else {
+                Button {
+                    Haptic.success()
+                    createPlan()
+                } label: {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "checkmark")
+                        Text("Create Plan".localized)
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.fastingGreen, Color.fastingGreen.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 20)
+                    )
+                }
+            }
+        }
+        .padding(Spacing.lg)
+    }
+    
+    private func advanceStep() {
+        // Safety check after health step
+        if step == 1 {
+            let profile = buildProfile()
+            let safety = PlanCalculator.safetyCheck(for: profile)
+            if case .blocked(let reason) = safety {
+                safetyBlockReason = reason
+                showSafetyAlert = true
+                return
+            }
+        }
+        withAnimation { step += 1 }
     }
     
     // MARK: - Step 1: Body Info
@@ -188,7 +247,92 @@ struct OnboardingFlow: View {
         }
     }
     
-    // MARK: - Step 2: Activity & Diet
+    // MARK: - Step 2: Health Screening
+    
+    private var healthStep: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Health Check".localized)
+                        .font(.title2.bold())
+                    Text("Your safety matters. We'll adjust your plan accordingly.".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .padding(.vertical, Spacing.md)
+            }
+            
+            Section("Do you have any of these conditions?".localized) {
+                ForEach(HealthCondition.allCases.filter { $0 != .none }) { condition in
+                    Button {
+                        toggleCondition(condition)
+                    } label: {
+                        HStack(spacing: Spacing.md) {
+                            Image(systemName: condition.icon)
+                                .font(.title3)
+                                .foregroundStyle(condition.isFastingContraindication ? Color.fastingOrange : Color.fastingTeal)
+                                .frame(width: 32)
+                            
+                            Text(condition.displayName)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            
+                            Spacer()
+                            
+                            if selectedConditions.contains(condition) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.fastingGreen)
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            if !selectedConditions.isEmpty {
+                Section {
+                    let contraindicated = selectedConditions.filter(\.isFastingContraindication)
+                    let cautionary = selectedConditions.filter(\.requiresReducedIntensity)
+                    
+                    if !contraindicated.isEmpty {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.fastingOrange)
+                            Text("safety_contraindication_warning".localized)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    if !cautionary.isEmpty {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundStyle(Color.fastingTeal)
+                            Text("safety_reduced_intensity_note".localized)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func toggleCondition(_ condition: HealthCondition) {
+        if selectedConditions.contains(condition) {
+            selectedConditions.remove(condition)
+        } else {
+            selectedConditions.insert(condition)
+        }
+        Haptic.selection()
+    }
+    
+    // MARK: - Step 3: Activity & Diet
     
     private var activityStep: some View {
         Form {
@@ -209,6 +353,7 @@ struct OnboardingFlow: View {
                 ForEach(ActivityLevel.allCases) { level in
                     Button {
                         activityLevel = level
+                        Haptic.selection()
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
@@ -240,7 +385,84 @@ struct OnboardingFlow: View {
         }
     }
     
-    // MARK: - Step 3: Goal
+    // MARK: - Step 4: Mood & Stress
+    
+    private var moodStep: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("How are you doing?".localized)
+                        .font(.title2.bold())
+                    Text("Stress and sleep affect fasting tolerance. We'll calibrate your plan.".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .padding(.vertical, Spacing.md)
+            }
+            
+            Section("Stress Level".localized) {
+                ForEach(StressLevel.allCases) { level in
+                    Button {
+                        stressLevel = level
+                        Haptic.selection()
+                    } label: {
+                        HStack(spacing: Spacing.md) {
+                            Text(level.emoji)
+                                .font(.title2)
+                            Text(level.displayName)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if stressLevel == level {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.fastingGreen)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            Section("Sleep Quality".localized) {
+                ForEach(SleepQuality.allCases) { level in
+                    Button {
+                        sleepQuality = level
+                        Haptic.selection()
+                    } label: {
+                        HStack(spacing: Spacing.md) {
+                            Text(level.emoji)
+                                .font(.title2)
+                            Text(level.displayName)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if sleepQuality == level {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.fastingGreen)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            if stressLevel == .high || sleepQuality == .poor {
+                Section {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "heart.fill")
+                            .foregroundStyle(Color.fastingOrange)
+                        Text("mood_gentle_note".localized)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Step 5: Goal
     
     private var goalStep: some View {
         Form {
@@ -261,6 +483,7 @@ struct OnboardingFlow: View {
                 ForEach(FastingGoal.allCases) { g in
                     Button {
                         goal = g
+                        Haptic.selection()
                     } label: {
                         HStack(spacing: Spacing.md) {
                             Image(systemName: g.icon)
@@ -291,10 +514,160 @@ struct OnboardingFlow: View {
         }
     }
     
-    // MARK: - Step 4: Summary
+    // MARK: - Step 6: Smart Schedule (EventKit)
+    
+    private var calendarStep: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Smart Schedule".localized)
+                        .font(.title2.bold())
+                    Text("Connect your calendar for personalized daily suggestions.".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .padding(.vertical, Spacing.md)
+            }
+            
+            if calendarAuthorized {
+                Section("This Week".localized) {
+                    if weekEvents.isEmpty {
+                        Text("No events this week".localized)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(0..<7, id: \.self) { dayOffset in
+                            let events = dayOffset < weekEvents.count ? weekEvents[dayOffset] : []
+                            let date = Calendar.current.date(byAdding: .day, value: dayOffset, to: Calendar.current.startOfDay(for: Date()))!
+                            calendarDayRow(date: date, events: events)
+                        }
+                    }
+                }
+                
+                Section {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(Color.fastingGreen)
+                        Text("schedule_preview_note".localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Section {
+                    VStack(spacing: Spacing.lg) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 48))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(Color.fastingTeal)
+                        
+                        Text("calendar_permission_desc".localized)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                        Button {
+                            requestCalendarAccess()
+                        } label: {
+                            Text("Connect Calendar".localized)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Spacing.xl)
+                                .padding(.vertical, Spacing.sm)
+                                .background(Color.fastingTeal, in: Capsule())
+                        }
+                        
+                        Text("calendar_privacy_note".localized)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.vertical, Spacing.lg)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                }
+            }
+        }
+    }
+    
+    private func calendarDayRow(date: Date, events: [EKEvent]) -> some View {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E M/d"
+        let isToday = Calendar.current.isDateInToday(date)
+        
+        return HStack(spacing: Spacing.md) {
+            Text(formatter.string(from: date))
+                .font(.caption.bold())
+                .foregroundStyle(isToday ? Color.fastingGreen : .primary)
+                .frame(width: 56, alignment: .leading)
+            
+            if events.isEmpty {
+                Text("Free".localized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(events.prefix(2), id: \.eventIdentifier) { event in
+                        Text(event.title ?? "")
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                    if events.count > 2 {
+                        Text("+\(events.count - 2)")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 2)
+    }
+    
+    private func requestCalendarAccess() {
+        Task {
+            do {
+                let granted: Bool
+                if #available(iOS 17.0, *) {
+                    granted = try await eventStore.requestFullAccessToEvents()
+                } else {
+                    granted = try await eventStore.requestAccess(to: .event)
+                }
+                await MainActor.run {
+                    calendarAuthorized = granted
+                    if granted { loadWeekEvents() }
+                }
+            } catch {
+                print("[Calendar] Auth error: \(error)")
+            }
+        }
+    }
+    
+    private func loadWeekEvents() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        var result: [[EKEvent]] = []
+        
+        for dayOffset in 0..<7 {
+            guard let start = calendar.date(byAdding: .day, value: dayOffset, to: today),
+                  let end = calendar.date(byAdding: .day, value: 1, to: start) else {
+                result.append([])
+                continue
+            }
+            let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
+            result.append(eventStore.events(matching: predicate))
+        }
+        
+        weekEvents = result
+    }
+    
+    // MARK: - Step 7: Summary
     
     private var summaryStep: some View {
         let profile = buildProfile()
+        let safety = PlanCalculator.safetyCheck(for: profile)
         let plan = PlanCalculator.generatePlan(from: profile)
         
         return Form {
@@ -309,6 +682,22 @@ struct OnboardingFlow: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 .padding(.vertical, Spacing.md)
+            }
+            
+            // Safety cautions
+            if case .caution(let reasons) = safety {
+                Section("⚠️ " + "Safety Notes".localized) {
+                    ForEach(reasons, id: \.self) { reason in
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.fastingOrange)
+                                .font(.caption)
+                            Text(reason.localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
             
             Section("Fasting") {
@@ -332,6 +721,13 @@ struct OnboardingFlow: View {
                 LabeledContent("BMI".localized, value: String(format: "%.1f (%@)", profile.bmi, profile.bmiCategory))
                 LabeledContent("TDEE".localized, value: "\(Int(profile.tdee)) kcal")
                 LabeledContent("BMR".localized, value: "\(Int(profile.bmr)) kcal")
+                
+                if profile.stressLevel == .high {
+                    LabeledContent("Stress".localized, value: "⚠️ " + "High".localized)
+                }
+                if profile.sleepQuality == .poor {
+                    LabeledContent("Sleep".localized, value: "⚠️ " + "Poor".localized)
+                }
             }
             
             if profile.isElderly || profile.dietPreference == .vegan {
@@ -359,7 +755,10 @@ struct OnboardingFlow: View {
             weightKg: weightKg,
             activityLevel: activityLevel,
             goal: goal,
-            dietPreference: dietPreference
+            dietPreference: dietPreference,
+            healthConditions: Array(selectedConditions),
+            stressLevel: stressLevel,
+            sleepQuality: sleepQuality
         )
     }
     
