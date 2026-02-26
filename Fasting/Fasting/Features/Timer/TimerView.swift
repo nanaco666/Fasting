@@ -442,12 +442,12 @@ struct TimerView: View {
         return VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack(alignment: .firstTextBaseline) {
-                Image(systemName: phase.icon)
+                Image(systemName: "figure.walk")
                     .font(.subheadline)
-                    .foregroundStyle(phase.color)
+                    .foregroundStyle(Color.fastingGreen)
                 Text("Body Journey".localized)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(phase.color)
+                    .foregroundStyle(Color.fastingGreen)
                 
                 Spacer()
                 
