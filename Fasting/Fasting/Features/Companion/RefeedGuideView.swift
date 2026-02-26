@@ -53,7 +53,7 @@ struct RefeedGuideView: View {
     
     private var celebrationHeader: some View {
         VStack(spacing: 16) {
-            Text(isGoalAchieved ? "🎉" : "💪")
+            Text(wasGoalMet ? "🎉" : "💪")
                 .font(.system(size: 56))
             
             Text(completion.title)
