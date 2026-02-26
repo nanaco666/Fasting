@@ -38,22 +38,15 @@ struct TimerView: View {
                         weekStrip
                             .padding(.horizontal, 20)
                         
-                        // Unified timer card (ring + time + STARTED/GOAL + remaining)
+                        // Timer card (dial + pills + action button — all in one)
                         timerCard
                             .padding(.horizontal, 20)
                         
-                        // Action button
-                        actionButton
-                            .padding(.horizontal, 20)
-                        
-                        // Mood check-in
+                        // Health-style cards
                         if fastingService.isFasting {
                             moodCard
                                 .padding(.horizontal, 20)
-                        }
-                        
-                        // Body journey (phases)
-                        if fastingService.isFasting {
+                            
                             bodyPhaseCard
                                 .padding(.horizontal, 20)
                         } else {
@@ -256,7 +249,11 @@ struct TimerView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                
+                // Action button inside card
+                actionButton
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
             }
             .glassCard(cornerRadius: CornerRadius.extraLarge)
             .onChange(of: isGoalAchieved) { _, achieved in
@@ -392,9 +389,33 @@ struct TimerView: View {
     // MARK: - Mood Card (standalone)
     
     private var moodCard: some View {
-        moodCheckInRow
-            .padding(16)
-            .glassCard(cornerRadius: CornerRadius.extraLarge)
+        VStack(alignment: .leading, spacing: 12) {
+            // Health-style header: icon + title + time
+            HStack {
+                Image(systemName: "face.smiling")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.fastingOrange)
+                Text("Mood".localized)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.fastingOrange)
+                
+                Spacer()
+                
+                if let record = recentMoodRecord {
+                    Text(formatTime(record.timestamp))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            
+            // Content
+            moodCheckInContent
+        }
+        .padding(16)
+        .glassCard(cornerRadius: CornerRadius.large)
     }
     
     // MARK: - Body Phase Card (standalone, with expand/collapse)
@@ -404,32 +425,23 @@ struct TimerView: View {
     private var bodyPhaseCard: some View {
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
         
-        return VStack(spacing: 0) {
-            // Phase header — emoji + name + companion message
-            HStack(spacing: 12) {
-                Text(phase.emoji)
-                    .font(.title2)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(phase.name)
-                            .font(.subheadline.weight(.semibold))
-                        
-                        if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
-                            Text("· \(formatShortInterval(timeToNext))")
-                                .font(.caption.weight(.medium).monospacedDigit())
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    
-                    Text(phase.companionMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(isPhaseExpanded ? nil : 2)
-                }
+        return VStack(alignment: .leading, spacing: 0) {
+            // Health-style header: icon + title + next phase time
+            HStack {
+                Image(systemName: phase.icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(phase.color)
+                Text("Body Journey".localized)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(phase.color)
                 
                 Spacer()
+                
+                if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
+                    Text("timer_next_phase".localized + " \(formatShortInterval(timeToNext))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
@@ -444,6 +456,24 @@ struct TimerView: View {
                 }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
+            
+            // Phase content: emoji + name + companion
+            HStack(spacing: 10) {
+                Text(phase.emoji)
+                    .font(.title2)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(phase.name)
+                        .font(.headline)
+                    Text(phase.companionMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(isPhaseExpanded ? nil : 2)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
             
             // Expanded: science detail + events + timeline
             if isPhaseExpanded {
@@ -522,63 +552,48 @@ struct TimerView: View {
         return moodRecords.first { $0.timestamp >= start }
     }
     
-    private var moodCheckInRow: some View {
-        Group {
-            if let record = recentMoodRecord {
-                // Already recorded — show state
+    @ViewBuilder
+    private var moodCheckInContent: some View {
+        if let record = recentMoodRecord {
+            // Recorded state — big emoji + label
+            Button {
+                showMoodCheckIn = true
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
                 HStack(spacing: 10) {
                     Text(record.mood.emoji)
-                        .font(.title3)
+                        .font(.title2)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text(record.mood.localizedLabel)
-                            .font(.subheadline.weight(.semibold))
-                        Text("mood_recorded_at".localized + " " + formatTime(record.timestamp))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text("mood_update".localized)
+                            .font(.caption)
+                            .foregroundStyle(Color.fastingGreen)
                     }
                     
                     Spacer()
-                    
-                    // Re-record button
-                    Button {
-                        showMoodCheckIn = true
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    } label: {
-                        Text("mood_update".localized)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Color.fastingGreen)
-                    }
                 }
-            } else {
-                // Not recorded — prompt
-                Button {
-                    showMoodCheckIn = true
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "face.smiling")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("mood_checkin_title".localized)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.primary)
-                            Text("mood_checkin_subtitle".localized)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                .buttonStyle(.plain)
             }
+            .buttonStyle(.plain)
+        } else {
+            // Prompt — tap to record
+            Button {
+                showMoodCheckIn = true
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                HStack {
+                    Text("mood_checkin_subtitle".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Record".localized)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.fastingGreen)
+                }
+            }
+            .buttonStyle(.plain)
         }
     }
     
