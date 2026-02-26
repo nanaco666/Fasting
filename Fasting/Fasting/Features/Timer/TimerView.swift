@@ -42,9 +42,15 @@ struct TimerView: View {
                         actionButton
                             .padding(.horizontal, 20)
                         
-                        // Current phase — unified (physiology + psychology + guidance)
+                        // Mood check-in
                         if fastingService.isFasting {
-                            currentPhaseSection
+                            moodCard
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        // Body journey (phases)
+                        if fastingService.isFasting {
+                            bodyPhaseCard
                                 .padding(.horizontal, 20)
                         } else {
                             BodyJourneyIdleCard()
@@ -368,15 +374,24 @@ struct TimerView: View {
     
     // MARK: - Current Phase (unified: physiology + psychology + guidance + mood)
     
+    // MARK: - Mood Card (standalone)
+    
+    private var moodCard: some View {
+        moodCheckInRow
+            .padding(16)
+            .glassCard(cornerRadius: CornerRadius.extraLarge)
+    }
+    
+    // MARK: - Body Phase Card (standalone, with expand/collapse)
+    
     @State private var isPhaseExpanded = false
     
-    private var currentPhaseSection: some View {
-        let hours = elapsed / 3600
+    private var bodyPhaseCard: some View {
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
-        let phaseMsg = CompanionEngine.phaseMessage(hours: hours)
+        let phaseMsg = CompanionEngine.phaseMessage(hours: elapsed / 3600)
         
         return VStack(spacing: 0) {
-            // Phase header — tappable to expand/collapse timeline
+            // Phase header — tappable
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
@@ -425,14 +440,7 @@ struct TimerView: View {
             
             Divider().opacity(0.3)
             
-            // Mood check-in — above content so expand doesn't push it off screen
-            moodCheckInRow
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            
-            Divider().opacity(0.3)
-            
-            // What's happening — current phase info
+            // Current phase description
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
