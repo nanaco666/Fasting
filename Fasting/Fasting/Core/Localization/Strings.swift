@@ -481,55 +481,14 @@ static let all: [String: [String: String]] = [
     "Connect": ["en": "Connect", "zh-Hans": "连接"],
     
     // Mood check-in
-    "How are you feeling?": ["en": "How are you feeling?", "zh-Hans": "你现在感觉如何？"],
     "Your mood": ["en": "Your mood", "zh-Hans": "你的状态"],
     "Any symptoms?": ["en": "Any symptoms?", "zh-Hans": "有什么症状吗？"],
     "For you": ["en": "For you", "zh-Hans": "给你的建议"],
-    "checkin_hours": ["en": "You've been fasting for %d hours", "zh-Hans": "你已经断食 %d 小时了"],
-    "mood_great": ["en": "Great", "zh-Hans": "很好"],
-    "mood_good": ["en": "Good", "zh-Hans": "不错"],
-    "mood_neutral": ["en": "Okay", "zh-Hans": "一般"],
-    "mood_tough": ["en": "Tough", "zh-Hans": "有点难"],
-    "mood_struggling": ["en": "Struggling", "zh-Hans": "很挣扎"],
-    "headache": ["en": "Headache", "zh-Hans": "头痛"],
-    "irritable": ["en": "Irritable", "zh-Hans": "易怒"],
-    "foggy": ["en": "Brain fog", "zh-Hans": "脑雾"],
-    "hungry": ["en": "Hungry", "zh-Hans": "饥饿"],
-    "energetic": ["en": "Energetic", "zh-Hans": "精力充沛"],
-    "clearMinded": ["en": "Clear mind", "zh-Hans": "头脑清晰"],
-    "dizzy": ["en": "Dizzy", "zh-Hans": "头晕"],
-    "anxious": ["en": "Anxious", "zh-Hans": "焦虑"],
     "safety_consider_ending": ["en": "It's okay to end your fast now. Listen to your body — that takes real strength.", "zh-Hans": "现在结束断食也完全可以。倾听身体的声音——这才是真正的自律。"],
     
     // Companion messages - mood responses
-    "companion_great_early": ["en": "Awesome start! Your body is transitioning smoothly.", "zh-Hans": "开局很好！身体正在平稳过渡。"],
-    "companion_great_mid": ["en": "You're in the zone. Fat burning is ramping up.", "zh-Hans": "状态不错！脂肪燃烧正在加速。"],
-    "companion_great_late": ["en": "Incredible discipline. Your body is in deep ketosis now.", "zh-Hans": "了不起的坚持。身体已经进入深度酮症。"],
-    "companion_great_extended": ["en": "You're achieving something remarkable. Autophagy is in full effect.", "zh-Hans": "你正在做一件了不起的事。细胞自噬全面启动。"],
-    "companion_good_early": ["en": "Solid start. The first few hours are just warm-up.", "zh-Hans": "稳稳的。前几个小时只是热身。"],
-    "companion_good_mid": ["en": "Doing well! Glycogen stores are running low — fat is taking over.", "zh-Hans": "表现不错！糖原正在耗尽，脂肪开始接管供能。"],
-    "companion_good_late": ["en": "You're past the hardest part. It gets easier from here.", "zh-Hans": "最难的部分已经过去了。接下来会越来越轻松。"],
-    "companion_good_extended": ["en": "Deep into your fast. Your cells are cleaning house.", "zh-Hans": "深度断食中。你的细胞正在大扫除。"],
-    "companion_neutral_early": ["en": "It's normal to feel neutral early on. Your body is adjusting.", "zh-Hans": "刚开始感觉平平很正常。身体在适应中。"],
-    "companion_neutral_mid": ["en": "Hang in there. Around hour 12-14, many people find renewed energy.", "zh-Hans": "坚持住。很多人在12-14小时后会找到新的能量感。"],
-    "companion_neutral_late": ["en": "You're doing better than you think. Sometimes 'okay' is perfectly fine.", "zh-Hans": "你比自己以为的做得好。'一般'本身就挺好的。"],
-    "companion_neutral_extended": ["en": "Still going. That takes quiet strength.", "zh-Hans": "还在坚持。这是一种安静的力量。"],
-    "companion_tough_early": ["en": "The beginning can be the hardest. It gets better — your body just needs time to switch fuel sources.", "zh-Hans": "开头通常最难。会好起来的——身体只是需要时间切换燃料来源。"],
-    "companion_tough_mid": ["en": "This is the 'keto flu' zone. Try: salt water, a walk, or deep breathing. It passes.", "zh-Hans": "这是'酮流感'区间。试试：淡盐水、散步、或深呼吸。会过去的。"],
-    "companion_tough_late": ["en": "You've come so far. If your body says stop, listen. There's no failure in stopping — only in ignoring yourself.", "zh-Hans": "你已经走了这么远。如果身体说停下，就听它的。停下不是失败——忽视自己才是。"],
-    "companion_tough_extended": ["en": "Deep respect for pushing through. But please, prioritize safety. End if you need to.", "zh-Hans": "佩服你的坚持。但请把安全放第一位。需要结束就结束。"],
-    "companion_struggling_early": ["en": "Hey, it's okay. Struggling early doesn't mean you can't do this. Take it one hour at a time.", "zh-Hans": "嘿，没关系。一开始挣扎不代表你做不到。一个小时一个小时来。"],
-    "companion_struggling_mid": ["en": "I hear you. This is hard. Drink some water with a pinch of salt. If it doesn't improve in 30 minutes, it's okay to stop.", "zh-Hans": "我理解你。这确实很难。喝杯加了一小撮盐的水。如果30分钟后没有改善，停下来也没关系。"],
-    "companion_struggling_late": ["en": "You've already accomplished a lot. Ending now is not giving up — it's being smart about your body.", "zh-Hans": "你已经完成了很多。现在结束不是放弃——是对身体负责。"],
-    "companion_struggling_extended": ["en": "Please consider ending your fast. You've achieved an incredible milestone. Your body is telling you something — listen.", "zh-Hans": "请考虑结束断食。你已经达到了不起的里程碑。身体在告诉你什么——倾听它。"],
     
     // Symptom tips
-    "symptom_tip_headache": ["en": "Headaches during fasting are often from dehydration or electrolyte loss. Try water with a pinch of salt.", "zh-Hans": "断食中的头痛通常来自脱水或电解质流失。试试加一小撮盐的水。"],
-    "symptom_tip_irritable": ["en": "Irritability is a common sign of blood sugar adjustment. It usually passes within 1-2 hours.", "zh-Hans": "易怒是血糖调整的常见表现。通常1-2小时内会过去。"],
-    "symptom_tip_foggy": ["en": "Brain fog means your brain is switching from glucose to ketones. This clears up as ketosis deepens.", "zh-Hans": "脑雾意味着大脑正在从葡萄糖切换到酮体供能。随着酮症加深会消失。"],
-    "symptom_tip_hungry": ["en": "Hunger comes in waves — it peaks and passes. Ghrelin (hunger hormone) actually decreases the longer you fast.", "zh-Hans": "饥饿是波浪式的——会到达顶峰然后消退。饥饿素实际上会随着断食时间延长而下降。"],
-    "symptom_tip_dizzy": ["en": "Dizziness could mean low blood pressure or dehydration. Sit down, sip water slowly. If it persists, please end your fast.", "zh-Hans": "头晕可能意味着低血压或脱水。坐下来，慢慢喝水。如果持续不缓解，请结束断食。"],
-    "symptom_tip_anxious": ["en": "Anxiety can increase during fasting due to cortisol. Try box breathing: inhale 4s, hold 4s, exhale 4s, hold 4s.", "zh-Hans": "断食期间焦虑可能因皮质醇升高。试试方块呼吸：吸气4秒，屏住4秒，呼气4秒，屏住4秒。"],
     
     // Phase messages
     "phase_msg_0_title": ["en": "Just getting started", "zh-Hans": "刚刚开始"],
@@ -556,7 +515,6 @@ static let all: [String: [String: String]] = [
     "completion_24_body": ["en": "An extended fast. Autophagy has been activated. Your cells thank you.", "zh-Hans": "一次延长断食。细胞自噬已被激活。你的细胞感谢你。"],
     
     // Refeed guide
-    "Refeed Guide": ["en": "Refeed Guide", "zh-Hans": "复食指南"],
     "Important": ["en": "Important", "zh-Hans": "注意事项"],
     "refeed_short_title": ["en": "Light Refeed", "zh-Hans": "轻度复食"],
     "refeed_short_subtitle": ["en": "Your fast was under 18 hours — a gentle transition back is all you need.", "zh-Hans": "断食不到18小时——温和过渡就好。"],
@@ -595,13 +553,11 @@ static let all: [String: [String: String]] = [
     // Mood Check-in
     "How are you feeling?": ["en": "How are you feeling?", "zh-Hans": "你现在感觉怎么样？"],
     "companion_checkin_subtitle": ["en": "Quick check-in, we're here for you", "zh-Hans": "快速记录，我们陪着你"],
-    "mood_question": ["en": "How's your body feeling?", "zh-Hans": "身体感觉如何？"],
     "mood_great": ["en": "Great", "zh-Hans": "很好"],
     "mood_good": ["en": "Good", "zh-Hans": "不错"],
     "mood_neutral": ["en": "Okay", "zh-Hans": "一般"],
     "mood_tough": ["en": "Tough", "zh-Hans": "有点难"],
     "mood_struggling": ["en": "Hard", "zh-Hans": "很挣扎"],
-    "symptom_question": ["en": "Any of these?", "zh-Hans": "有这些感觉吗？"],
     "headache": ["en": "Headache", "zh-Hans": "头痛"],
     "irritable": ["en": "Irritable", "zh-Hans": "易怒"],
     "foggy": ["en": "Brain fog", "zh-Hans": "脑雾"],
@@ -610,9 +566,6 @@ static let all: [String: [String: String]] = [
     "clearMinded": ["en": "Clear mind", "zh-Hans": "头脑清晰"],
     "dizzy": ["en": "Dizzy", "zh-Hans": "头晕"],
     "anxious": ["en": "Anxious", "zh-Hans": "焦虑"],
-    "note_optional": ["en": "Add a note (optional)", "zh-Hans": "写点什么（可选）"],
-    "note_placeholder": ["en": "How you feel, what triggered it...", "zh-Hans": "你的感受，什么触发了它..."],
-    "companion_says": ["en": "Your companion says", "zh-Hans": "你的陪伴者说"],
     
     // Companion Phase Messages
     "companion_phase_start": ["en": "You've just started. Your body is still using the last meal's energy. Relax.", "zh-Hans": "刚刚开始。身体还在消耗上一餐的能量。放松。"],
