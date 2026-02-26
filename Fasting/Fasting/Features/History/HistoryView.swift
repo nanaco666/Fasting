@@ -18,7 +18,7 @@ struct HistoryView: View {
             ZStack {
                 GradientBackground()
                 
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: Spacing.xl) {
                         calendarSection
                             .padding(.horizontal, Spacing.lg)
@@ -31,6 +31,7 @@ struct HistoryView: View {
                     }
                     .padding(.vertical, Spacing.lg)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
             .navigationTitle(L10n.Tab.history)
             .navigationBarTitleDisplayMode(.large)
@@ -141,6 +142,8 @@ struct HistoryView: View {
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.lg)
