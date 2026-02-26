@@ -319,6 +319,7 @@ struct BodyJourneyIdleCard: View {
             Image(systemName: "figure.walk")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
+                .symbolEffect(.wiggle.byLayer, options: .repeat(.continuous))
             
             Text("Start fasting to begin your body's journey".localized)
                 .font(.subheadline)
