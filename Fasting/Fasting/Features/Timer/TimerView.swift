@@ -70,7 +70,7 @@ struct TimerView: View {
                         SettingsView()
                     } label: {
                         Image(systemName: "gearshape")
-                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
