@@ -486,26 +486,35 @@ struct TimerView: View {
                 .padding(.bottom, 14)
             }
             
-            // Expanded: phase timeline only (detail shown per-phase in timeline)
+            // Expanded: phase timeline with auto-scroll to current
             if isPhaseExpanded {
                 Divider().opacity(0.3)
                 
-                // Phase timeline
-                VStack(spacing: 0) {
-                    ForEach(FastingPhaseManager.phases) { p in
-                        let isUnlocked = elapsed / 3600 >= p.startHour
-                        let isCurrent = p.id == phase.id
-                        
-                        PhaseTimelineRow(
-                            phase: p,
-                            isUnlocked: isUnlocked,
-                            isCurrent: isCurrent,
-                            duration: elapsed
-                        )
+                ScrollViewReader { proxy in
+                    VStack(spacing: 0) {
+                        ForEach(FastingPhaseManager.phases) { p in
+                            let isUnlocked = elapsed / 3600 >= p.startHour
+                            let isCurrent = p.id == phase.id
+                            
+                            PhaseTimelineRow(
+                                phase: p,
+                                isUnlocked: isUnlocked,
+                                isCurrent: isCurrent,
+                                duration: elapsed
+                            )
+                            .id(p.id)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            withAnimation(.smoothSpring) {
+                                proxy.scrollTo(phase.id, anchor: .center)
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
                 .transition(.opacity)
             }
         }
