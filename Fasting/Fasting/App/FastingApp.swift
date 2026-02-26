@@ -52,6 +52,7 @@ struct FastingApp: App {
 struct ContentView: View {
     @State private var selectedTab = 0
     @State private var languageRefresh = UUID()
+    @AppStorage("appearanceMode") private var appearanceMode: Int = 0
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -84,6 +85,7 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
             languageRefresh = UUID()
         }
+        .preferredColorScheme(appearanceMode == 1 ? .light : appearanceMode == 2 ? .dark : nil)
         .onOpenURL { url in
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "history" { selectedTab = 1 }
