@@ -213,8 +213,8 @@ struct PhaseTimelineRow: View {
                         }
                         
                         Text(phaseTimeRange)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
@@ -237,6 +237,21 @@ struct PhaseTimelineRow: View {
                 Text(phase.companionMessage)
                     .font(.subheadline)
                     .foregroundStyle(isUnlocked ? .secondary : .quaternary)
+                
+                // Warning banner for 36h+ phases
+                if phase.startHour >= 36 && isUnlocked {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Color.fastingOrange)
+                        Text(phase.startHour >= 48 ? "Medical supervision required".localized : "Listen to your body carefully".localized)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.fastingOrange)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.fastingOrange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                }
                 
                 // Expanded detail
                 if showDetail && isUnlocked {
@@ -265,7 +280,7 @@ struct PhaseTimelineRow: View {
                             .font(.caption.weight(.semibold))
                         
                         Text(event.description)
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -274,8 +289,8 @@ struct PhaseTimelineRow: View {
             
             // Description
             Text(phase.scienceDetail)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .padding(.top, Spacing.xs)
                 .fixedSize(horizontal: false, vertical: true)
         }
