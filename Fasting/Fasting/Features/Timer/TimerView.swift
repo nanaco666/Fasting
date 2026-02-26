@@ -274,7 +274,7 @@ struct TimerView: View {
                     .padding(.bottom, 16)
                 }
             }
-            .glassCard(cornerRadius: 24)
+            .glassCard(cornerRadius: CornerRadius.extraLarge)
             .onChange(of: isGoalAchieved) { _, achieved in
                 if achieved && !hasShownGoalCelebration {
                     hasShownGoalCelebration = true
@@ -368,15 +368,16 @@ struct TimerView: View {
     
     // MARK: - Current Phase (unified: physiology + psychology + guidance + mood)
     
+    @State private var isPhaseExpanded = false
+    
     private var currentPhaseSection: some View {
         let hours = elapsed / 3600
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
         let phaseMsg = CompanionEngine.phaseMessage(hours: hours)
         
         return VStack(spacing: 0) {
-            // Phase header with icon + name + time to next
+            // Phase header — tappable to expand/collapse timeline
             HStack(spacing: 12) {
-                // Phase icon
                 ZStack {
                     Circle()
                         .fill(phase.color.opacity(0.12))
@@ -406,15 +407,26 @@ struct TimerView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
             }
             .padding(16)
             .background(phase.color.opacity(0.06))
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(response: 0.35)) {
+                    isPhaseExpanded.toggle()
+                }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
             
             Divider().opacity(0.5)
             
-            // What's happening — physiology + psychology combined
+            // What's happening — current phase info
             VStack(alignment: .leading, spacing: 12) {
-                // Physiological message from CompanionEngine
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
                         .font(.caption)
@@ -431,7 +443,6 @@ struct TimerView: View {
                     }
                 }
                 
-                // Key events from phase data
                 if !phase.keyEvents.isEmpty {
                     ForEach(phase.keyEvents.prefix(2)) { event in
                         HStack(alignment: .top, spacing: 10) {
@@ -455,13 +466,36 @@ struct TimerView: View {
             }
             .padding(16)
             
+            // Expanded: full phase timeline
+            if isPhaseExpanded {
+                Divider().opacity(0.5)
+                
+                VStack(spacing: 0) {
+                    ForEach(FastingPhaseManager.phases) { p in
+                        let isUnlocked = elapsed / 3600 >= p.startHour
+                        let isCurrent = p.id == phase.id
+                        
+                        PhaseTimelineRow(
+                            phase: p,
+                            isUnlocked: isUnlocked,
+                            isCurrent: isCurrent,
+                            duration: elapsed
+                        )
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            
             Divider().opacity(0.5)
             
             // Mood check-in / recorded state
             moodCheckInRow
                 .padding(16)
         }
-        .glassCard(cornerRadius: 20)
+        .glassCard(cornerRadius: CornerRadius.extraLarge)
+        .animation(.spring(response: 0.35), value: isPhaseExpanded)
     }
     
     private func formatShortInterval(_ interval: TimeInterval) -> String {
