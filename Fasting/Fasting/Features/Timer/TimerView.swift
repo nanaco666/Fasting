@@ -470,56 +470,24 @@ struct TimerView: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
             
-            // Phase name (hero) + companion message
-            VStack(alignment: .leading, spacing: 6) {
-                Text(phase.name)
-                    .font(.title2.weight(.bold))
-                
-                Text(phase.companionMessage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineLimit(isPhaseExpanded ? nil : 2)
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 14)
-            
-            // Expanded: science detail + events + timeline
-            if isPhaseExpanded {
-                Divider().opacity(0.3)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    // Science detail
-                    Text(phase.scienceDetail)
-                        .font(.caption)
+            // Phase summary (only when collapsed)
+            if !isPhaseExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(phase.name)
+                        .font(.title2.weight(.bold))
+                    
+                    Text(phase.companionMessage)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    
-                    // Key events
-                    if !phase.keyEvents.isEmpty {
-                        ForEach(phase.keyEvents) { event in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: event.icon)
-                                    .font(.caption)
-                                    .foregroundStyle(phase.color.opacity(0.7))
-                                    .frame(width: 16)
-                                    .padding(.top, 2)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(event.title)
-                                        .font(.caption.weight(.semibold))
-                                    Text(event.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                        }
-                    }
+                        .lineLimit(2)
                 }
-                .padding(16)
-                .transition(.opacity)
-                
+                .padding(.horizontal, 16)
+                .padding(.bottom, 14)
+            }
+            
+            // Expanded: phase timeline only (detail shown per-phase in timeline)
+            if isPhaseExpanded {
                 Divider().opacity(0.3)
                 
                 // Phase timeline
