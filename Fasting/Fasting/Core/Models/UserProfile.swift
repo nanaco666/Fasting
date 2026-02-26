@@ -121,6 +121,108 @@ enum DietPreference: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Health Conditions
+
+enum HealthCondition: String, Codable, CaseIterable, Identifiable {
+    case none = "none"
+    case diabetes = "diabetes"
+    case thyroid = "thyroid"
+    case eatingDisorder = "eating_disorder"
+    case pregnant = "pregnant"
+    case heartDisease = "heart_disease"
+    case medication = "medication"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .none: return "None".localized
+        case .diabetes: return "Diabetes".localized
+        case .thyroid: return "Thyroid condition".localized
+        case .eatingDisorder: return "Eating disorder history".localized
+        case .pregnant: return "Pregnant or nursing".localized
+        case .heartDisease: return "Heart disease".localized
+        case .medication: return "Taking medication".localized
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .none: return "checkmark.shield.fill"
+        case .diabetes: return "drop.fill"
+        case .thyroid: return "waveform.path.ecg"
+        case .eatingDisorder: return "heart.slash.fill"
+        case .pregnant: return "figure.and.child.holdinghands"
+        case .heartDisease: return "heart.fill"
+        case .medication: return "pills.fill"
+        }
+    }
+    
+    var isFastingContraindication: Bool {
+        switch self {
+        case .eatingDisorder, .pregnant: return true
+        default: return false
+        }
+    }
+    
+    var requiresReducedIntensity: Bool {
+        switch self {
+        case .diabetes, .thyroid, .heartDisease, .medication: return true
+        default: return false
+        }
+    }
+}
+
+// MARK: - Stress & Sleep
+
+enum StressLevel: String, Codable, CaseIterable, Identifiable {
+    case low = "low"
+    case moderate = "moderate"
+    case high = "high"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .low: return "Low".localized
+        case .moderate: return "Moderate".localized
+        case .high: return "High".localized
+        }
+    }
+    
+    var emoji: String {
+        switch self {
+        case .low: return "😌"
+        case .moderate: return "😐"
+        case .high: return "😰"
+        }
+    }
+}
+
+enum SleepQuality: String, Codable, CaseIterable, Identifiable {
+    case good = "good"
+    case fair = "fair"
+    case poor = "poor"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .good: return "Good (7-9h)".localized
+        case .fair: return "Fair (5-7h)".localized
+        case .poor: return "Poor (<5h)".localized
+        }
+    }
+    
+    var emoji: String {
+        switch self {
+        case .good: return "😴"
+        case .fair: return "🥱"
+        case .poor: return "😵"
+        }
+    }
+}
+
 // MARK: - User Profile Model
 
 @Model
@@ -136,7 +238,14 @@ final class UserProfile {
     var createdAt: Date
     var updatedAt: Date
     
-    // MARK: - Computed
+    // New fields — all optional for backward compatibility
+    var healthConditionsData: Data?
+    var stressLevelRaw: String?
+    var sleepQualityRaw: String?
+    var preferredEatingWindowStart: Int?
+    var preferredEatingWindowEnd: Int?
+    
+    // MARK: - Computed (existing)
     
     var sex: BiologicalSex {
         get { BiologicalSex(rawValue: sexRaw) ?? .male }
@@ -156,6 +265,38 @@ final class UserProfile {
     var dietPreference: DietPreference {
         get { DietPreference(rawValue: dietPreferenceRaw) ?? .omnivore }
         set { dietPreferenceRaw = newValue.rawValue }
+    }
+    
+    // MARK: - Computed (new)
+    
+    var healthConditions: [HealthCondition] {
+        get {
+            guard let data = healthConditionsData else { return [] }
+            return (try? JSONDecoder().decode([HealthCondition].self, from: data)) ?? []
+        }
+        set {
+            healthConditionsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
+    var stressLevel: StressLevel {
+        get { StressLevel(rawValue: stressLevelRaw ?? "") ?? .moderate }
+        set { stressLevelRaw = newValue.rawValue }
+    }
+    
+    var sleepQuality: SleepQuality {
+        get { SleepQuality(rawValue: sleepQualityRaw ?? "") ?? .fair }
+        set { sleepQualityRaw = newValue.rawValue }
+    }
+    
+    var hasFastingContraindication: Bool {
+        healthConditions.contains(where: { $0.isFastingContraindication })
+    }
+    
+    var needsReducedIntensity: Bool {
+        healthConditions.contains(where: { $0.requiresReducedIntensity })
+        || stressLevel == .high
+        || sleepQuality == .poor
     }
     
     /// BMI
@@ -200,7 +341,10 @@ final class UserProfile {
         weightKg: Double = 70,
         activityLevel: ActivityLevel = .sedentary,
         goal: FastingGoal = .fatLoss,
-        dietPreference: DietPreference = .omnivore
+        dietPreference: DietPreference = .omnivore,
+        healthConditions: [HealthCondition] = [],
+        stressLevel: StressLevel = .moderate,
+        sleepQuality: SleepQuality = .fair
     ) {
         self.id = UUID()
         self.age = age
@@ -210,6 +354,9 @@ final class UserProfile {
         self.activityLevelRaw = activityLevel.rawValue
         self.goalRaw = goal.rawValue
         self.dietPreferenceRaw = dietPreference.rawValue
+        self.healthConditionsData = try? JSONEncoder().encode(healthConditions)
+        self.stressLevelRaw = stressLevel.rawValue
+        self.sleepQualityRaw = sleepQuality.rawValue
         self.createdAt = Date()
         self.updatedAt = Date()
     }
