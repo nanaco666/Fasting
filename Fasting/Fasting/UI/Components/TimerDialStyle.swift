@@ -11,12 +11,14 @@ enum TimerDialStyle: String, CaseIterable {
     case simple = "simple"
     case clock = "clock"
     case plate = "plate"
+    case solar = "solar"
     
     var displayName: String {
         switch self {
         case .simple: return "Simple"
         case .clock: return "Clock"
         case .plate: return "Plate"
+        case .solar: return "Solar"
         }
     }
     
@@ -25,6 +27,7 @@ enum TimerDialStyle: String, CaseIterable {
         case .simple: return "circle.circle"
         case .clock: return "clock.fill"
         case .plate: return "circle.grid.2x1.fill"
+        case .solar: return "sun.max.fill"
         }
     }
     
@@ -68,6 +71,15 @@ struct TimerDial: View {
                 )
             case .plate:
                 PlateDialView(
+                    progress: progress,
+                    elapsed: elapsed,
+                    target: target,
+                    startTime: startTime,
+                    isFasting: isFasting,
+                    isGoalAchieved: isGoalAchieved
+                )
+            case .solar:
+                SolarDialView(
                     progress: progress,
                     elapsed: elapsed,
                     target: target,
