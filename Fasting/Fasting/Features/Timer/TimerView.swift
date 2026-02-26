@@ -445,7 +445,6 @@ struct TimerView: View {
                 Image(systemName: "figure.equestrian.sports")
                     .font(.subheadline)
                     .foregroundStyle(Color.fastingGreen)
-                    .symbolEffect(.wiggle.byLayer, options: .repeat(.continuous))
                 Text("Body Journey".localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.fastingGreen)
