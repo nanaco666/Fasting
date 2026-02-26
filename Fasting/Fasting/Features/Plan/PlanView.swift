@@ -109,6 +109,10 @@ struct PlanView: View {
                 overviewCard(plan: plan)
                     .padding(.horizontal, Spacing.lg)
                 
+                // 📅 This Week — smart schedule
+                WeekScheduleView(basePlan: plan.recommendedPreset, profile: profile)
+                    .padding(.horizontal, Spacing.lg)
+                
                 // Nutrition card
                 nutritionCard(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
