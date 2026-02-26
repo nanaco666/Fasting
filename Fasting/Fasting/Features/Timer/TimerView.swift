@@ -442,7 +442,7 @@ struct TimerView: View {
         return VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack(alignment: .firstTextBaseline) {
-                Image(systemName: "figure.walk")
+                Image(systemName: "figure.equestrian.sports")
                     .font(.subheadline)
                     .foregroundStyle(Color.fastingGreen)
                     .symbolEffect(.wiggle.byLayer, options: .repeat(.continuous))

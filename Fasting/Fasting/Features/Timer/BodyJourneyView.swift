@@ -316,7 +316,7 @@ struct PhaseTimelineRow: View {
 struct BodyJourneyIdleCard: View {
     var body: some View {
         VStack(spacing: Spacing.md) {
-            Image(systemName: "figure.walk")
+            Image(systemName: "figure.equestrian.sports")
                 .font(.title2)
                 .foregroundStyle(.tertiary)
                 .symbolEffect(.wiggle.byLayer, options: .repeat(.continuous))
