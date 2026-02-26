@@ -148,17 +148,16 @@ struct PlanView: View {
                 Circle()
                     .trim(from: 0, to: plan.progress)
                     .stroke(
-                        AngularGradient(colors: [.fastingGreen, .fastingTeal, .fastingGreen], center: .center),
+                        Color.fastingGreen,
                         style: StrokeStyle(lineWidth: 12, lineCap: .round)
                     )
                     .frame(width: 120, height: 120)
                     .rotationEffect(.degrees(-90))
-                    .shadow(color: .fastingGreen.opacity(0.3), radius: 8)
                 
                 VStack(spacing: 0) {
                     Text(String(format: "week_number".localized, min(plan.weeksElapsed + 1, plan.durationWeeks)))
                         .font(.title3.bold())
-                    Text("of \(plan.durationWeeks)")
+                    Text("/\(plan.durationWeeks)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -213,29 +212,29 @@ struct PlanView: View {
             
             HStack(spacing: Spacing.md) {
                 nutritionPill(
-                    label: "Calories",
+                    label: "Calories".localized,
                     value: "\(plan.dailyCalorieTarget)",
                     unit: "kcal",
                     color: Color.fastingOrange
                 )
                 
                 nutritionPill(
-                    label: "Protein",
+                    label: "Protein".localized,
                     value: "\(plan.proteinTargetGrams)",
                     unit: "g",
                     color: Color.fastingGreen
                 )
                 
                 nutritionPill(
-                    label: "Carb:Fiber",
+                    label: "Carb:Fiber ratio".localized,
                     value: "≤8",
                     unit: ":1",
-                    color: Color.fastingBlue
+                    color: Color.fastingTeal
                 )
             }
             
             if plan.calorieDeficit > 0 {
-                Text("Deficit: -\(plan.calorieDeficit) kcal from your TDEE (\(Int(profile.tdee)) kcal)")
+                Text("Deficit".localized + ": -\(plan.calorieDeficit) kcal (TDEE \(Int(profile.tdee)) kcal)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -302,7 +301,7 @@ struct PlanView: View {
                             HStack(spacing: Spacing.md) {
                                 Image(systemName: workout.typeIcon)
                                     .font(.subheadline)
-                                    .foregroundStyle(Color.fastingBlue)
+                                    .foregroundStyle(Color.fastingTeal)
                                     .frame(width: 24)
                                 
                                 Text(workout.typeName)
@@ -327,7 +326,7 @@ struct PlanView: View {
                 VStack(spacing: Spacing.md) {
                     Image(systemName: "heart.fill")
                         .font(.title2)
-                        .foregroundStyle(.pink)
+                        .foregroundStyle(Color.fastingOrange)
                     
                     Text("Connect Apple Health to track your exercise and calorie burn.".localized)
                         .font(.caption)
@@ -350,7 +349,7 @@ struct PlanView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, Spacing.xl)
                             .padding(.vertical, Spacing.sm)
-                            .background(Color.pink, in: Capsule())
+                            .background(Color.fastingTeal, in: Capsule())
                     }
                 }
                 .padding(Spacing.lg)
@@ -433,7 +432,7 @@ struct PlanView: View {
     private func priorityColor(_ priority: FitnessRecommendation.Priority) -> Color {
         switch priority {
         case .critical: return Color.fastingOrange
-        case .important: return Color.fastingBlue
+        case .important: return Color.fastingTeal
         case .optional: return Color.fastingGreen
         }
     }

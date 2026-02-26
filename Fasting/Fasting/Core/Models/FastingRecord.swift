@@ -40,19 +40,19 @@ enum FastingPreset: String, Codable, CaseIterable, Identifiable {
         case .sixteen8: return "16:8"
         case .eighteen6: return "18:6"
         case .twenty4: return "20:4"
-        case .omad: return "OMAD (每日一餐)"
-        case .custom: return "自定义"
+        case .omad: return "OMAD"
+        case .custom: return "preset_custom_name".localized
         }
     }
     
     /// 描述
     var description: String {
         switch self {
-        case .sixteen8: return "断食16小时，8小时进食窗口"
-        case .eighteen6: return "断食18小时，6小时进食窗口"
-        case .twenty4: return "断食20小时，4小时进食窗口"
-        case .omad: return "断食23小时，每天只吃一餐"
-        case .custom: return "自定义断食时长"
+        case .sixteen8: return "preset_16_8_desc".localized
+        case .eighteen6: return "preset_18_6_desc".localized
+        case .twenty4: return "preset_20_4_desc".localized
+        case .omad: return "preset_omad_desc".localized
+        case .custom: return "preset_custom_desc".localized
         }
     }
 }
@@ -65,9 +65,9 @@ enum FastingStatus: String, Codable {
     
     var displayName: String {
         switch self {
-        case .inProgress: return "进行中"
-        case .completed: return "已完成"
-        case .cancelled: return "已取消"
+        case .inProgress: return L10n.Status.inProgress
+        case .completed: return L10n.Status.completed
+        case .cancelled: return L10n.Status.cancelled
         }
     }
 }
@@ -209,9 +209,9 @@ extension FastingRecord {
         let hours = Int(duration) / 3600
         let minutes = (Int(duration) % 3600) / 60
         if hours > 0 {
-            return "\(hours)小时\(minutes)分钟"
+            return "\(hours)h \(minutes)m"
         } else {
-            return "\(minutes)分钟"
+            return "\(minutes)m"
         }
     }
 }

@@ -2,32 +2,16 @@
 //  StatisticsView.swift
 //  Fasting
 //
-//  Insights page - Redesigned based on Apple Journal Insights reference
+//  Insights — ADA-compliant design with glass cards + 3-color palette
 //
 
 import SwiftUI
 import SwiftData
 import Charts
 
-// MARK: - Design Constants (based on reference)
-
-private enum InsightColors {
-    static let streakCardBg = Color(red: 0.22, green: 0.24, blue: 0.35) // Dark blue-gray
-    static let statsChartBg = Color(red: 0.55, green: 0.55, blue: 0.85) // Light purple
-    static let totalDaysCard = Color(red: 0.85, green: 0.45, blue: 0.45) // Coral/salmon
-    static let visitedCard = Color(red: 0.55, green: 0.55, blue: 0.75) // Light purple-gray
-    static let writtenCard = Color(red: 0.75, green: 0.55, blue: 0.55) // Dusty rose
-    static let cardCornerRadius: CGFloat = 20
-}
-
 struct StatisticsView: View {
-    // MARK: - Properties
-    
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
     @State private var selectedPeriod: StatsPeriod = .week
-    @Environment(\.colorScheme) private var colorScheme
-    
-    // MARK: - Body
     
     var body: some View {
         NavigationStack {
@@ -36,267 +20,174 @@ struct StatisticsView: View {
                 
                 ScrollView {
                     VStack(spacing: Spacing.xl) {
-                        // Streaks Section
-                        streaksSection
+                        // Hero: Current streak
+                        streakHero
                             .padding(.horizontal, Spacing.lg)
                         
-                        // Stats Section
-                        statsSection
+                        // Stats summary
+                        statsRow
                             .padding(.horizontal, Spacing.lg)
                         
-                        // Period selector
-                        periodSelector
-                            .padding(.horizontal, Spacing.lg)
-                        
-                        // Trend chart
-                        trendChartCard
+                        // Period chart
+                        trendCard
                             .padding(.horizontal, Spacing.lg)
                     }
                     .padding(.vertical, Spacing.lg)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
             .navigationTitle(L10n.Tab.insights)
             .navigationBarTitleDisplayMode(.large)
         }
     }
     
-    // MARK: - Streaks Section (based on reference)
+    // MARK: - Streak Hero
     
-    private var streaksSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Streaks".localized)
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            
-            HStack(spacing: Spacing.md) {
-                // Current streak / No streak card (large, left side)
-                currentStreakCard
-                
-                // Right side cards
-                VStack(spacing: Spacing.md) {
-                    // Longest daily streak
-                    miniStreakCard(
-                        label: "Longest",
-                        title: "Daily",
-                        subtitle: "Streak",
-                        value: "\(longestStreak)",
-                        unit: "Days"
-                    )
-                    
-                    // Best week
-                    miniStreakCard(
-                        label: "Best",
-                        title: "Weekly",
-                        subtitle: "Record",
-                        value: "\(bestWeekCount)",
-                        unit: "Fasts"
-                    )
-                }
-            }
-            .frame(height: 180)
-        }
-    }
-    
-    private var currentStreakCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
+    private var streakHero: some View {
+        VStack(spacing: Spacing.lg) {
             if currentStreak > 0 {
-                // Has streak
-                HStack {
+                HStack(spacing: Spacing.sm) {
                     Image(systemName: "flame.fill")
-                        .font(.title2)
+                        .font(.title)
+                        .foregroundStyle(Color.fastingOrange)
+                        .symbolEffect(.pulse, options: .repeating, value: currentStreak > 0)
+                    
                     Text("\(currentStreak)")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
                 }
-                .foregroundStyle(.white)
                 
                 Text("Day Streak".localized)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                Spacer()
+                    .font(.title3.weight(.semibold))
                 
                 Text(L10n.Insights.keepItUp)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             } else {
-                // No streak
-                Spacer()
+                Image(systemName: "flame")
+                    .font(.system(size: 44))
+                    .foregroundStyle(.tertiary)
                 
                 Text("No Current Streak".localized)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                    .font(.title3.weight(.semibold))
                 
                 Text("Fast at least once a day\nto build a streak.".localized)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.leading)
-                
-                Spacer()
-            }
-        }
-        .padding(Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(InsightColors.streakCardBg)
-        .clipShape(RoundedRectangle(cornerRadius: InsightColors.cardCornerRadius))
-    }
-    
-    private func miniStreakCard(label: String, title: String, subtitle: String, value: String, unit: String) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 0) {
-                Text(value)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.fastingOrange)
-                Text(unit)
-                    .font(.caption)
-                    .foregroundStyle(Color.fastingOrange)
-            }
-        }
-        .padding(Spacing.md)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: InsightColors.cardCornerRadius))
-    }
-    
-    // MARK: - Stats Section (based on reference)
-    
-    private var statsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Stats".localized)
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            
-            // Main chart card
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("\(totalFasts)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                
-                Text("Fasts".localized)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                Text("This Year".localized)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                
-                // Mini chart
-                if !periodData.isEmpty {
-                    Chart(periodData) { item in
-                        BarMark(
-                            x: .value("Day", item.label),
-                            y: .value("Hours", item.hours)
-                        )
-                        .foregroundStyle(.white.opacity(0.4))
-                        .cornerRadius(2)
-                    }
-                    .chartXAxis(.hidden)
-                    .chartYAxis(.hidden)
-                    .frame(height: 50)
-                    .padding(.top, Spacing.sm)
-                }
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
-            .padding(Spacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(InsightColors.statsChartBg)
-            .clipShape(RoundedRectangle(cornerRadius: InsightColors.cardCornerRadius))
             
-            // Three stat cards in a row
-            HStack(spacing: Spacing.md) {
-                // Total time
-                solidStatCard(
-                    title: "Total Time",
-                    value: formattedTotalTime,
-                    subtitle: nil,
-                    backgroundColor: InsightColors.totalDaysCard
+            // Mini streak stats
+            HStack(spacing: Spacing.lg) {
+                streakMini(
+                    label: "Longest".localized,
+                    value: "\(longestStreak)",
+                    unit: L10n.Timer.days
                 )
                 
-                // Success rate
-                solidStatCard(
-                    title: "Success",
-                    value: "\(Int(successRate * 100))%",
-                    subtitle: "Rate",
-                    backgroundColor: InsightColors.visitedCard
+                Divider().frame(height: 32)
+                
+                streakMini(
+                    label: "Best".localized + " " + "Weekly".localized,
+                    value: "\(bestWeekCount)",
+                    unit: "Fasts".localized
                 )
                 
-                // Average
-                solidStatCard(
-                    title: "Average",
-                    value: formattedAverageTime,
-                    subtitle: "Duration",
-                    backgroundColor: InsightColors.writtenCard
+                Divider().frame(height: 32)
+                
+                streakMini(
+                    label: "Total Fasts".localized,
+                    value: "\(completedRecords.count)",
+                    unit: "This Year".localized
                 )
             }
-            .frame(height: 100)
         }
+        .padding(Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .glassCard(cornerRadius: CornerRadius.extraLarge)
     }
     
-    private func solidStatCard(title: String, value: String, subtitle: String?, backgroundColor: Color) -> some View {
+    private func streakMini(label: String, value: String, unit: String) -> some View {
         VStack(spacing: Spacing.xs) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.8))
-            
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.7)
+                .font(.title2.bold())
+                .monospacedDigit()
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
                 .lineLimit(1)
-            
-            if let subtitle = subtitle {
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(backgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: InsightColors.cardCornerRadius))
+        .frame(maxWidth: .infinity)
     }
     
-    // MARK: - Period Selector
+    // MARK: - Stats Row
     
-    private var periodSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(StatsPeriod.allCases) { period in
-                Button {
-                    withAnimation(.fastSpring) {
-                        selectedPeriod = period
-                    }
-                } label: {
-                    Text(period.displayName)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(selectedPeriod == period ? .white : .secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.md)
-                        .background(
-                            selectedPeriod == period
-                                ? AnyShapeStyle(Color.fastingBlue)
-                                : AnyShapeStyle(Color.clear)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
+    private var statsRow: some View {
+        HStack(spacing: Spacing.md) {
+            statCard(
+                title: L10n.Insights.totalTime,
+                value: formattedTotalTime,
+                color: .fastingGreen
+            )
+            statCard(
+                title: "Success".localized,
+                value: "\(Int(successRate * 100))%",
+                color: .fastingTeal
+            )
+            statCard(
+                title: "Average".localized,
+                value: formattedAverageTime,
+                color: .fastingOrange
+            )
         }
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
     
-    // MARK: - Trend Chart Card
+    private func statCard(title: String, value: String, color: Color) -> some View {
+        VStack(spacing: Spacing.sm) {
+            Text(value)
+                .font(.title2.bold())
+                .foregroundStyle(color)
+                .monospacedDigit()
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.lg)
+        .glassCard(cornerRadius: CornerRadius.medium)
+    }
     
-    private var trendChartCard: some View {
+    // MARK: - Trend Card
+    
+    private var trendCard: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
+            // Period selector
+            HStack(spacing: 0) {
+                ForEach(StatsPeriod.allCases) { period in
+                    Button {
+                        withAnimation(.fastSpring) { selectedPeriod = period }
+                        Haptic.selection()
+                    } label: {
+                        Text(period.displayName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(selectedPeriod == period ? .white : .secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                selectedPeriod == period
+                                    ? AnyShapeStyle(Color.fastingGreen)
+                                    : AnyShapeStyle(Color.clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Color.gray.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+            
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -309,11 +200,11 @@ struct StatisticsView: View {
                 
                 Spacer()
                 
-                // Total for period
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(formattedPeriodTotal)
                         .font(.title2.bold())
-                        .foregroundStyle(Color.fastingBlue)
+                        .foregroundStyle(Color.fastingGreen)
+                        .monospacedDigit()
                     Text("total".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -322,7 +213,6 @@ struct StatisticsView: View {
             
             // Chart
             if periodData.isEmpty || periodData.allSatisfy({ $0.hours == 0 }) {
-                // Empty state
                 VStack(spacing: Spacing.md) {
                     Image(systemName: "chart.bar")
                         .font(.system(size: 40))
@@ -344,7 +234,7 @@ struct StatisticsView: View {
                     )
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.fastingBlue, .fastingTeal],
+                            colors: [.fastingGreen, .fastingTeal],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -379,39 +269,21 @@ struct StatisticsView: View {
             }
         }
         .padding(Spacing.lg)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: InsightColors.cardCornerRadius))
+        .glassCard(cornerRadius: CornerRadius.large)
     }
     
-    // MARK: - Computed Properties
+    // MARK: - Data
     
     private var completedRecords: [FastingRecord] {
         records.filter { $0.status == .completed }
     }
     
-    private var totalFasts: Int {
-        completedRecords.count
-    }
-    
     private var totalHours: Double {
-        completedRecords
-            .compactMap { $0.actualDuration }
-            .reduce(0, +) / 3600
+        completedRecords.compactMap { $0.actualDuration }.reduce(0, +) / 3600
     }
     
-    private var totalMinutes: Double {
-        completedRecords
-            .compactMap { $0.actualDuration }
-            .reduce(0, +) / 60
-    }
-    
-    /// Formatted total time - shows hours if >= 1h, otherwise minutes
     private var formattedTotalTime: String {
-        if totalHours >= 1 {
-            return "\(Int(totalHours))h"
-        } else {
-            return "\(Int(totalMinutes))m"
-        }
+        totalHours >= 1 ? "\(Int(totalHours))h" : "\(Int(totalHours * 60))m"
     }
     
     private var averageHours: Double {
@@ -419,80 +291,91 @@ struct StatisticsView: View {
         return totalHours / Double(completedRecords.count)
     }
     
-    private var averageMinutes: Double {
-        guard !completedRecords.isEmpty else { return 0 }
-        return totalMinutes / Double(completedRecords.count)
-    }
-    
-    /// Formatted average time - shows hours if >= 1h, otherwise minutes
     private var formattedAverageTime: String {
-        if averageHours >= 1 {
-            return String(format: "%.1fh", averageHours)
-        } else {
-            return "\(Int(averageMinutes))m"
-        }
+        averageHours >= 1 ? String(format: "%.1fh", averageHours) : "\(Int(averageHours * 60))m"
     }
     
-    /// Success rate: fasts that achieved their target / total fasts
     private var successRate: Double {
         guard !records.isEmpty else { return 0 }
-        let successful = records.filter { record in
-            // A fast is successful if completed AND achieved the target duration
-            record.status == .completed && record.isGoalAchieved
-        }.count
-        let totalAttempts = records.count
-        return Double(successful) / Double(totalAttempts)
-    }
-    
-    private var longestFast: Double {
-        (completedRecords.compactMap { $0.actualDuration }.max() ?? 0) / 3600
+        let successful = records.filter { $0.status == .completed && $0.isGoalAchieved }.count
+        return Double(successful) / Double(records.count)
     }
     
     private var currentStreak: Int {
-        calculateCurrentStreak()
+        let cal = Calendar.current
+        var streak = 0
+        var check = cal.startOfDay(for: Date())
+        while true {
+            if completedRecords.contains(where: { cal.isDate($0.startTime, inSameDayAs: check) }) {
+                streak += 1
+                check = cal.date(byAdding: .day, value: -1, to: check)!
+            } else { break }
+        }
+        return streak
     }
     
     private var longestStreak: Int {
-        calculateLongestStreak()
+        let cal = Calendar.current
+        let sorted = Set(completedRecords.map { cal.startOfDay(for: $0.startTime) }).sorted()
+        guard !sorted.isEmpty else { return 0 }
+        var longest = 1, current = 1
+        for i in 1..<sorted.count {
+            if cal.date(byAdding: .day, value: 1, to: sorted[i-1]) == sorted[i] {
+                current += 1
+                longest = max(longest, current)
+            } else { current = 1 }
+        }
+        return longest
     }
     
     private var bestWeekCount: Int {
-        // Calculate the best number of fasts in any 7-day period
         guard !completedRecords.isEmpty else { return 0 }
-        
-        let calendar = Calendar.current
-        var bestCount = 0
-        
-        // Check each possible 7-day window
+        let cal = Calendar.current
+        var best = 0
         for record in completedRecords {
-            let weekStart = calendar.startOfDay(for: record.startTime)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
-            
-            let countInWeek = completedRecords.filter { r in
-                r.startTime >= weekStart && r.startTime < weekEnd
-            }.count
-            
-            bestCount = max(bestCount, countInWeek)
+            let start = cal.startOfDay(for: record.startTime)
+            let end = cal.date(byAdding: .day, value: 7, to: start)!
+            let count = completedRecords.filter { $0.startTime >= start && $0.startTime < end }.count
+            best = max(best, count)
         }
-        
-        return bestCount
+        return best
     }
     
     private var periodData: [ChartData] {
-        generatePeriodData()
+        let cal = Calendar.current
+        let now = Date()
+        switch selectedPeriod {
+        case .week:
+            return (0..<7).reversed().map { daysAgo in
+                let date = cal.date(byAdding: .day, value: -daysAgo, to: now)!
+                let hours = completedRecords.filter { cal.isDate($0.startTime, inSameDayAs: date) }
+                    .compactMap { $0.actualDuration }.reduce(0, +) / 3600
+                let f = DateFormatter(); f.dateFormat = "E"
+                return ChartData(label: f.string(from: date), hours: hours)
+            }
+        case .month:
+            return (0..<4).reversed().map { weeksAgo in
+                let start = cal.date(byAdding: .weekOfYear, value: -weeksAgo, to: now)!
+                let end = cal.date(byAdding: .day, value: 7, to: start)!
+                let hours = completedRecords.filter { $0.startTime >= start && $0.startTime < end }
+                    .compactMap { $0.actualDuration }.reduce(0, +) / 3600
+                return ChartData(label: "W\(4-weeksAgo)", hours: hours)
+            }
+        case .year:
+            return (0..<12).reversed().map { monthsAgo in
+                let month = cal.date(byAdding: .month, value: -monthsAgo, to: now)!
+                let hours = completedRecords.filter { cal.isDate($0.startTime, equalTo: month, toGranularity: .month) }
+                    .compactMap { $0.actualDuration }.reduce(0, +) / 3600
+                let f = DateFormatter(); f.dateFormat = "MMM"
+                return ChartData(label: f.string(from: month), hours: hours)
+            }
+        }
     }
     
-    private var periodTotalHours: Double {
-        periodData.reduce(0) { $0 + $1.hours }
-    }
+    private var periodTotalHours: Double { periodData.reduce(0) { $0 + $1.hours } }
     
     private var formattedPeriodTotal: String {
-        if periodTotalHours >= 1 {
-            return "\(Int(periodTotalHours))h"
-        } else {
-            let minutes = periodTotalHours * 60
-            return "\(Int(minutes))m"
-        }
+        periodTotalHours >= 1 ? "\(Int(periodTotalHours))h" : "\(Int(periodTotalHours * 60))m"
     }
     
     private var periodDescription: String {
@@ -502,111 +385,13 @@ struct StatisticsView: View {
         case .year: return "Last 12 months".localized
         }
     }
-    
-    // MARK: - Helper Methods
-    
-    private func calculateCurrentStreak() -> Int {
-        let calendar = Calendar.current
-        var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
-        
-        while true {
-            let hasRecord = completedRecords.contains { record in
-                calendar.isDate(record.startTime, inSameDayAs: checkDate)
-            }
-            
-            if hasRecord {
-                streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else {
-                break
-            }
-        }
-        
-        return streak
-    }
-    
-    private func calculateLongestStreak() -> Int {
-        let calendar = Calendar.current
-        let sortedDates = completedRecords
-            .map { calendar.startOfDay(for: $0.startTime) }
-            .sorted()
-        
-        guard !sortedDates.isEmpty else { return 0 }
-        
-        var longest = 1
-        var current = 1
-        
-        for i in 1..<sortedDates.count {
-            let daysBetween = calendar.dateComponents([.day], from: sortedDates[i-1], to: sortedDates[i]).day ?? 0
-            
-            if daysBetween == 1 {
-                current += 1
-                longest = max(longest, current)
-            } else if daysBetween > 1 {
-                current = 1
-            }
-        }
-        
-        return longest
-    }
-    
-    private func generatePeriodData() -> [ChartData] {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        switch selectedPeriod {
-        case .week:
-            return (0..<7).reversed().map { daysAgo in
-                let date = calendar.date(byAdding: .day, value: -daysAgo, to: now)!
-                let dayRecords = completedRecords.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
-                let hours = dayRecords.compactMap { $0.actualDuration }.reduce(0, +) / 3600
-                
-                let formatter = DateFormatter()
-                formatter.dateFormat = "E"
-                
-                return ChartData(label: formatter.string(from: date), hours: hours)
-            }
-            
-        case .month:
-            return (0..<4).reversed().map { weeksAgo in
-                let weekStart = calendar.date(byAdding: .weekOfYear, value: -weeksAgo, to: now)!
-                let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)!
-                
-                let weekRecords = completedRecords.filter { record in
-                    record.startTime >= weekStart && record.startTime < weekEnd
-                }
-                let hours = weekRecords.compactMap { $0.actualDuration }.reduce(0, +) / 3600
-                
-                return ChartData(label: "W\(4-weeksAgo)", hours: hours)
-            }
-            
-        case .year:
-            return (0..<12).reversed().map { monthsAgo in
-                let monthStart = calendar.date(byAdding: .month, value: -monthsAgo, to: now)!
-                let monthRecords = completedRecords.filter { record in
-                    calendar.isDate(record.startTime, equalTo: monthStart, toGranularity: .month)
-                }
-                let hours = monthRecords.compactMap { $0.actualDuration }.reduce(0, +) / 3600
-                
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMM"
-                
-                return ChartData(label: formatter.string(from: monthStart), hours: hours)
-            }
-        }
-    }
 }
 
 // MARK: - Supporting Types
 
 enum StatsPeriod: String, CaseIterable, Identifiable {
-    case week = "week"
-    case month = "month"
-    case year = "year"
-    
+    case week, month, year
     var id: String { rawValue }
-    
     var displayName: String {
         switch self {
         case .week: return L10n.Insights.week
@@ -621,8 +406,6 @@ struct ChartData: Identifiable {
     let label: String
     let hours: Double
 }
-
-// MARK: - Preview
 
 #Preview {
     StatisticsView()

@@ -75,6 +75,13 @@ struct ContentView: View {
                     Label("Plan".localized, systemImage: "target")
                 }
                 .tag(2)
+            
+            // Insights
+            StatisticsView()
+                .tabItem {
+                    Label(L10n.Tab.insights, systemImage: "chart.bar")
+                }
+                .tag(3)
         }
         .tint(Color.fastingGreen)
         .symbolRenderingMode(.hierarchical)
@@ -86,6 +93,7 @@ struct ContentView: View {
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "history" { selectedTab = 1 }
             else if url.host == "plan" { selectedTab = 2 }
+            else if url.host == "insights" { selectedTab = 3 }
         }
     }
 }

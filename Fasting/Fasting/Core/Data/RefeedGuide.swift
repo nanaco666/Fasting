@@ -49,7 +49,7 @@ enum RefeedGuide {
             title: "refeed_short_title".localized,
             subtitle: "refeed_short_subtitle".localized,
             steps: [
-                RefeedStep(icon: "drop.fill", title: "refeed_water_title".localized, detail: "refeed_water_detail".localized, timing: "refeed_timing_first".localized, color: .blue),
+                RefeedStep(icon: "drop.fill", title: "refeed_water_title".localized, detail: "refeed_water_detail".localized, timing: "refeed_timing_first".localized, color: .fastingTeal),
                 RefeedStep(icon: "leaf.fill", title: "refeed_light_title".localized, detail: "refeed_light_detail".localized, timing: "refeed_timing_15min".localized, color: .green),
                 RefeedStep(icon: "fork.knife", title: "refeed_meal_title".localized, detail: "refeed_short_meal_detail".localized, timing: "refeed_timing_30min".localized, color: .orange),
             ],
@@ -62,9 +62,9 @@ enum RefeedGuide {
             title: "refeed_medium_title".localized,
             subtitle: "refeed_medium_subtitle".localized,
             steps: [
-                RefeedStep(icon: "cup.and.saucer.fill", title: "refeed_broth_title".localized, detail: "refeed_broth_detail".localized, timing: "refeed_timing_first".localized, color: .brown),
+                RefeedStep(icon: "cup.and.saucer.fill", title: "refeed_broth_title".localized, detail: "refeed_broth_detail".localized, timing: "refeed_timing_first".localized, color: .fastingOrange),
                 RefeedStep(icon: "leaf.fill", title: "refeed_vegsoup_title".localized, detail: "refeed_vegsoup_detail".localized, timing: "refeed_timing_30min".localized, color: .green),
-                RefeedStep(icon: "fish.fill", title: "refeed_protein_title".localized, detail: "refeed_protein_detail".localized, timing: "refeed_timing_1h".localized, color: .pink),
+                RefeedStep(icon: "fish.fill", title: "refeed_protein_title".localized, detail: "refeed_protein_detail".localized, timing: "refeed_timing_1h".localized, color: .fastingOrange),
             ],
             warnings: ["refeed_warn_no_sugar".localized, "refeed_warn_small_portions".localized]
         )
@@ -75,10 +75,10 @@ enum RefeedGuide {
             title: "refeed_extended_title".localized,
             subtitle: "refeed_extended_subtitle".localized,
             steps: [
-                RefeedStep(icon: "cup.and.saucer.fill", title: "refeed_broth_title".localized, detail: "refeed_broth_extended_detail".localized, timing: "refeed_timing_first".localized, color: .brown),
+                RefeedStep(icon: "cup.and.saucer.fill", title: "refeed_broth_title".localized, detail: "refeed_broth_extended_detail".localized, timing: "refeed_timing_first".localized, color: .fastingOrange),
                 RefeedStep(icon: "leaf.fill", title: "refeed_fermented_title".localized, detail: "refeed_fermented_detail".localized, timing: "refeed_timing_1h".localized, color: .green),
-                RefeedStep(icon: "carrot.fill", title: "refeed_millet_title".localized, detail: "refeed_millet_detail".localized, timing: "refeed_timing_2h".localized, color: .yellow),
-                RefeedStep(icon: "fish.fill", title: "refeed_protein_title".localized, detail: "refeed_extended_protein_detail".localized, timing: "refeed_timing_3h".localized, color: .pink),
+                RefeedStep(icon: "carrot.fill", title: "refeed_millet_title".localized, detail: "refeed_millet_detail".localized, timing: "refeed_timing_2h".localized, color: .fastingGreen),
+                RefeedStep(icon: "fish.fill", title: "refeed_protein_title".localized, detail: "refeed_extended_protein_detail".localized, timing: "refeed_timing_3h".localized, color: .fastingOrange),
             ],
             warnings: ["refeed_warn_no_sugar".localized, "refeed_warn_small_portions".localized, "refeed_warn_insulin".localized]
         )

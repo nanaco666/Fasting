@@ -92,7 +92,7 @@ enum FastingPhaseManager {
             nameKey: "phase_autophagy_name",
             subtitleKey: "phase_autophagy_subtitle",
             icon: "sparkles",
-            color: Color.blue,
+            color: Color.fastingTeal,
             startHour: 48, endHour: 72,
             keyEvents: [
                 PhaseEvent(titleKey: "phase_autophagy_ev1_title", descKey: "phase_autophagy_ev1_desc", icon: "star.fill"),
@@ -107,7 +107,7 @@ enum FastingPhaseManager {
             nameKey: "phase_remodel_name",
             subtitleKey: "phase_remodel_subtitle",
             icon: "leaf.fill",
-            color: Color.purple,
+            color: Color.fastingTeal,
             startHour: 72, endHour: .infinity,
             keyEvents: [
                 PhaseEvent(titleKey: "phase_remodel_ev1_title", descKey: "phase_remodel_ev1_desc", icon: "scale.3d"),

@@ -201,8 +201,8 @@ struct HistoryView: View {
         case .normal: ("Normal".localized, .fastingGreen)
         case .shorter: ("14:10", .fastingOrange)
         case .skip: ("Skip".localized, .gray)
-        case .flexible: ("Flexible".localized, .fastingBlue)
-        case .extended: ("Extended".localized, .purple)
+        case .flexible: ("Flexible".localized, .fastingTeal)
+        case .extended: ("Extended".localized, .fastingOrange)
         }
         return Text(text)
             .font(.caption2.weight(.medium))
@@ -459,7 +459,7 @@ struct RecordRowCard: View {
     private var statusColor: Color {
         switch record.status {
         case .completed: return .fastingGreen
-        case .inProgress: return .fastingBlue
+        case .inProgress: return .fastingTeal
         case .cancelled: return .gray
         }
     }

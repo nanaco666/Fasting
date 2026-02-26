@@ -18,10 +18,13 @@ extension Color {
     // Alert: system orange for warnings/streaks
     static let fastingOrange = Color.orange
     
-    // Legacy aliases (will remove after full migration)
-    static let fastingBlue = Color.blue
-    static let fastingPurple = Color.purple
-    static let fastingPink = Color.pink
+    // Legacy aliases — mapped to 3-color palette
+    @available(*, deprecated, message: "Use fastingTeal, fastingGreen, or fastingOrange instead")
+    static let fastingBlue = Color.teal
+    @available(*, deprecated, message: "Use fastingTeal instead")
+    static let fastingPurple = Color.teal
+    @available(*, deprecated, message: "Use fastingOrange instead")
+    static let fastingPink = Color.orange
     
     // Semantic colors
     static let fastingActive = Color.fastingGreen
@@ -78,7 +81,7 @@ struct AppGradients {
     )
     
     static let statsCard = LinearGradient(
-        colors: [.fastingBlue.opacity(0.12), .fastingPurple.opacity(0.05)],
+        colors: [.fastingTeal.opacity(0.12), .fastingTeal.opacity(0.05)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

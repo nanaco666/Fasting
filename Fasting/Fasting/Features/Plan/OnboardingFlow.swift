@@ -58,7 +58,7 @@ struct OnboardingFlow: View {
                 // Navigation buttons
                 VStack(spacing: Spacing.md) {
                     if step > 0 {
-                        Button("Back") {
+                        Button("Back".localized) {
                             withAnimation { step -= 1 }
                         }
                         .foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ struct OnboardingFlow: View {
                 .padding(.vertical, Spacing.md)
             }
             
-            Section("Basics") {
+            Section("Basics".localized) {
                 Picker("Sex", selection: $sex) {
                     ForEach(BiologicalSex.allCases) { s in
                         Text(s.displayName).tag(s)
@@ -157,7 +157,7 @@ struct OnboardingFlow: View {
                     .tint(Color.fastingGreen)
             }
             
-            Section("Body") {
+            Section("Body".localized) {
                 HStack {
                     Text("Height".localized)
                     Spacer()
@@ -205,7 +205,7 @@ struct OnboardingFlow: View {
                 .padding(.vertical, Spacing.md)
             }
             
-            Section("Activity Level") {
+            Section("Activity Level".localized) {
                 ForEach(ActivityLevel.allCases) { level in
                     Button {
                         activityLevel = level
@@ -230,7 +230,7 @@ struct OnboardingFlow: View {
                 }
             }
             
-            Section("Diet") {
+            Section("Diet".localized) {
                 Picker("Preference", selection: $dietPreference) {
                     ForEach(DietPreference.allCases) { pref in
                         Text(pref.displayName).tag(pref)
@@ -312,30 +312,30 @@ struct OnboardingFlow: View {
             }
             
             Section("Fasting") {
-                LabeledContent("Plan", value: plan.recommendedPreset.displayName)
-                LabeledContent("Duration", value: "\(plan.durationWeeks) weeks")
+                LabeledContent("Plan".localized, value: plan.recommendedPreset.displayName)
+                LabeledContent("Duration".localized, value: "\(plan.durationWeeks) " + "weeks".localized)
                 if plan.expectedWeeklyLossKg > 0 {
-                    LabeledContent("Expected loss", value: String(format: "~%.1f kg/week", plan.expectedWeeklyLossKg))
+                    LabeledContent("Expected loss".localized, value: String(format: "~%.1f kg/week", plan.expectedWeeklyLossKg))
                 }
             }
             
-            Section("Nutrition") {
-                LabeledContent("Daily calories", value: "\(plan.dailyCalorieTarget) kcal")
+            Section("Nutrition".localized) {
+                LabeledContent("Daily calories".localized, value: "\(plan.dailyCalorieTarget) kcal")
                 if plan.calorieDeficit > 0 {
-                    LabeledContent("Deficit", value: "-\(plan.calorieDeficit) kcal")
+                    LabeledContent("Deficit".localized, value: "-\(plan.calorieDeficit) kcal")
                 }
-                LabeledContent("Protein", value: plan.proteinDescription)
-                LabeledContent("Carb:Fiber ratio", value: "≤ 8:1")
+                LabeledContent("Protein".localized, value: plan.proteinDescription)
+                LabeledContent("Carb:Fiber ratio".localized, value: "≤ 8:1")
             }
             
-            Section("Profile") {
-                LabeledContent("BMI", value: String(format: "%.1f (%@)", profile.bmi, profile.bmiCategory))
-                LabeledContent("TDEE", value: "\(Int(profile.tdee)) kcal")
-                LabeledContent("BMR", value: "\(Int(profile.bmr)) kcal")
+            Section("Profile".localized) {
+                LabeledContent("BMI".localized, value: String(format: "%.1f (%@)", profile.bmi, profile.bmiCategory))
+                LabeledContent("TDEE".localized, value: "\(Int(profile.tdee)) kcal")
+                LabeledContent("BMR".localized, value: "\(Int(profile.bmr)) kcal")
             }
             
             if profile.isElderly || profile.dietPreference == .vegan {
-                Section("⚠️ Notes") {
+                Section("⚠️") {
                     if profile.isElderly {
                         Text("Ensure protein ≥ \(plan.proteinTargetGrams)g/day to prevent muscle loss")
                             .font(.caption)

@@ -210,6 +210,14 @@ static let all: [String: [String: String]] = [
     "This Week": ["en": "This Week", "zh-Hans": "本周完成"],
     "days": ["en": "days", "zh-Hans": "天"],
     
+    // Preset names & descriptions
+    "preset_custom_name": ["en": "Custom", "zh-Hans": "自定义"],
+    "preset_16_8_desc": ["en": "16h fasting, 8h eating window", "zh-Hans": "断食16小时，8小时进食窗口"],
+    "preset_18_6_desc": ["en": "18h fasting, 6h eating window", "zh-Hans": "断食18小时，6小时进食窗口"],
+    "preset_20_4_desc": ["en": "20h fasting, 4h eating window", "zh-Hans": "断食20小时，4小时进食窗口"],
+    "preset_omad_desc": ["en": "23h fasting, one meal a day", "zh-Hans": "断食23小时，每天只吃一餐"],
+    "preset_custom_desc": ["en": "Custom fasting duration", "zh-Hans": "自定义断食时长"],
+    
     // Presets
     "Choose a Plan": ["en": "Choose a Plan", "zh-Hans": "选择方案"],
     "hours fasting": ["en": "hours fasting", "zh-Hans": "小时断食"],
