@@ -187,50 +187,15 @@ struct TimerView: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
             VStack(spacing: 16) {
-                // Progress ring + time
-                ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.08), lineWidth: 14)
-                    
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(
-                            Color.fastingGreen,
-                            style: StrokeStyle(lineWidth: 14, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .animation(.smoothSpring, value: progress)
-                    
-                    VStack(spacing: 6) {
-                        Text(formattedElapsed)
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .contentTransition(.numericText())
-                        
-                        if fastingService.isFasting {
-                            if isGoalAchieved {
-                                Text("COMPLETED ✓")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.fastingGreen)
-                                    .tracking(1)
-                            } else {
-                                // Remaining + percentage
-                                Text("\(formattedRemaining) · \(Int(progress * 100))%")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                                    .contentTransition(.numericText())
-                            }
-                        } else if lastCompleted != nil {
-                            Text("LAST FAST")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                                .tracking(1)
-                        }
-                    }
-                }
-                .frame(height: 250)
-                .padding(.horizontal, 20)
+                // Watch-dial timer
+                WatchDialView(
+                    progress: progress,
+                    elapsed: fastingService.isFasting ? elapsed : (lastCompleted?.actualDuration ?? 0),
+                    target: fastingService.currentFast?.targetDuration ?? (lastCompleted?.targetDuration ?? 0),
+                    startTime: fastingService.currentFast?.startTime,
+                    isFasting: fastingService.isFasting,
+                    isGoalAchieved: isGoalAchieved
+                )
                 .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)
