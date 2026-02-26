@@ -83,7 +83,7 @@ struct BodyJourneyCard: View {
                 Text(currentPhase.name)
                     .font(.subheadline.weight(.semibold))
                 
-                Text(currentPhase.subtitle)
+                Text(currentPhase.companionMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -234,7 +234,7 @@ struct PhaseTimelineRow: View {
                 }
                 
                 // Subtitle
-                Text(phase.subtitle)
+                Text(phase.companionMessage)
                     .font(.subheadline)
                     .foregroundStyle(isUnlocked ? .secondary : .quaternary)
                 
@@ -273,7 +273,7 @@ struct PhaseTimelineRow: View {
             }
             
             // Description
-            Text(phase.detailDescription)
+            Text(phase.scienceDetail)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .padding(.top, Spacing.xs)

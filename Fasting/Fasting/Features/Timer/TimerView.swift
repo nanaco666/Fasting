@@ -403,40 +403,33 @@ struct TimerView: View {
     
     private var bodyPhaseCard: some View {
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
-        let phaseMsg = CompanionEngine.phaseMessage(hours: elapsed / 3600)
         
         return VStack(spacing: 0) {
-            // Phase header — tappable
+            // Phase header — emoji + name + companion message
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(phase.color.opacity(0.12))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: phase.icon)
-                        .font(.system(size: 18))
-                        .foregroundStyle(phase.color)
-                }
+                Text(phase.emoji)
+                    .font(.title2)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(phase.name)
-                        .font(.subheadline.weight(.semibold))
-                    Text(phase.subtitle)
+                    HStack(spacing: 6) {
+                        Text(phase.name)
+                            .font(.subheadline.weight(.semibold))
+                        
+                        if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
+                            Text("· \(formatShortInterval(timeToNext))")
+                                .font(.caption.weight(.medium).monospacedDigit())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    
+                    Text(phase.companionMessage)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(isPhaseExpanded ? nil : 2)
                 }
                 
                 Spacer()
-                
-                if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("timer_next_phase".localized)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Text(formatShortInterval(timeToNext))
-                            .font(.caption.weight(.medium).monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
                 
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
@@ -444,7 +437,6 @@ struct TimerView: View {
                     .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
             }
             .padding(16)
-            .background(phase.color.opacity(0.06))
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.fastSpring) {
@@ -453,53 +445,45 @@ struct TimerView: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
             
-            Divider().opacity(0.3)
-            
-            // Current phase description
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(.caption)
-                        .foregroundStyle(phase.color)
-                        .padding(.top, 2)
-                    
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(phaseMsg.title)
-                            .font(.subheadline.weight(.semibold))
-                        Text(phaseMsg.body)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
+            // Expanded: science detail + events + timeline
+            if isPhaseExpanded {
+                Divider().opacity(0.3)
                 
-                if !phase.keyEvents.isEmpty {
-                    ForEach(phase.keyEvents.prefix(2)) { event in
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: event.icon)
-                                .font(.caption)
-                                .foregroundStyle(phase.color.opacity(0.7))
-                                .frame(width: 16)
-                                .padding(.top, 2)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(event.title)
-                                    .font(.subheadline.weight(.medium))
-                                Text(event.description)
+                VStack(alignment: .leading, spacing: 12) {
+                    // Science detail
+                    Text(phase.scienceDetail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    // Key events
+                    if !phase.keyEvents.isEmpty {
+                        ForEach(phase.keyEvents) { event in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: event.icon)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                    .foregroundStyle(phase.color.opacity(0.7))
+                                    .frame(width: 16)
+                                    .padding(.top, 2)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(event.title)
+                                        .font(.caption.weight(.semibold))
+                                    Text(event.description)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                         }
                     }
                 }
-            }
-            .padding(16)
-            
-            // Expanded: full phase timeline
-            if isPhaseExpanded {
+                .padding(16)
+                .transition(.opacity)
+                
                 Divider().opacity(0.3)
                 
+                // Phase timeline
                 VStack(spacing: 0) {
                     ForEach(FastingPhaseManager.phases) { p in
                         let isUnlocked = elapsed / 3600 >= p.startHour

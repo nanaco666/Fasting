@@ -699,7 +699,70 @@ static let all: [String: [String: String]] = [
     // MARK: - Mood Check-in UI
     "timer_next_phase": ["en": "Next", "zh-Hans": "下一步"],
     
-    // MARK: - Fasting Phases
+    // MARK: - Unified Fasting Phases (science + companion merged)
+    
+    // Phase 0: 0-2h Post-meal
+    "phase_postmeal_name": ["en": "Post-Meal", "zh-Hans": "餐后期"],
+    "phase_postmeal_ev1_title": ["en": "Insulin Peak", "zh-Hans": "胰岛素峰值"],
+    "phase_postmeal_ev1_desc": ["en": "Insulin peaks as your body processes the last meal.", "zh-Hans": "胰岛素达到峰值，身体正在处理上一餐。"],
+    "phase_postmeal_science": ["en": "Your body is in full absorption mode. Insulin is high, directing glucose into cells. Fat burning is suppressed. This is the easiest phase.", "zh-Hans": "身体处于完全吸收模式。胰岛素水平高，将葡萄糖导入细胞。脂肪燃烧被抑制。这是最轻松的阶段。"],
+    "phase_postmeal_companion": ["en": "You just started — relax into it. Your body is still running on the last meal.", "zh-Hans": "刚刚开始——放松就好。身体还在消化上一餐。"],
+    
+    // Phase 1: 2-6h Absorbing
+    "phase_absorbing_name": ["en": "Digesting", "zh-Hans": "消化吸收期"],
+    "phase_absorbing_ev1_title": ["en": "Insulin Dropping", "zh-Hans": "胰岛素下降"],
+    "phase_absorbing_ev1_desc": ["en": "Insulin begins to drop as nutrient absorption completes.", "zh-Hans": "营养吸收完成，胰岛素开始下降。"],
+    "phase_absorbing_ev2_title": ["en": "Glycogen Storing", "zh-Hans": "糖原储存"],
+    "phase_absorbing_ev2_desc": ["en": "Excess glucose stored as glycogen (~400-600 kcal reserve).", "zh-Hans": "多余葡萄糖被储存为糖原（约400-600kcal储备）。"],
+    "phase_absorbing_science": ["en": "Insulin falls as digestion completes. Body transitions from 'fed' to 'post-absorptive' state. The real fasting hasn't begun yet.", "zh-Hans": "消化完成后胰岛素下降。身体从\"进食态\"过渡到\"吸收后态\"。真正的断食还没有开始。"],
+    "phase_absorbing_companion": ["en": "Your body is wrapping up digestion. The real magic starts once glycogen runs low. You're doing great.", "zh-Hans": "身体正在完成消化。糖原用完后真正的魔法才开始。你做得很好。"],
+    
+    // Phase 2: 6-10h Glycogen depletion
+    "phase_glycogen_science": ["en": "Liver glycogen is being rapidly consumed. Insulin drops further, signaling fat cells to release fatty acids. Mild hunger is normal and temporary.", "zh-Hans": "肝糖原正在被快速消耗。胰岛素进一步下降，向脂肪细胞发出释放脂肪酸的信号。轻微饥饿感是正常的，且是暂时的。"],
+    "phase_glycogen_companion": ["en": "Glycogen is running low — your body is about to switch fuel sources. Hunger waves will pass in ~20 minutes. Drink some water.", "zh-Hans": "糖原快用完了——身体即将切换燃料。饥饿感大约20分钟就会过去。喝点水。"],
+    
+    // Phase 3: 10-14h Metabolic transition
+    "phase_transition_name": ["en": "Metabolic Switch", "zh-Hans": "代谢切换"],
+    "phase_transition_ev1_title": ["en": "Fat Mobilization", "zh-Hans": "脂肪动员"],
+    "phase_transition_ev1_desc": ["en": "Glycogen depleted. Fat cells release fatty acids as primary energy.", "zh-Hans": "糖原耗尽。脂肪细胞释放脂肪酸作为主要能源。"],
+    "phase_transition_ev2_title": ["en": "Blood Sugar Stabilizes", "zh-Hans": "血糖趋稳"],
+    "phase_transition_ev2_desc": ["en": "Blood sugar drops ~20% then stabilizes at a new baseline.", "zh-Hans": "血糖下降约20%后趋于稳定。"],
+    "phase_transition_science": ["en": "Critical crossover window. Liver glycogen depleted, fat oxidation ramps up, early ketone production begins. This is where most people feel the hardest hunger — but it passes.", "zh-Hans": "关键切换窗口。肝糖原耗尽，脂肪氧化急剧上升，早期酮体生成开始。大多数人在这里感到最强饥饿——但它会过去。"],
+    "phase_transition_companion": ["en": "This is the hardest stretch — you're right at the crossover point. Push through 30 more minutes and it gets noticeably easier.", "zh-Hans": "这是最难的阶段——身体正在切换点上。再坚持30分钟就会明显轻松。"],
+    
+    // Phase 4: 14-16h Light ketosis
+    "phase_light_ketosis_name": ["en": "Light Ketosis", "zh-Hans": "轻度酮症"],
+    "phase_light_ketosis_science": ["en": "Ketone production accelerates. Brain uses β-hydroxybutyrate — more efficient than glucose. Early autophagy triggered. Digestive system enters full rest.", "zh-Hans": "酮体产生加速。大脑使用β-羟基丁酸——比葡萄糖更高效。早期自噬被触发。消化系统完全休息。"],
+    "phase_light_ketosis_companion": ["en": "You've crossed into ketosis — fat is now fuel. Hunger fading, mental clarity lifting. The hard part is behind you.", "zh-Hans": "你已进入酮症——脂肪现在就是燃料。饥饿消退，头脑清醒。最难的部分已经过去了。"],
+    
+    // Phase 5: 16-20h Deep ketosis
+    "phase_deep_ketosis_name": ["en": "Deep Ketosis", "zh-Hans": "深度酮症"],
+    "phase_deep_ketosis_science": ["en": "Full ketosis. BDNF surges, promoting neuroprotection. Autophagy accelerates — cells clearing damaged proteins and organelles.", "zh-Hans": "完全酮症。BDNF激增，促进神经保护。自噬加速——细胞清理受损蛋白质和细胞器。"],
+    "phase_deep_ketosis_companion": ["en": "Your brain is on premium fuel. If you feel unusually clear-headed, that's BDNF. Cells are deep cleaning. Enjoy this state.", "zh-Hans": "大脑在用高级燃料。如果感觉异常清醒，那是BDNF在工作。细胞深度清理中。享受吧。"],
+    
+    // Phase 6: 20-24h Autophagy starts
+    "phase_autophagy_start_name": ["en": "Autophagy Begins", "zh-Hans": "自噬启动"],
+    "phase_autophagy_start_science": ["en": "Autophagy fully active — cells recycling damaged components at accelerating rate. Immune function optimizing. Growth hormone rises.", "zh-Hans": "自噬完全活跃——细胞以加速的速度回收受损组件。免疫功能优化。生长激素上升。"],
+    "phase_autophagy_start_companion": ["en": "Almost a full day — rare territory. Autophagy in full swing. Every hour from here multiplies benefits. You've earned this.", "zh-Hans": "快一整天了——稀有领域。自噬全面启动。每过一小时收益叠加。你值得的。"],
+    
+    // Phase 7: 24-36h Autophagy accelerates
+    "phase_autophagy_accel_name": ["en": "Autophagy Accelerating", "zh-Hans": "自噬加速"],
+    "phase_autophagy_accel_science": ["en": "Autophagy in high gear. Growth hormone may be 5x baseline. Inflammation markers drop significantly.", "zh-Hans": "自噬进入高速档。生长激素可能是基线的5倍。炎症指标显著下降。"],
+    "phase_autophagy_accel_companion": ["en": "Beyond 24 hours — an achievement. Deep repair mode. HGH surging, inflammation dropping. Be proud.", "zh-Hans": "超过24小时——这是成就。深度修复模式。生长激素飙升，炎症下降。骄傲吧。"],
+    
+    // Phase 8: 36-48h Peak autophagy
+    "phase_autophagy_peak_science": ["en": "Maximum autophagy. Damaged organelles, misfolded proteins aggressively recycled. The golden window of cellular renewal.", "zh-Hans": "自噬最大化。受损细胞器、错误折叠蛋白质被积极回收。细胞更新的黄金窗口。"],
+    "phase_autophagy_peak_companion": ["en": "Peak autophagy — deepest cellular clean possible. Something extraordinary. ⚠️ Past 36h, listen to your body very carefully.", "zh-Hans": "自噬巅峰——最深层的细胞清理。了不起。⚠️ 超过36小时，请仔细倾听身体。"],
+    
+    // Phase 9: 48-72h Immune reset
+    "phase_immune_name": ["en": "Immune Reset", "zh-Hans": "免疫重启"],
+    "phase_immune_science": ["en": "IGF-1 drops significantly, triggering stem cell renewal. Immune system 'rebooting'. ⚠️ Medical supervision required.", "zh-Hans": "IGF-1大幅下降，触发干细胞更新。免疫系统\"重启\"。⚠️ 需要医疗监督。"],
+    "phase_immune_companion": ["en": "Immune system rebooting via stem cell renewal. Powerful but serious territory. ⚠️ Medical guidance essential.", "zh-Hans": "免疫系统通过干细胞更新重启。强力修复但也是严肃领域。⚠️ 请确保有医生指导。"],
+    
+    // Phase 10: 72h+ Deep remodeling
+    "phase_remodel_companion": ["en": "Deep metabolic remodeling. ⚠️ Professional medical supervision required. Watch for muscle loss.", "zh-Hans": "深度代谢重塑。⚠️ 必须在专业医疗监督下进行。注意肌肉流失。"],
+
+    // Legacy phase keys (kept for backward compat)
     "phase_glycogen_name": ["en": "Glycogen Depletion", "zh-Hans": "糖原消耗"],
     "phase_glycogen_subtitle": ["en": "Glycogen depletion phase", "zh-Hans": "糖原消耗期"],
     "phase_glycogen_ev1_title": ["en": "Insulin Drops", "zh-Hans": "胰岛素下降"],

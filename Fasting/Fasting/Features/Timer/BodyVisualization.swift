@@ -203,7 +203,7 @@ struct BodyVisualizationView: View {
             Text("·")
                 .foregroundStyle(.tertiary)
             
-            Text(currentPhase.subtitle)
+            Text(currentPhase.companionMessage)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
