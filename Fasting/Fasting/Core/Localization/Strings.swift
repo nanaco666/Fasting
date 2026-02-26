@@ -190,7 +190,7 @@ extension Notification.Name {
 enum LocalizedStrings {
 static let all: [String: [String: String]] = [
     // Tab Bar
-    "Timer": ["en": "Timer", "zh-Hans": "断食"],
+    "Timer": ["en": "Fasting", "zh-Hans": "断食"],
     "History": ["en": "History", "zh-Hans": "历史"],
     "Insights": ["en": "Insights", "zh-Hans": "统计"],
     
