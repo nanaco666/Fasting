@@ -29,37 +29,29 @@ struct TimerView: View {
                 GradientBackground()
                 
                 ScrollView {
-                    VStack(spacing: 28) {
-                        // Week strip (moved to top, like Zero)
+                    VStack(spacing: 20) {
+                        // Week strip
                         weekStrip
                             .padding(.horizontal, 20)
                         
-                        // Timer card
+                        // Unified timer card (ring + time + STARTED/GOAL + remaining)
                         timerCard
                             .padding(.horizontal, 20)
                         
-                        // Time info + action
-                        if fastingService.isFasting {
-                            timeInfoRow
-                                .padding(.horizontal, 20)
-                        }
+                        // Action button
                         actionButton
                             .padding(.horizontal, 20)
                         
-                        // Mood check-in button (when fasting)
+                        // Current phase — unified (physiology + psychology + guidance)
                         if fastingService.isFasting {
-                            moodCheckInButton
+                            currentPhaseSection
+                                .padding(.horizontal, 20)
+                        } else {
+                            BodyJourneyIdleCard()
                                 .padding(.horizontal, 20)
                         }
                         
-                        // Companion message + mood check-in
-                        if fastingService.isFasting {
-                            companionSection
-                                .padding(.horizontal, 20)
-                        }
-                        
-                        bodyJourneySection
-                            .padding(.horizontal, 20)
+                        // Upcoming holiday
                         upcomingHolidaySection
                             .padding(.horizontal, 20)
                     }
@@ -184,44 +176,46 @@ struct TimerView: View {
         }
     }
     
-    // MARK: - Timer Card
+    // MARK: - Unified Timer Card (ring + elapsed + remaining + STARTED/GOAL)
     
     private var timerCard: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
-            VStack(spacing: 0) {
+            VStack(spacing: 16) {
+                // Progress ring + time
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.08), lineWidth: 16)
+                        .stroke(Color.gray.opacity(0.08), lineWidth: 14)
                     
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
                             Color.fastingGreen,
-                            style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 14, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.8), value: progress)
+                        .animation(.spring(response: 0.6), value: progress)
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         Text(formattedElapsed)
-                            .font(.system(size: 52, weight: .bold, design: .rounded))
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .contentTransition(.numericText())
-                            .onTapGesture {
-                                if fastingService.isFasting, let start = fastingService.currentFast?.startTime {
-                                    editedStartTime = start
-                                    showEditStart = true
-                                }
-                            }
                         
                         if fastingService.isFasting {
-                            Text(isGoalAchieved
-                                 ? "COMPLETED ✓"
-                                 : "ELAPSED (\(Int(progress * 100))%)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .tracking(1)
+                            if isGoalAchieved {
+                                Text("COMPLETED ✓")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.fastingGreen)
+                                    .tracking(1)
+                            } else {
+                                // Remaining + percentage
+                                Text("\(formattedRemaining) · \(Int(progress * 100))%")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                                    .contentTransition(.numericText())
+                            }
                         } else if lastCompleted != nil {
                             Text("LAST FAST")
                                 .font(.caption.weight(.semibold))
@@ -230,8 +224,55 @@ struct TimerView: View {
                         }
                     }
                 }
-                .frame(height: 280)
-                .padding(20)
+                .frame(height: 250)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                
+                // STARTED / GOAL row — part of the card
+                if fastingService.isFasting,
+                   let start = fastingService.currentFast?.startTime,
+                   let targetDur = fastingService.currentFast?.targetDuration {
+                    
+                    HStack(spacing: 12) {
+                        // STARTED — tappable to edit
+                        Button {
+                            editedStartTime = start
+                            showEditStart = true
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        } label: {
+                            VStack(spacing: 3) {
+                                Text("STARTED")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                                    .tracking(0.5)
+                                Text(formatTimeShort(start))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.fastingGreen)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // GOAL — display only
+                        let preset = fastingService.currentFast?.presetType.displayName ?? ""
+                        VStack(spacing: 3) {
+                            Text("\(preset) GOAL")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .tracking(0.5)
+                            Text(formatTimeShort(start.addingTimeInterval(targetDur)))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.fastingGreen)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                }
             }
             .glassCard(cornerRadius: 24)
             .onChange(of: isGoalAchieved) { _, achieved in
@@ -241,36 +282,6 @@ struct TimerView: View {
                 }
             }
         }
-    }
-    
-    // MARK: - Time Info Row (STARTED / GOAL)
-    
-    private var timeInfoRow: some View {
-        HStack(spacing: 12) {
-            if let start = fastingService.currentFast?.startTime {
-                timeInfoPill(label: "STARTED", value: formatTimeShort(start))
-            }
-            if let start = fastingService.currentFast?.startTime,
-               let target = fastingService.currentFast?.targetDuration {
-                let preset = fastingService.currentFast?.presetType.displayName ?? ""
-                timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(target)))
-            }
-        }
-    }
-    
-    private func timeInfoPill(label: String, value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.tertiary)
-                .tracking(0.5)
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.fastingGreen)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
     }
     
     private func formatTimeShort(_ date: Date) -> String {
@@ -355,77 +366,189 @@ struct TimerView: View {
         return "\(days) " + "days away".localized
     }
     
-    // MARK: - Mood Check-in
+    // MARK: - Current Phase (unified: physiology + psychology + guidance + mood)
     
-    private var moodCheckInButton: some View {
-        Button {
-            Haptic.medium()
-            showMoodCheckIn = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "heart.text.clipboard")
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.title3)
-                    .foregroundStyle(Color.fastingGreen)
+    private var currentPhaseSection: some View {
+        let hours = elapsed / 3600
+        let phase = FastingPhaseManager.currentPhase(for: elapsed)
+        let phaseMsg = CompanionEngine.phaseMessage(hours: hours)
+        
+        return VStack(spacing: 0) {
+            // Phase header with icon + name + time to next
+            HStack(spacing: 12) {
+                // Phase icon
+                ZStack {
+                    Circle()
+                        .fill(phase.color.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: phase.icon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(phase.color)
+                }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("How are you feeling?".localized)
+                    Text(phase.name)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text("companion_checkin_subtitle".localized)
+                    Text(phase.subtitle)
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("timer_next_phase".localized)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Text(formatShortInterval(timeToNext))
+                            .font(.caption.weight(.medium).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(16)
-            .background(Color.gray.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
-    }
-    
-    // MARK: - Companion
-    
-    private var companionSection: some View {
-        let msg = CompanionEngine.phaseMessage(hours: elapsed / 3600)
-        return HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "sparkles")
-                .font(.title3)
-                .foregroundStyle(Color.fastingGreen)
+            .background(phase.color.opacity(0.06))
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(msg.title)
-                    .font(.subheadline.weight(.semibold))
-                Text(msg.body)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            Divider().opacity(0.5)
+            
+            // What's happening — physiology + psychology combined
+            VStack(alignment: .leading, spacing: 12) {
+                // Physiological message from CompanionEngine
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "sparkles")
+                        .font(.caption)
+                        .foregroundStyle(phase.color)
+                        .padding(.top, 2)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(phaseMsg.title)
+                            .font(.subheadline.weight(.semibold))
+                        Text(phaseMsg.body)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                
+                // Key events from phase data
+                if !phase.keyEvents.isEmpty {
+                    ForEach(phase.keyEvents.prefix(2)) { event in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: event.icon)
+                                .font(.caption)
+                                .foregroundStyle(phase.color.opacity(0.7))
+                                .frame(width: 16)
+                                .padding(.top, 2)
+                            
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(event.title)
+                                    .font(.caption.weight(.semibold))
+                                Text(event.description)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
             }
-            Spacer()
+            .padding(16)
+            
+            Divider().opacity(0.5)
+            
+            // Mood check-in / recorded state
+            moodCheckInRow
+                .padding(16)
         }
-        .padding(16)
-        .background(Color.fastingGreen.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
+        .glassCard(cornerRadius: 20)
     }
     
-    // MARK: - Body Journey
+    private func formatShortInterval(_ interval: TimeInterval) -> String {
+        let h = Int(interval) / 3600
+        let m = (Int(interval) % 3600) / 60
+        return h > 0 ? "\(h)h \(m)m" : "\(m)m"
+    }
     
-    private var bodyJourneySection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Body Journey".localized)
-                .font(.title3.weight(.bold))
-                .padding(.horizontal, 4)
-            
-            if fastingService.isFasting {
-                BodyJourneyCard(duration: elapsed, isFasting: true)
+    // MARK: - Mood Check-in Row (inside phase card)
+    
+    @Query(sort: \MoodRecord.timestamp, order: .reverse) private var moodRecords: [MoodRecord]
+    
+    private var recentMoodRecord: MoodRecord? {
+        // Find mood record from this fasting session
+        guard let start = fastingService.currentFast?.startTime else { return nil }
+        return moodRecords.first { $0.timestamp >= start }
+    }
+    
+    private var moodCheckInRow: some View {
+        Group {
+            if let record = recentMoodRecord {
+                // Already recorded — show state
+                HStack(spacing: 10) {
+                    Text(record.mood.emoji)
+                        .font(.title3)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(record.mood.localizedLabel)
+                            .font(.subheadline.weight(.semibold))
+                        Text("mood_recorded_at".localized + " " + formatTime(record.timestamp))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Re-record button
+                    Button {
+                        showMoodCheckIn = true
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Text("mood_update".localized)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.fastingGreen)
+                    }
+                }
             } else {
-                BodyJourneyIdleCard()
+                // Not recorded — prompt
+                Button {
+                    showMoodCheckIn = true
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "face.smiling")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("mood_checkin_title".localized)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
+                            Text("mood_checkin_subtitle".localized)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
+    }
+
+    // MARK: - Body Journey (standalone, for non-fasting state only)
+    
+    // Used by idle state via BodyJourneyIdleCard in the main scroll
     }
     
     // MARK: - Plan Progress (Week Timeline)

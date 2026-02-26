@@ -682,6 +682,11 @@ static let all: [String: [String: String]] = [
     "symptom_advice_hungry": ["en": "🍽️ Hunger comes in waves, not a straight line. This wave will pass in 15-20 minutes. Stay hydrated.", "zh-Hans": "🍽️ 饥饿感是一波一波的，不是直线上升。这波会在15-20分钟后过去。保持水分。"],
     
     // MARK: - Mood Check-in UI
+    "timer_next_phase": ["en": "Next", "zh-Hans": "下一步"],
+    "mood_recorded_at": ["en": "Recorded at", "zh-Hans": "记录于"],
+    "mood_update": ["en": "Update", "zh-Hans": "更新"],
+    "mood_checkin_title": ["en": "How are you feeling?", "zh-Hans": "你现在感觉怎么样？"],
+    "mood_checkin_subtitle": ["en": "Quick check-in, we're here for you", "zh-Hans": "快速记录，我们陪着你"],
     "mood_very_unpleasant": ["en": "VERY UNPLEASANT", "zh-Hans": "非常不舒服"],
     "mood_very_pleasant": ["en": "VERY PLEASANT", "zh-Hans": "非常舒适"],
     "mood_question": ["en": "How are you feeling right now?", "zh-Hans": "你现在感觉怎么样？"],

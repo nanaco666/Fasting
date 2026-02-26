@@ -10,13 +10,18 @@ import SwiftUI
 // MARK: - App Colors
 
 extension Color {
-    // Primary gradient colors (Health/Fitness inspired)
-    static let fastingGreen = Color(red: 0.18, green: 0.80, blue: 0.44)
-    static let fastingTeal = Color(red: 0.35, green: 0.78, blue: 0.98)
-    static let fastingBlue = Color(red: 0.0, green: 0.48, blue: 1.0)
-    static let fastingOrange = Color(red: 1.0, green: 0.58, blue: 0.0)
-    static let fastingPurple = Color(red: 0.69, green: 0.32, blue: 0.87)
-    static let fastingPink = Color(red: 1.0, green: 0.18, blue: 0.33)
+    // Primary palette — 3 colors only (ADA discipline)
+    // Hero: system green (adapts to light/dark automatically)
+    static let fastingGreen = Color.green
+    // Accent: warm teal for secondary elements
+    static let fastingTeal = Color.teal
+    // Alert: system orange for warnings/streaks
+    static let fastingOrange = Color.orange
+    
+    // Legacy aliases (will remove after full migration)
+    static let fastingBlue = Color.blue
+    static let fastingPurple = Color.purple
+    static let fastingPink = Color.pink
     
     // Semantic colors
     static let fastingActive = Color.fastingGreen
