@@ -82,7 +82,13 @@ enum CompanionEngine {
     
     private static func baseMoodResponse(mood: Mood, hours: Double) -> String {
         let bucket = hourBucket(hours)
-        return "companion_\(mood.rawValue)_\(bucket)".localized
+        let key = "companion_\(mood.rawValue)_\(bucket)"
+        let result = key.localized
+        // Fallback if key not found (returns key itself)
+        if result == key {
+            return "companion_\(mood.rawValue)_general".localized
+        }
+        return result
     }
     
     private static func symptomAdvice(symptoms: [MoodSymptom], hours: Double) -> String {

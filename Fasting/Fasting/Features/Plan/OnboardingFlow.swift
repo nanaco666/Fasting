@@ -35,7 +35,7 @@ struct OnboardingFlow: View {
                             .fill(index <= step ? Color.fastingGreen : Color.gray.opacity(0.3))
                             .frame(width: 10, height: 10)
                             .scaleEffect(index == step ? 1.2 : 1.0)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: step)
+                            .animation(.smoothSpring, value: step)
                     }
                 }
                 .padding(.horizontal)

@@ -124,7 +124,7 @@ struct HistoryView: View {
                 title: "Longest Streak".localized,
                 value: "\(longestStreak)",
                 unit: L10n.Timer.days,
-                color: .fastingBlue
+                color: .fastingTeal
             )
         }
     }
@@ -390,6 +390,7 @@ struct DayRingCell: View {
             .frame(height: 62)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(day), \(progress >= 1.0 ? "completed" : progress > 0 ? "\(Int(progress * 100)) percent" : "no fast")\(holiday.map { ", \($0.localizedName)" } ?? "")")
     }
 }
 

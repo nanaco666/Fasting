@@ -21,7 +21,6 @@ struct TimerView: View {
     @State private var lastFastDuration: TimeInterval = 0
     @State private var lastFastGoalMet = false
     
-    private var timer: Timer { Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in } }
     
     var body: some View {
         NavigationStack {
@@ -200,7 +199,7 @@ struct TimerView: View {
                             style: StrokeStyle(lineWidth: 14, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.6), value: progress)
+                        .animation(.smoothSpring, value: progress)
                     
                     VStack(spacing: 6) {
                         Text(formattedElapsed)
@@ -233,6 +232,8 @@ struct TimerView: View {
                 .frame(height: 250)
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(timerAccessibilityLabel)
                 
                 // STARTED / GOAL row — always visible
                 HStack(spacing: 12) {
@@ -467,7 +468,7 @@ struct TimerView: View {
             .background(phase.color.opacity(0.06))
             .contentShape(Rectangle())
             .onTapGesture {
-                withAnimation(.spring(response: 0.35)) {
+                withAnimation(.fastSpring) {
                     isPhaseExpanded.toggle()
                 }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -539,7 +540,7 @@ struct TimerView: View {
             }
         }
         .glassCard(cornerRadius: CornerRadius.extraLarge)
-        .animation(.spring(response: 0.35), value: isPhaseExpanded)
+        .animation(.fastSpring, value: isPhaseExpanded)
     }
     
     private func formatShortInterval(_ interval: TimeInterval) -> String {
@@ -685,6 +686,18 @@ struct TimerView: View {
         return FastingRecord.formatDuration(0)
     }
     
+    private var timerAccessibilityLabel: String {
+        if fastingService.isFasting {
+            if isGoalAchieved {
+                return "\(formattedElapsed), completed"
+            }
+            return "\(formattedElapsed) elapsed, \(formattedRemaining) remaining, \(Int(progress * 100)) percent"
+        } else if lastCompleted != nil {
+            return "Last fast: \(formattedElapsed)"
+        }
+        return "No active fast"
+    }
+    
     private var formattedRemaining: String {
         FastingRecord.formatShortDuration(remaining)
     }
@@ -787,264 +800,5 @@ struct PlanWeekTimeline: View {
     }
 }
 
-// MARK: - Preset Selection Sheet
 
-struct PresetSelectionSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let onSelect: (FastingPreset, TimeInterval?) -> Void
-    
-    @State private var selectedPreset: FastingPreset = .sixteen8
-    @State private var customHours: Int = 16
-    @State private var customMinutes: Int = 0
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                presetSection
-                if selectedPreset == .custom {
-                    customDurationSection
-                }
-            }
-            .navigationTitle(L10n.Preset.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        let custom = selectedPreset == .custom
-                            ? Double(customHours * 3600 + customMinutes * 60)
-                            : nil
-                        onSelect(selectedPreset, custom)
-                    } label: {
-                        Image(systemName: "checkmark.circle.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(Color.fastingGreen)
-                            .font(.title3)
-                    }
-                }
-            }
-        }
-    }
-    
-    private var presetSection: some View {
-        Section {
-            ForEach(FastingPreset.allCases) { preset in
-                PresetRow(
-                    preset: preset,
-                    isSelected: selectedPreset == preset
-                ) {
-                    Haptic.selection()
-                    withAnimation { selectedPreset = preset }
-                }
-            }
-        } header: {
-            Text("Fasting Plan".localized)
-        }
-    }
-    
-    private var customDurationSection: some View {
-        Section {
-            HStack {
-                Picker("", selection: $customHours) {
-                    ForEach(0..<73) { h in
-                        Text("\(h) \(L10n.Preset.hours)").tag(h)
-                    }
-                }
-                .pickerStyle(.wheel)
-                
-                Picker("", selection: $customMinutes) {
-                    ForEach(Array(stride(from: 0, to: 60, by: 5)), id: \.self) { m in
-                        Text("\(m) min").tag(m)
-                    }
-                }
-                .pickerStyle(.wheel)
-            }
-            .frame(height: 120)
-        } header: {
-            Text("Duration".localized)
-        }
-    }
-    
 
-}
-
-// MARK: - Preset Row
-
-private struct PresetRow: View {
-    let preset: FastingPreset
-    let isSelected: Bool
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: Spacing.sm) {
-                        Text(preset.displayName)
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        
-                        if preset == .sixteen8 {
-                            Text(L10n.Preset.popular)
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.fastingGreen, in: Capsule())
-                        }
-                    }
-                    
-                    Text(preset.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.fastingGreen) : AnyShapeStyle(.tertiary))
-                    .font(.title3)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Settings View
-
-struct SettingsView: View {
-    @State private var languageManager = LanguageManager.shared
-    @State private var healthService = HealthKitService.shared
-    
-    @AppStorage("defaultPreset") private var defaultPreset: String = "sixteen8"
-    @AppStorage("notificationsOn") private var notificationsOn = true
-    
-    var body: some View {
-        List {
-            Section(L10n.Settings.fastingSettings) {
-                // Default preset
-                Picker(selection: $defaultPreset) {
-                    ForEach(FastingPreset.allCases) { preset in
-                        Text(preset.displayName).tag(preset.rawValue)
-                    }
-                } label: {
-                    Label(L10n.Settings.defaultPlan, systemImage: "clock")
-                }
-                
-                // Notifications
-                Toggle(isOn: $notificationsOn) {
-                    Label(L10n.Settings.notifications, systemImage: "bell")
-                }
-                .tint(Color.fastingGreen)
-            }
-            
-            Section(L10n.Settings.data) {
-                // HealthKit
-                Button {
-                    Task { await healthService.requestAuthorization() }
-                } label: {
-                    HStack {
-                        Label(L10n.Settings.healthSync, systemImage: "heart")
-                        Spacer()
-                        if healthService.isAuthorized {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Color.fastingGreen)
-                        } else {
-                            Text("Connect".localized)
-                                .font(.caption)
-                                .foregroundStyle(Color.fastingGreen)
-                        }
-                    }
-                }
-                .foregroundStyle(.primary)
-                
-                // iCloud
-                HStack {
-                    Label(L10n.Settings.iCloudSync, systemImage: "icloud")
-                    Spacer()
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.fastingGreen)
-                }
-            }
-            
-            Section {
-                Picker(selection: Binding(
-                    get: { languageManager.currentLanguage },
-                    set: { languageManager.currentLanguage = $0 }
-                )) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
-                } label: {
-                    Label(L10n.Settings.language, systemImage: "globe")
-                }
-            }
-            
-            Section(L10n.Settings.about) {
-                HStack {
-                    Label(L10n.Settings.version, systemImage: "info.circle")
-                    Spacer()
-                    Text("1.2.0").foregroundStyle(.secondary)
-                }
-            }
-        }
-        .navigationTitle(L10n.Settings.title)
-    }
-}
-
-// MARK: - Edit Start Time Sheet
-
-struct EditStartTimeSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var startTime: Date
-    let onSave: () -> Void
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: Spacing.lg) {
-                Text("Adjust Start Time".localized)
-                    .font(.headline)
-                
-                DatePicker(
-                    "",
-                    selection: $startTime,
-                    in: ...Date(),
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                
-                Button {
-                    onSave()
-                    dismiss()
-                } label: {
-                    Text("Save".localized)
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.fastingGreen, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-                }
-                .padding(.horizontal, Spacing.xl)
-            }
-            .padding(.top, Spacing.lg)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Timer.cancel) { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-#Preview {
-    TimerView()
-        .modelContainer(for: [FastingRecord.self, FastingPlan.self], inMemory: true)
-}

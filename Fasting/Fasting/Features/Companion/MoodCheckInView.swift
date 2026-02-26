@@ -20,6 +20,7 @@ struct MoodCheckInView: View {
     @State private var showResponse = false
     @State private var companionResponse = ""
     @State private var animationPhase: CGFloat = 0
+    @State private var lastHapticValue: Double = 0.5
     
     private var currentMood: Mood {
         switch moodValue {
@@ -65,12 +66,13 @@ struct MoodCheckInView: View {
                     // Fluid orb
                     moodOrb
                         .frame(height: 200)
+                        .accessibilityHidden(true)
                     
                     // Mood label
                     Text(currentMood.localizedLabel)
                         .font(.title2.weight(.semibold))
                         .contentTransition(.interpolate)
-                        .animation(.spring(response: 0.4), value: currentMood)
+                        .animation(.fastSpring, value: currentMood)
                         .padding(.top, 16)
                     
                     // Phase context
@@ -107,8 +109,8 @@ struct MoodCheckInView: View {
                         .padding(.top, 16)
                         .padding(.bottom, 8)
                 }
-                .animation(.spring(response: 0.5), value: showSymptoms)
-                .animation(.spring(response: 0.5), value: showResponse)
+                .animation(.smoothSpring, value: showSymptoms)
+                .animation(.smoothSpring, value: showResponse)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -220,9 +222,15 @@ struct MoodCheckInView: View {
                         .gesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
-                                    let new = value.location.x / geo.size.width
-                                    moodValue = min(max(new, 0), 1)
-                                    UISelectionFeedbackGenerator().selectionChanged()
+                                    let new = min(max(value.location.x / geo.size.width, 0), 1)
+                                    moodValue = new
+                                    // Haptic only when crossing mood boundaries (every 0.2)
+                                    if abs(new - lastHapticValue) > 0.15 {
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                        lastHapticValue = new
+                                    }
+                                }
+                                .onEnded { _ in
                                     updateResponse()
                                 }
                         )
@@ -257,7 +265,7 @@ struct MoodCheckInView: View {
                 ForEach(MoodSymptom.allCases) { symptom in
                     let selected = selectedSymptoms.contains(symptom)
                     Button {
-                        withAnimation(.spring(response: 0.3)) {
+                        withAnimation(.fastSpring) {
                             if selected {
                                 selectedSymptoms.remove(symptom)
                             } else {
@@ -289,7 +297,7 @@ struct MoodCheckInView: View {
                     }
                     .buttonStyle(.plain)
                     .scaleEffect(selected ? 1.03 : 1.0)
-                    .animation(.spring(response: 0.25), value: selected)
+                    .animation(.fastSpring, value: selected)
                 }
             }
         }
@@ -355,45 +363,4 @@ struct MoodCheckInView: View {
     }
 }
 
-// MARK: - Flow Layout
-
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        return result.size
-    }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        for (index, position) in result.positions.enumerated() {
-            subviews[index].place(
-                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
-                proposal: .unspecified
-            )
-        }
-    }
-    
-    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
-        let maxWidth = proposal.width ?? .infinity
-        var positions: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth && x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            positions.append(CGPoint(x: x, y: y))
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-        }
-        
-        return (CGSize(width: maxWidth, height: y + rowHeight), positions)
-    }
-}
+// FlowLayout moved to UI/Components/FlowLayout.swift
