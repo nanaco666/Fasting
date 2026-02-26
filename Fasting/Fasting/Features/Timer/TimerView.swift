@@ -234,51 +234,56 @@ struct TimerView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
                 
-                // STARTED / GOAL row — part of the card
-                if fastingService.isFasting,
-                   let start = fastingService.currentFast?.startTime,
-                   let targetDur = fastingService.currentFast?.targetDuration {
-                    
-                    HStack(spacing: 12) {
-                        // STARTED — tappable to edit
+                // STARTED / GOAL row — always visible
+                HStack(spacing: 12) {
+                    if fastingService.isFasting, let start = fastingService.currentFast?.startTime {
+                        // Fasting: STARTED tappable to edit
                         Button {
                             editedStartTime = start
                             showEditStart = true
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         } label: {
+                            timeInfoPill(label: "STARTED", value: formatTimeShort(start))
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Fasting: GOAL display
+                        if let targetDur = fastingService.currentFast?.targetDuration {
+                            let preset = fastingService.currentFast?.presetType.displayName ?? ""
+                            timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(targetDur)))
+                        }
+                    } else {
+                        // Idle: START = now
+                        timeInfoPill(label: "START", value: formatTimeShort(Date()))
+                        
+                        // Idle: GOAL — tappable, opens preset picker & starts
+                        Button {
+                            showPresetSheet = true
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        } label: {
                             VStack(spacing: 3) {
-                                Text("STARTED")
+                                Text("GOAL")
                                     .font(.caption2.weight(.semibold))
                                     .foregroundStyle(.tertiary)
                                     .tracking(0.5)
-                                Text(formatTimeShort(start))
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color.fastingGreen)
+                                HStack(spacing: 4) {
+                                    Text(idlePresetLabel)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(Color.fastingGreen)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color.fastingGreen.opacity(0.6))
+                                }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
-                        
-                        // GOAL — display only
-                        let preset = fastingService.currentFast?.presetType.displayName ?? ""
-                        VStack(spacing: 3) {
-                            Text("\(preset) GOAL")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                                .tracking(0.5)
-                            Text(formatTimeShort(start.addingTimeInterval(targetDur)))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.fastingGreen)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
             .glassCard(cornerRadius: CornerRadius.extraLarge)
             .onChange(of: isGoalAchieved) { _, achieved in
@@ -290,6 +295,28 @@ struct TimerView: View {
         }
     }
     
+    private func timeInfoPill(label: String, value: String) -> some View {
+        VStack(spacing: 3) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .tracking(0.5)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.fastingGreen)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+    }
+    
+    @AppStorage("defaultPreset") private var idleDefaultPreset: String = "sixteen8"
+    
+    private var idlePresetLabel: String {
+        let preset = FastingPreset(rawValue: idleDefaultPreset) ?? .sixteen8
+        return preset.displayName
+    }
+    
     private func formatTimeShort(_ date: Date) -> String {
         let f = DateFormatter()
         f.dateFormat = "EEE, HH:mm"
@@ -298,37 +325,27 @@ struct TimerView: View {
     
     // MARK: - Action Button
     
+    @ViewBuilder
     private var actionButton: some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            if fastingService.isFasting {
+        if fastingService.isFasting {
+            // End fast — subtle, not prominent
+            Button {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 showConfirmEnd = true
-            } else {
-                showPresetSheet = true
-            }
-        } label: {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: fastingService.isFasting ? "stop.fill" : "play.fill")
-                Text(fastingService.isFasting ? L10n.Timer.endFasting : L10n.Timer.startFasting)
-                    .font(.title3.weight(.semibold))
-            }
-            .foregroundStyle(fastingService.isFasting ? AnyShapeStyle(.primary) : AnyShapeStyle(.white))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background {
-                if fastingService.isFasting {
-                    // Subtle outline for "End Fast" (like Zero)
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.gray.opacity(0.06))
-                } else {
-                    // Bold green for "Start"
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.fastingGreen.gradient)
-                        .shadow(color: Color.fastingGreen.opacity(0.3), radius: 12, y: 6)
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "stop.fill")
+                    Text(L10n.Timer.endFasting)
+                        .font(.title3.weight(.semibold))
                 }
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+                .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 20))
             }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        // No start button in idle — user taps GOAL pill instead
     }
     
     // MARK: - Upcoming Holiday
@@ -503,11 +520,7 @@ struct TimerView: View {
                 .transition(.opacity)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.extraLarge))
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.extraLarge)
-                .fill(.ultraThinMaterial)
-        )
+        .glassCard(cornerRadius: CornerRadius.extraLarge)
         .animation(.spring(response: 0.35), value: isPhaseExpanded)
     }
     
