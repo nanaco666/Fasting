@@ -59,17 +59,22 @@ struct OnboardingFlow: View {
                 progressBar
                 
                 // Step content
-                TabView(selection: $step) {
-                    bodyInfoStep.tag(0)
-                    healthStep.tag(1)
-                    activityStep.tag(2)
-                    moodStep.tag(3)
-                    goalStep.tag(4)
-                    calendarStep.tag(5)
-                    summaryStep.tag(6)
+                Group {
+                    switch step {
+                    case 0: bodyInfoStep
+                    case 1: healthStep
+                    case 2: activityStep
+                    case 3: moodStep
+                    case 4: goalStep
+                    case 5: calendarStep
+                    case 6: summaryStep
+                    default: bodyInfoStep
+                    }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .scrollDisabled(true)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
                 .animation(.smoothSpring, value: step)
                 
                 navigationButtons

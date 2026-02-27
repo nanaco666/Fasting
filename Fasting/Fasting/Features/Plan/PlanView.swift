@@ -50,7 +50,7 @@ struct PlanView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showOnboarding) {
+            .fullScreenCover(isPresented: $showOnboarding) {
                 OnboardingFlow { _, _ in
                     showOnboarding = false
                 }
