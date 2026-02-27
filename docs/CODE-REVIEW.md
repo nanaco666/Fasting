@@ -1,62 +1,75 @@
 # Fasting App — 全面代码审查与 UAT 报告
 
-**日期**: 2026-02-26 (Rev.2)
-**审查范围**: 全部 43 个 Swift 源文件 + Widget Extension + 测试文件
+**日期**: 2026-02-27 (Rev.3)
+**审查范围**: 全部 45+ 个 Swift 源文件 + Widget Extension + 测试文件
 **审查视角**: 顶级程序员（代码质量） + 顶级设计师（用户验收测试）
-**自上次审查以来**: +11 commits，新增 4 个表盘组件，统一断食阶段模型，Tab 精简为 3 个，布局重构
+**自 Rev.2 以来**: +34 commits，新增 Buchinger 身心福祉量表、CalendarService 智能调度、7 步引导流、MoodRecord 扩展、Settings 重构、StatisticsView 删除
 
 ---
 
 ## 综合评分
 
 ```
-                      Rev.1    Rev.2    变化
-程序员视角:            72       74       +2  ▲
-设计师视角:            78       81       +3  ▲
+                      Rev.1    Rev.2    Rev.3    变化
+程序员视角:            72       74       76       +2  ▲
+设计师视角:            78       81       82       +1  ▲
 ```
 
-| 维度 | Rev.1 | Rev.2 | 变化 | 说明 |
-|------|-------|-------|------|------|
-| 架构设计 | 7 | 7.5 | ▲ | Tab 精简、阶段模型统一、表盘策略模式 |
-| 代码质量 | 6 | 6.5 | ▲ | CompanionEngine 大幅简化，但新增 force unwrap |
-| 性能 | 5 | 5 | — | DateFormatter / O(n²) 未变，SolarDial Canvas 新增负担 |
-| 健壮性 | 5 | 5.5 | ▲ | TimerView.progress 加了 guard，其余未变 |
-| 可测试性 | 3 | 3 | — | 依然零测试覆盖 |
-| 本地化 | 6 | 5.5 | ▼ | 硬编码英文从 2 个 View 扩散到 4 个表盘 |
-| 可维护性 | 7 | 7 | — | 表盘拆分为独立文件好，但 4 份重复代码 |
-| Apple 生态 | 9 | 9 | — | 不变 |
-| 视觉一致性 | 8 | 9 | ▲ | 4 种表盘风格 + 统一卡片 + 按钮内嵌 |
-| 信息层级 | 8 | 8.5 | ▲ | Action button 内嵌卡片，Mood 卡片交互更清晰 |
-| 交互设计 | 7 | 7.5 | ▲ | 长按切换表盘，Mood 卡片可点击 |
-| 无障碍 | 4 | 4 | — | 核心问题未修复 |
+| 维度 | R1 | R2 | R3 | 变化 | 说明 |
+|------|----|----|-----|------|------|
+| 架构设计 | 7 | 7.5 | 8 | ▲ | CalendarService 智能调度、7 步引导、死代码清理 |
+| 代码质量 | 6 | 6.5 | 7 | ▲ | 大量 bug fix，CompanionEngine 增强，但引入新风险 |
+| 性能 | 5 | 5 | 5 | — | DateFormatter/O(n²) 未变，新增 EventKit 主线程 I/O |
+| 健壮性 | 5 | 5.5 | 6 | ▲ | Timer 3 个 bug 修复，但 Onboarding 安全检查可被绕过 |
+| 可测试性 | 3 | 3 | 3 | — | 依然零测试覆盖 |
+| 本地化 | 6 | 5.5 | 6.5 | ▲ | 新增 65+ 本地化字符串，但 Widget 仍全英文 |
+| 可维护性 | 7 | 7 | 7 | — | 删除了 StatisticsView 死代码，但 MoodCheckInView 膨胀到 625 行 |
+| Apple 生态 | 9 | 9 | 9.5 | ▲ | 新增 EventKit 智能调度 |
+| 视觉一致性 | 8 | 9 | 9 | — | 3 色主题 + SF Symbols 纯文字，无 emoji |
+| 信息层级 | 8 | 8.5 | 8.5 | — | 不变 |
+| 交互设计 | 7 | 7.5 | 8 | ▲ | Buchinger 身心量表 + 周日程可视化 |
+| 无障碍 | 4 | 4 | 4 | — | 核心滑块仍不可访问 |
 
 ---
 
 ## 本次变更概览
 
-### ✅ 已改善
-| 原问题 | 改善情况 |
+### ✅ 已修复
+| 原问题 | 修复情况 |
 |--------|---------|
-| P0 #1 除零崩溃 | **部分修复** — `TimerView.progress` 加了 `guard target > 0`，但 `FastingRecord.progress`、`FastingPlan.progress`、`UserProfile.bmi` 未改 |
-| CompanionEngine force unwrap | **已修复** — `phaseMessage` 改为委托 FastingPhaseManager，消除了原来的嵌套逻辑 |
-| 4th Tab 架构混乱 | **已修复** — 精简为 3 Tab（Timer/History/Plan），Statistics 合并到 History |
-| Phase 模型碎片化 | **已修复** — 统一为 11 阶段模型，科学描述 + 陪伴语合并 |
-| TimerView 代码膨胀 | **已改善** — 表盘拆分为 4 个独立文件，Mood 卡片重构更简洁 |
-| ActionButton 游离在外 | **已修复** — 内嵌到 timerCard 中，视觉分组更合理 |
-| 死代码 `moodCheckInContent` | **已修复** — 替换为更简洁的 `moodCard` 实现 |
+| StatisticsView 死代码 | **✅ 已删除** — `4973437` 彻底移除了文件 |
+| Timer 结束后不重置 | **✅ 已修复** — `30679b9` 修复 timer reset on end |
+| Widget 数据陈旧 | **✅ 已修复** — `30679b9` 修复 widget stale data |
+| Body Journey 不实时更新 | **✅ 已修复** — `30679b9` Body Journey live update |
+| Tab tint 污染全局 | **✅ 已修复** — `d184535` 绿色 tint 只作用于 TabBar |
+| Settings 风格不统一 | **✅ 已修复** — `ac73b51` 回归系统原生风格 |
+| Widget Timeline 空白期 | **✅ 不存在** — 60 entries + 30min reload，无 gap |
+| Body Journey emoji | **✅ 已移除** — 改为纯 SF Symbols + 文字层级 |
 
-### 🆕 新增问题
+### 🆕 新增功能
+| 功能 | 文件 | 说明 |
+|------|------|------|
+| Buchinger 身心福祉量表 | MoodCheckInView.swift (重写) | PWB/EWB 0-10 双轴、酮体追踪、Companion 即时指导 |
+| CalendarService 智能调度 | CalendarService.swift (新) | EventKit 集成、社交事件检测、自动降级/升级方案 |
+| 7 步引导流 | OnboardingFlow.swift (扩展) | 新增健康、情绪、日历步骤 |
+| 周日程可视化 | WeekScheduleView.swift (新) | 基于日历数据的每周断食安排展示 |
+| UserProfile 健康扩展 | UserProfile.swift | 健康状况、压力、睡眠字段 |
+| PlanCalculator 安全增强 | PlanCalculator.swift | 安全检查 + 压力/睡眠自适应 |
+| 65+ 新本地化字符串 | Strings.swift | 覆盖新功能的中英文翻译 |
+| Light/Dark 模式切换 | SettingsView.swift | 用户可手动选择外观 |
+
+### 🆕 新引入问题
 | 问题 | 严重度 | 位置 |
 |------|--------|------|
-| "COMPLETED"/"LAST FAST" 硬编码扩散到 4 个表盘 | P1 | Simple/Watch/Plate/SolarDialView |
-| PlateDialView 刻度用 `.white` — 浅色模式不可见 | P1 | PlateDialView.swift |
-| SolarDialView 全部暗色硬编码 — 浅色模式下完全失效 | P1 | SolarDialView.swift |
-| `TimerDialStyle.next` force unwrap | P2 | TimerDialStyle.swift:37 |
-| 长按切换表盘零可发现性 | P1-设计 | TimerView.swift:201 |
-| `.id(style)` 强制销毁重建整个视图树 | P2 | TimerDialStyle.swift:92 |
-| `PlanWeekTimeline` force unwrap + DateFormatter | P2 | TimerView.swift:663,740 |
-| `planProgressSection` 死代码 | P3 | TimerView.swift:574-586 |
-| `.repeatForever` 动画叠加扩散到 3 个表盘 | P2 | Plate/Solar/WatchDialView |
+| Onboarding TabView 手势可绕过安全检查 | **P0** | OnboardingFlow.swift:62 |
+| CalendarService `.writeOnly` 误判为可读 | **P0** | CalendarService.swift:102 |
+| MoodCheckInView 自定义 Slider 不可访问 | P1 | MoodCheckInView.swift:247 |
+| EventKit 同步 I/O 在主线程 | P1 | CalendarService.swift:138, OnboardingFlow.swift:659 |
+| MoodRecord 无 Schema 版本控制 | P2 | MoodRecord.swift:241 |
+| Model 层导入 SwiftUI | P2 | MoodRecord.swift:8 |
+| 启动即弹通知权限 | P2 | FastingApp.swift:39 |
+| PlanCalculator 最低热量不分性别 | P2 | PlanCalculator.swift:66 |
+| WeekScheduleView @StateObject + Singleton | P2 | WeekScheduleView.swift:12 |
 
 ---
 
@@ -66,161 +79,125 @@
 
 ## 🔴 P0 — 必须立即修复
 
-### 1. 除零崩溃（3 处残留） ⚠️ 部分修复
+### 1. 🆕 Onboarding TabView 手势绕过安全检查
 
-`TimerView.progress` 已加 guard ✅，但 Model 层 3 处未改：
+**OnboardingFlow.swift:62-72** — 安全攸关的严重 Bug
 
-**FastingRecord.swift**
 ```swift
-// 🔴 仍未修复 — targetDuration = 0 时产生 nan
-var progress: Double {
-    min(currentDuration / targetDuration, 1.0)
+TabView(selection: $step) {
+    bodyInfoStep.tag(0)
+    healthStep.tag(1)      // ← 健康状况筛查（饮食障碍、怀孕等）
+    activityStep.tag(2)
+    moodStep.tag(3)
+    goalStep.tag(4)
+    calendarStep.tag(5)
+    summaryStep.tag(6)
+}
+.tabViewStyle(.page(indexDisplayMode: .never))
+```
+
+`.page` 样式的 TabView 允许用户左右滑动到任意步骤。`advanceStep()` 中的安全检查（`safetyCheck`，拦截饮食障碍/怀孕/严重健康问题用户）**完全可被滑动绕过**。一个有禁忌症的用户可以直接滑到 summary 创建断食计划。
+
+**修复**: 添加 `.scrollDisabled(true)` 或改用自定义 page 容器。
+
+---
+
+### 2. 🆕 CalendarService `.writeOnly` 误判为已授权
+
+**CalendarService.swift:101-103**
+
+```swift
+var isAuthorized: Bool {
+    authorizationStatus == .fullAccess || authorizationStatus == .writeOnly
 }
 ```
 
-**FastingPlan.swift**
-```swift
-// 🔴 仍未修复 — durationWeeks = 0 时除零
-var progress: Double {
-    min(Double(weeksElapsed) / Double(durationWeeks), 1.0)
-}
-```
+`.writeOnly` 只能写入日历、**不能读取事件**。用此状态调用 `store.events(matching:)` 会返回空结果或异常。智能调度依赖事件读取，授权判断错误会导致整个调度引擎失效。
 
-**UserProfile.swift**
-```swift
-// 🔴 仍未修复 — heightCm = 0 时除零
-var bmi: Double {
-    let heightM = heightCm / 100
-    return weightKg / (heightM * heightM)
-}
-```
+**修复**: 只检查 `.fullAccess`。对 iOS 16 还需兼容 `.authorized`。
 
 ---
 
-### 2. App 入口 fatalError ❌ 未修复
+### 3. 除零崩溃（Model 层 3 处） ❌ 未修复
 
-**FastingApp.swift:32** — 仍然 `fatalError`。
-
----
-
-### 3. 数据持久化静默失败 ❌ 未修复
-
-**FastingService.swift** — 仍然 `try? modelContext?.save()`。
+`FastingRecord.progress`、`FastingPlan.progress`、`UserProfile.bmi` — 仍无 guard。
 
 ---
 
-### 4. 自动取消前一个断食无用户确认 ❌ 未修复
+### 4. App 入口 fatalError ❌ 未修复
+
+**FastingApp.swift:32** — 特别危险：MoodRecord schema 变更后，如果轻量级迁移失败，直接崩溃。
 
 ---
 
-### 5. FastingPlan 字符串分割越界崩溃 ❌ 未修复
+### 5. 数据持久化静默失败 ❌ 未修复
 
----
+### 6. 自动取消前一个断食无用户确认 ❌ 未修复
 
-### 6. 枚举回退掩盖数据损坏 ❌ 未修复
+### 7. FastingPlan 字符串分割越界崩溃 ❌ 未修复
 
 ---
 
 ## 🟡 P1 — 高优先级
 
-### 7. 🆕 SolarDialView 浅色模式完全失效
+### 8. 🆕 EventKit 同步 I/O 在主线程
 
-**SolarDialView.swift** — 全部使用硬编码暗色：
+**CalendarService.swift:137-138 + OnboardingFlow.swift:648-663**
 
 ```swift
-// 整个表盘基于暗色背景设计
-Circle().fill(Color(white: 0.08))          // outerBezel — 近乎黑色
-Circle().stroke(Color(white: 0.25), ...)   // 金属边框
-.foregroundStyle(.white.opacity(...))      // 所有文字和刻度都是白色
-
-// Inner circle 也是暗色
-RadialGradient(colors: [Color(white: 0.12), Color(white: 0.06)], ...)
+// @MainActor class 中同步执行 I/O
+let predicate = store.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
+let ekEvents = store.events(matching: predicate)  // 同步阻塞
 ```
 
-在浅色模式下：黑色圆盘 + 白色文字 → 突兀且与系统风格冲突。
-在暗色模式下：效果很好。
+日历事件多的用户（工作日历同步）会明显卡顿。`generateWeekSchedule` 对 7 天逐日查询 = 7 次同步 I/O。
 
-**修复方向**: 使用 `@Environment(\.colorScheme)` 做双模适配，或限制 Solar 仅在暗色模式下可选。
+**修复**: 移到 `Task.detached` 或 background actor。
 
 ---
 
-### 8. 🆕 PlateDialView 浅色模式刻度不可见
+### 9. 🆕 CalendarService 跨午夜事件计算错误
 
-**PlateDialView.swift:137**
+**CalendarService.swift:186-189**
+
 ```swift
-// 刻度和标签全部使用 .white
-.fill(Color.white.opacity(isPast && isFasting ? 0.8 : (isMajor ? 0.4 : 0.2)))
+let earliest = mealEvents.map(\.startHour).min() ?? 12
+let latestEnd = mealEvents.map(\.endHour).max() ?? 20
 ```
 
-在浅色模式下：白色刻度 + 浅色背景 = 完全不可见。
-
-**修复方向**: 改用 `Color.primary`，自动适配深浅色。
+只用 `.hour` 分量。晚餐 22:00-01:00 的 `endHour` = 1，小于 `earliest`，eating window 计算错误。
 
 ---
 
-### 9. 🆕 硬编码英文扩散到 4 个表盘
+### 10. SolarDialView / PlateDialView 浅色模式失效 ❌ 未修复
 
-之前只有 WatchDialView 一处 "COMPLETED"/"LAST FAST"，现在 4 个表盘都有：
+### 11. 硬编码英文扩散到 4 个表盘 ❌ 未修复
 
-| 文件 | 硬编码文本 |
-|------|-----------|
-| SimpleDialView.swift:49,63 | "COMPLETED", "LAST FAST" |
-| WatchDialView.swift:262,278 | "COMPLETED", "LAST FAST" |
-| PlateDialView.swift:209,225 | "COMPLETED", "LAST FAST" |
-| SolarDialView.swift:339,351 | "COMPLETED", "LAST FAST" |
-| TimerView.swift:212,219,223,231 | "STARTED", "GOAL", "START" |
+### 12. 长按切换表盘零可发现性 ❌ 未修复
 
-**修复方向**: 提取到 `L10n.Timer` 命名空间，一处维护。
+### 13. NoiseTexture Canvas 性能 ❌ 未修复
 
----
+### 14. DateFormatter 在 body 路径中创建 ❌ 未修复
 
-### 10. 🆕 长按切换表盘零可发现性
+现在总计 **8 处**：TimerView 3 处 + HistoryView 5 处 + PlanWeekTimeline 1 处。
 
-**TimerView.swift:201**
-```swift
-.onLongPressGesture(perform: switchDialStyle)
-```
+### 15. O(n²) / O(n×days) 统计算法 ❌ 未修复
 
-没有任何 UI 提示告诉用户可以长按切换表盘样式。这是一个"隐藏功能"——大多数用户永远不会发现。
+`dayProgress()` O(days × records)、`currentStreak` O(streak × records) 在 HistoryView 中仍然存在。
 
-**修复方向**: 
-- Settings 中添加表盘选择器（主入口）
-- 首次使用时显示 tooltip/coach mark
-- 表盘上添加微妙的样式图标
+### 16. @Observable Singleton 架构缺陷 ❌ 未修复
 
----
+### 17. 本地化系统架构性问题 ❌ 未修复
 
-### 11. NoiseTexture Canvas 性能灾难 ❌ 未修复
+Strings.swift 现已 1043 行，450+ key。Widget target 完全无法访问。
 
-### 12. DateFormatter 在 body 路径中创建 ❌ 未修复
+### 18. Widget 硬编码英文 ❌ 未修复
 
-现在更多了一处：
+"Remaining"、"Done ✅"、"Not Fasting"、"Tap to start"、"Fasting Timer" 等全部未本地化。
 
-**TimerView.swift:740-743** — `PlanWeekTimeline.dayLabel`
-```swift
-private func dayLabel(_ date: Date) -> String {
-    let formatter = DateFormatter()    // 🟡 ForEach 循环内，7 天每天调用
-    formatter.locale = Locale.current
-    formatter.dateFormat = "EEE"
-    return String(formatter.string(from: date).prefix(2))
-}
-```
+### 19. SharedFastingData 代码重复 ❌ 未修复
 
-**总计**: weekdayLabel、formatTimeShort、formatTime、dayLabel、StatisticsView 中 2 处 = **6 处**。
-
----
-
-### 13. O(n²) 统计算法 ❌ 未修复
-
-### 14. BodyVisualization 30fps Canvas 持续运行 ❌ 未修复
-
-### 15. @Observable Singleton 架构缺陷 ❌ 未修复
-
-### 16. 本地化系统架构性问题 ❌ 未修复
-
-### 17. Widget 进度环不实时更新 ❌ 未修复
-
-### 18. SharedFastingData 代码重复 ❌ 未修复
+Widget 版注释明确写着 "duplicated, keep in sync"。
 
 ---
 
@@ -228,44 +205,49 @@ private func dayLabel(_ date: Date) -> String {
 
 | # | 问题 | 位置 | 状态 |
 |---|------|------|------|
-| 19 | `FlowLayout` 未使用 cache | FlowLayout.swift | ❌ |
-| 20 | `milestones` JSON 每次访问都解码 | FastingPlan.swift | ❌ |
-| 21 | HealthKit `isAuthorized` 不反映真实状态 | HealthKitService.swift | ❌ |
-| 22 | 通知 `timeInterval` 竞态条件 | NotificationService.swift | ❌ |
-| 23 | `ChartData.id = UUID()` | StatisticsView.swift | ❌ |
-| 24 | 6 个 Bool `@State` 控制 sheet | TimerView.swift | ❌ |
-| 25 | 版本号硬编码 `"1.2.0"` | SettingsView.swift | ❌ |
-| 26 | iCloud 同步状态硬编码 ✓ | SettingsView.swift | ❌ |
-| 27 | `HapticService.swift` 命名与 `Haptic` 不一致 | HapticService.swift | ❌ |
-| 28 | 农历缓存仅覆盖 2025-2027 | HolidayService.swift | ❌ |
-| 29 | `RefeedGuide` 用 `var`（computed）而非 `let` | RefeedGuide.swift | ❌ |
-| 30 | 测试覆盖率为零 | FastingTests.swift | ❌ |
-| 31 | `print` 用于日志 | PlanView, HealthKitService | ❌ |
-| 32 | `.repeatForever` 动画叠加 | Plate/Solar/WatchDialView | ❌ 范围扩大 |
-| 33 | `configure()` 前方法静默无效 | FastingService.swift | ❌ |
-| 34 | `MoodRecord` 缺少显式 `id` | MoodRecord.swift | ❌ |
-| 35 | 🆕 `TimerDialStyle.next` force unwrap | TimerDialStyle.swift:37 | 🆕 |
-| 36 | 🆕 `.id(style)` 强制销毁重建视图树 | TimerDialStyle.swift:92 | 🆕 |
-| 37 | 🆕 `PlanWeekTimeline.weekDays` force unwrap | TimerView.swift:663 | 🆕 |
-| 38 | 🆕 `planProgressSection` 死代码 | TimerView.swift:574-586 | 🆕 |
-| 39 | 🆕 4 个表盘 `centerContent` 高度重复 | Simple/Watch/Plate/Solar | 🆕 |
-| 40 | 🆕 Preview `modelContainer` 缺 `MoodRecord` | FastingApp.swift:100 | ❌ |
-| 41 | 🆕 `CompanionEngine.symptomAdvice` 仍有 `symptoms.first!` | CompanionEngine.swift:68 | 🆕 |
+| 20 | 🆕 MoodRecord 无 `VersionedSchema`/`SchemaMigrationPlan` | MoodRecord.swift | 🆕 |
+| 21 | 🆕 MoodRecord Model 层导入 SwiftUI（`KetoneLevel.color`） | MoodRecord.swift:8 | 🆕 |
+| 22 | 🆕 启动即弹通知权限（用户还不了解 App） | FastingApp.swift:39 | 🆕 |
+| 23 | 🆕 PlanCalculator 最低 1200kcal 不分性别（男性偏低） | PlanCalculator.swift:66 | 🆕 |
+| 24 | 🆕 老年人蛋白质下限 `max(base, 1.2)` 无效 | PlanCalculator.swift:154 | 🆕 |
+| 25 | 🆕 Milestone 标题硬编码英文（description 用了 key） | PlanCalculator.swift:204 | 🆕 |
+| 26 | 🆕 WeekScheduleView `@StateObject` + `.shared` 语义冲突 | WeekScheduleView.swift:12 | 🆕 |
+| 27 | 🆕 WeekScheduleView 空数据 = 永旋 ProgressView | WeekScheduleView.swift:30 | 🆕 |
+| 28 | 🆕 DaySchedule `id = UUID()` 每次重建 | CalendarService.swift | 🆕 |
+| 29 | 🆕 PWB/EWB slider 内部 0.5 精度但 UI 只显示整数 | MoodCheckInView.swift:270 | 🆕 |
+| 30 | 🆕 `UITabBar.appearance()` 全局副作用 | FastingApp.swift:83 | 🆕 |
+| 31 | 🆕 Preview modelContainer 缺 MoodRecord | FastingApp.swift:103 | 🆕 |
+| 32 | 🆕 `.onChange(of: isGoalAchieved)` 在 TimelineView 内部 | TimerView.swift:262 | 🆕 |
+| 33 | `FlowLayout` 未使用 cache | FlowLayout.swift | ❌ |
+| 34 | HealthKit `isAuthorized` 不反映真实状态 | HealthKitService.swift | ❌ |
+| 35 | 6 个 Bool `@State` 控制 sheet | TimerView.swift | ❌ |
+| 36 | 版本号硬编码 `"1.2.0"` | SettingsView.swift | ❌ |
+| 37 | `CompanionEngine.symptomAdvice` 仍有 `symptoms.first!` | CompanionEngine.swift:152 | ❌ |
+| 38 | 农历缓存仅覆盖 2025-2027 | HolidayService.swift | ❌ |
+| 39 | 测试覆盖率为零 | FastingTests.swift | ❌ |
+| 40 | `.repeatForever` 动画叠加（3 个表盘） | Plate/Solar/WatchDialView | ❌ |
+| 41 | `resetPlan()` 无二次确认 | PlanView.swift:490 | ❌ |
+| 42 | `print` 调试日志 | PlanView.swift:343 | ❌ |
 
 ---
 
 ## ✅ 代码亮点
 
-- **零第三方依赖** — 全部使用系统框架，减少维护负担
-- **文件组织清晰** — `Core/Models`、`Core/Services`、`Features/`、`UI/Components/` 分层合理
-- **4 种表盘风格** — Simple/Clock/Plate/Solar，通过策略模式 `TimerDial` 统一分发 ✨ 新增
-- **SolarDialView** — 多层 Canvas 渲染（bezel → ticks → labels → wedge → glow → center），视觉品质达到 ADA 水准 ✨ 新增
-- **SectorShape 带动画支持** — `AnimatableData` 实现扇形渐变动画 ✨ 新增
-- **统一 11 阶段模型** — 科学精准 + 人格化陪伴合并到 FastingPhase ✨ 新增
-- **CompanionEngine 精简** — 从 156 行减到 120 行，职责更清晰 ✨ 改善
-- **HolidayService** — 节假日断食建议是独特的差异化功能
-- **SwiftData + CloudKit** — 自动同步方案选型正确
-- **Widget 全覆盖** — Small/Medium/Lockscreen 三种规格
+**新增亮点 ✨:**
+- **Buchinger 身心福祉量表** — PWB/EWB 双轴评估 + 酮体追踪 + 即时 Companion 指导，科学方法论支撑
+- **CalendarService 智能调度** — 社交事件检测、连续社交天数降级、周末升级、健康限制联动，逻辑设计精妙
+- **PlanCalculator 安全增强** — 饮食障碍/怀孕/医疗状况筛查 + 压力/睡眠自适应调节
+- **CompanionEngine 分层反馈** — 核心 → 饥饿 → 酮体 → 症状 → 正面强化 → 安全兜底，6 层指导体系
+- **Timer 3 bug 一次性修复** — 结束重置、Widget 刷新、Body Journey 实时更新
+- **StatisticsView 死代码清理** — 正确的减法
+
+**延续的亮点:**
+- 零第三方依赖，全系统框架
+- 4 种表盘风格 (Simple/Clock/Plate/Solar)
+- 统一 11 阶段模型（科学 + 陪伴合并）
+- HolidayService 节假日断食建议
+- SwiftData + CloudKit 自动同步
+- Widget 全覆盖 (Small/Medium/Lockscreen)
 
 ---
 
@@ -275,18 +257,20 @@ private func dayLabel(_ date: Date) -> String {
 
 ## 🔴 Critical — 阻断性问题
 
-### C1: 心情滑块对 VoiceOver 完全不可用 ❌ 未修复
+### C1: 自定义 Slider 不可访问 ❌ 未修复，范围扩大
 
-**MoodCheckInView.swift** — 自定义滑块使用 `DragGesture`：
-- 没有 `accessibilityValue`、`accessibilityAdjustableAction`、`accessibilityLabel`
-- VoiceOver 用户完全无法设置心情
+现在有 **3 个**自定义 Slider（PWB、EWB、旧 mood slider），全部缺少 VoiceOver 支持。Buchinger 量表的核心输入完全不可访问。
 
 ---
 
-### C2: 核心 UI 文案硬编码英文 ❌ 未修复，范围扩大
+### C2: 核心 UI 文案硬编码英文 ⚠️ 部分改善
 
-新增 4 个表盘后，"COMPLETED" 和 "LAST FAST" 从 1 处扩散到 **4 处**。
-TimerView 的 "STARTED"/"GOAL"/"START" 也仍未修复。
+新增 65+ 本地化字符串 ✅，但：
+- 4 个表盘的 "COMPLETED"/"LAST FAST" 仍未修复
+- TimerView "STARTED"/"GOAL"/"START" 仍未修复
+- Widget 全部英文
+- `UserProfile.bmiCategory` 硬编码
+- PlanCalculator Milestone 标题硬编码
 
 ---
 
@@ -294,12 +278,13 @@ TimerView 的 "STARTED"/"GOAL"/"START" 也仍未修复。
 
 ---
 
-### 🆕 C4: SolarDial 浅色模式完全失效
+### C4: SolarDial/PlateDial 浅色模式失效 ❌ 未修复
 
-SolarDialView 是纯暗色设计，在系统浅色模式下显示为：
-- **黑色圆盘**置于浅色背景上，极度突兀
-- 与其他 3 种表盘（都适配浅色模式）风格割裂
-- 用户切换到 Solar 后再切换系统外观 → 视觉崩溃
+---
+
+### 🆕 C5: Onboarding 安全检查可被滑动绕过
+
+有禁忌症（饮食障碍、怀孕）的用户可以滑过 healthStep 直接到 summary，创建可能危害健康的断食计划。这是**用户安全问题**，比 UI bug 更严重。
 
 ---
 
@@ -307,68 +292,50 @@ SolarDialView 是纯暗色设计，在系统浅色模式下显示为：
 
 ### M1: 空闲状态"开始"按钮直接启动 ❌ 未修复
 
-### M2: 结束断食 → 复食指南的时序问题 ❌ 未修复
+### M2: 结束断食 → 复食指南时序问题 ❌ 未修复
 
-### M3: Onboarding 可滑动跳过步骤 ❌ 未修复
+### M3: Settings 页 iCloud 同步状态造假 ❌ 未修复
 
-### M4: Settings 页 iCloud 同步状态造假 ❌ 未修复
+### M4: `resetPlan()` 一键删除无二次确认 ❌ 未修复
 
-### M5: `resetPlan()` 一键删除无二次确认 ❌ 未修复
+### 🆕 M5: Buchinger Check-in 无取消确认
 
-### M6: ~~统计页空状态缺少引导~~ → 已随 Tab 合并调整
+用户在 3 个 slider 上仔细调整了 PWB/EWB/hunger 数值后，点 X dismiss → 所有输入直接丢失，无确认对话框。
 
----
+### 🆕 M6: 通知权限在启动时立即请求
 
-### 🆕 M7: 表盘切换功能隐藏过深
-
-长按表盘可切换样式（Simple → Clock → Plate → Solar 循环），但：
-- **零可发现性** — 没有任何 UI 提示
-- **无法指定目标样式** — 只能循环切下一个
-- **Settings 中无表盘设置入口**
-- 大多数用户永远不会发现这个功能
-
-**修复方向**: 
-1. Settings 中加 "Timer Style" 选择器（四宫格预览）
-2. 首次安装显示 onboarding tip
-3. 表盘区域加微妙的样式指示图标
-
----
-
-### 🆕 M8: PlateDialView 浅色模式刻度和标签不可见
-
-白色刻度 + 白色标签在浅色背景上消失。与 Simple（使用 semantic color）和 Clock（使用 `Color.primary`）风格不一致。
+用户还没理解 App 是做什么的就被要求授权通知，大概率拒绝。应在用户首次开始断食时再请求。
 
 ---
 
 ## 🟢 Minor — 可后续优化
 
-| # | 问题 | 影响 | 状态 |
-|---|------|------|------|
-| m1 | Timer 页信息密度偏高 | 新用户信息过载 | ❌ |
-| m2 | `PrimaryButton` 用 `.accentColor` | 与主题色脱节 | ❌ |
-| m3 | `.repeatForever` 动画叠加 | 发光效果异常闪烁 | ❌ 范围扩大 |
-| m4 | 月导航按钮无 VoiceOver 标签 | 无障碍缺陷 | ❌ |
-| m5 | `CircularActionButton` 用 `DragGesture` | 应用 `ButtonStyle` | ❌ |
-| m6 | Picker 使用空标签 `""` | VoiceOver 无法识别 | ❌ |
-| m7 | 时间线连接线固定像素高度 | Dynamic Type 溢出 | ❌ |
-| m8 | Widget 用 emoji "Done ✅" | 应用 SF Symbol | ❌ |
-| m9 | 🆕 4 个表盘的 `centerContent` 大量重复 | 维护负担 | 🆕 |
-| m10 | 🆕 SolarDial 适合做暗色专属的 "premium" 皮肤 | 产品定位 | 🆕 |
+| # | 问题 | 状态 |
+|---|------|------|
+| m1 | Timer 页信息密度偏高 | ❌ |
+| m2 | `.repeatForever` 动画叠加 | ❌ |
+| m3 | 月导航按钮无 VoiceOver 标签 | ❌ |
+| m4 | Picker 空标签 | ❌ |
+| m5 | Widget "Done ✅" 用 emoji | ❌ |
+| m6 | 4 表盘 centerContent 重复代码 | ❌ |
+| m7 | 🆕 BodyJourneyView "h" 时间单位硬编码 | 🆕 |
+| m8 | 🆕 HistoryView 时间格式不尊重 12h 偏好 | 🆕 |
+| m9 | 🆕 MoodCheckInView 625 行，信息密度很高（可考虑分步引导） | 🆕 |
 
 ---
 
 ## ✅ 设计亮点
 
-- **4 种表盘风格** — Simple（简洁）、Clock（24h 表盘）、Plate（餐盘）、Solar（日晷）— 每种都有独特性格 ✨ 新增
-- **SolarDialView** — 多层渲染 + 光楔效果 + 日光渐弱，ADA 级视觉品质 ✨ 新增
-- **SectorShape 扇形动画** — 自定义 `AnimatableData` 实现丝滑的进度填充 ✨ 新增
-- **Action Button 内嵌** — 开始/结束按钮在 timerCard 内部，视觉归属感更强 ✨ 改善
-- **Mood Card 重构** — 从复杂嵌套变为简洁的 Health 风格可点击卡片 ✨ 改善
-- **Body Phase 统一** — 11 阶段科学 + 陪伴语，hero 阶段名 + 折叠详情 ✨ 改善
-- **3 色主题**（Green/Teal/Orange）克制统一
-- **玻璃卡片** — `glassCard` 视觉层次分明
-- **节假日断食建议** — 出色的差异化设计
-- **Week Strip** — Apple Fitness 风格活动环
+- **Buchinger 量表** — 基于医学文献的科学评估方法，PWB+EWB 双轴 + 酮体追踪，远超同类 App 的 emoji 打卡 ✨ 新增
+- **环境色随状态变化** — `ambientColor` 根据身心状态实时变化，提供直觉反馈 ✨ 新增
+- **CompanionEngine 安全兜底** — PWB/EWB ≤2 → critical 提醒，危险症状组合 → stop 建议 ✨ 新增
+- **周日程可视化** — 基于真实日历数据展示每日建议方案，实用性很强 ✨ 新增
+- **Settings 回归原生** — 标准 List + Section 布局，Light/Dark 切换控件 ✨ 改善
+- **纯 SF Symbols 无 emoji** — 卡片 header 统一为 icon + text 层级 ✨ 改善
+- **4 种表盘风格** — Simple/Clock/Plate/Solar
+- **SolarDialView** — 多层 Canvas 光楔效果
+- **3 色主题** (Green/Teal/Orange)
+- **节假日断食建议**
 
 ---
 
@@ -377,91 +344,115 @@ SolarDialView 是纯暗色设计，在系统浅色模式下显示为：
 ## 🔴 第一梯队 — 发布前必修复
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  1. 修复 Model 层 3 处除零崩溃（Record/Plan/Profile）      │
-│  2. 替换 fatalError 为优雅降级                             │
-│  3. 心情滑块添加 VoiceOver 支持                            │
-│  4. 本地化 4 个表盘的 "COMPLETED"/"LAST FAST"              │
-│     + TimerView 的 "STARTED"/"GOAL"/"START"               │
-│  5. 移除 weekStrip 无功能点击反馈                           │
-│  6. startFasting 前确认是否取消现有断食                      │
-│  7. SolarDial/PlateDial 浅色模式适配                       │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│  1. Onboarding 禁用滑动 (.scrollDisabled) — 安全攸关       │
+│  2. CalendarService 只检查 .fullAccess — 授权逻辑错误       │
+│  3. 修复 Model 层 3 处除零崩溃                              │
+│  4. 替换 fatalError 为优雅降级（特别是 MoodRecord 迁移后）   │
+│  5. 自定义 Slider 添加 VoiceOver（PWB/EWB/mood）            │
+│  6. 本地化 4 个表盘 + TimerView 的硬编码英文                 │
+│  7. SolarDial/PlateDial 浅色模式适配                        │
+│  8. 移除 weekStrip 无功能点击反馈                            │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ## 🟡 第二梯队 — 下个迭代
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  8. 表盘切换添加可发现性（Settings 入口 + 首次 tip）        │
-│  9. NoiseTexture Canvas 预渲染为 UIImage                  │
-│ 10. DateFormatter 缓存为 static let（6 处）               │
-│ 11. 统计算法从 O(n²) 优化到 O(n)                          │
-│ 12. 数据持久化 try? 改为有日志的错误处理                    │
-│ 13. Widget 进度环改为实时更新                               │
-│ 14. SharedFastingData 抽取为 Shared Framework             │
-│ 15. 首次使用时引导选择断食方案                              │
-│ 16. Onboarding 禁用滑动跳步                               │
-│ 17. 提取 4 个表盘共享的 centerContent 为公共组件            │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│  9. EventKit I/O 移到后台线程                               │
+│ 10. DateFormatter 缓存为 static let（8 处）                 │
+│ 11. 统计算法优化（dayProgress/currentStreak 预处理字典）     │
+│ 12. 通知权限延迟到首次断食时请求                             │
+│ 13. Widget 字符串本地化（需跨 target 共享 Strings）          │
+│ 14. SharedFastingData 抽取为 Shared Framework               │
+│ 15. 表盘切换添加可发现性（Settings 入口 + 首次 tip）         │
+│ 16. startFasting 前确认是否取消现有断食                      │
+│ 17. MoodRecord 添加 VersionedSchema 迁移计划                │
+│ 18. 提取 4 个表盘共享的 centerContent 为公共组件             │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ## 🟢 第三梯队 — 长期改善
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ 18. 补充核心逻辑单元测试（目标覆盖率 60%+）                │
-│ 19. 本地化系统迁移到标准 .strings 文件                     │
-│ 20. @Observable singleton → Environment 注入              │
-│ 21. 30fps Canvas 加视图可见性节流                          │
-│ 22. resetPlan 添加二次确认                                │
-│ 23. 农历缓存扩展或添加运行时 fallback                      │
-│ 24. .repeatForever 动画改为 phaseAnimator                 │
-│ 25. 清理死代码（planProgressSection 等）                   │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│ 19. 补充核心逻辑单元测试（目标覆盖率 60%+）                 │
+│ 20. 本地化系统迁移到标准 .strings 文件                      │
+│ 21. @Observable singleton → Environment 注入               │
+│ 22. 30fps Canvas 加视图可见性节流                           │
+│ 23. CalendarService 修复跨午夜事件计算                      │
+│ 24. PlanCalculator 最低热量按性别区分                       │
+│ 25. Model 层颜色映射移到 View extension（去除 SwiftUI 导入）│
+│ 26. .repeatForever 动画改为 phaseAnimator                  │
+│ 27. resetPlan 添加二次确认                                 │
+│ 28. 清理死代码（planProgressSection、Widget liveXxx 属性）  │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 修复进度追踪
 
-| 原 P0 问题 | 状态 | 说明 |
-|-----------|------|------|
-| #1 除零崩溃 | ⚠️ 1/4 | TimerView ✅ / Record ❌ / Plan ❌ / Profile ❌ |
-| #2 fatalError | ❌ | 未修复 |
-| #3 持久化静默失败 | ❌ | 未修复 |
-| #4 自动取消断食 | ❌ | 未修复 |
-| #5 字符串越界 | ❌ | 未修复 |
-| #6 枚举回退 | ❌ | 未修复 |
+### P0 问题
 
-| 原 P1 问题 | 状态 | 说明 |
-|-----------|------|------|
-| #7 NoiseTexture | ❌ | 未修复 |
-| #8 DateFormatter | ❌ | 未修复，新增 1 处 |
-| #9 O(n²) 算法 | ❌ | 未修复 |
-| #10 30fps Canvas | ❌ | 未修复 |
-| #11 Singleton 架构 | ❌ | 未修复 |
-| #12 本地化系统 | ❌ | 未修复 |
-| #13 Widget 进度环 | ❌ | 未修复 |
-| #14 SharedData 重复 | ❌ | 未修复 |
+| # | 问题 | R1 | R2 | R3 |
+|---|------|----|----|-----|
+| 1 | 除零崩溃 (Model 层) | ❌ | ⚠️ 1/4 | ⚠️ 1/4 |
+| 2 | fatalError | ❌ | ❌ | ❌ |
+| 3 | 持久化静默失败 | ❌ | ❌ | ❌ |
+| 4 | 自动取消断食 | ❌ | ❌ | ❌ |
+| 5 | 字符串越界 | ❌ | ❌ | ❌ |
+| 6 | 枚举回退 | ❌ | ❌ | ❌ |
+| 7 | 🆕 Onboarding 安全绕过 | — | — | ❌ |
+| 8 | 🆕 CalendarService 授权错误 | — | — | ❌ |
+
+### P1 问题
+
+| # | 问题 | R1 | R2 | R3 |
+|---|------|----|----|-----|
+| 9 | Solar/Plate 浅色模式 | — | ❌ | ❌ |
+| 10 | 硬编码英文 (表盘+Timer) | ❌ | ❌ | ❌ |
+| 11 | 表盘切换可发现性 | — | ❌ | ❌ |
+| 12 | NoiseTexture Canvas | ❌ | ❌ | ❌ |
+| 13 | DateFormatter 热路径 | ❌ | ❌ | ❌ (8处) |
+| 14 | O(n²) 统计 | ❌ | ❌ | ❌ |
+| 15 | Singleton 架构 | ❌ | ❌ | ❌ |
+| 16 | 本地化架构 | ❌ | ❌ | ❌ (1043行) |
+| 17 | Widget 英文 | ❌ | ❌ | ❌ |
+| 18 | SharedData 重复 | ❌ | ❌ | ❌ |
+| 19 | 🆕 EventKit 主线程 I/O | — | — | ❌ |
+| 20 | 🆕 跨午夜事件计算错误 | — | — | ❌ |
+
+### 已修复 ✅
+
+| 问题 | 修复时间 |
+|------|---------|
+| StatisticsView 死代码 | R3 (`4973437`) |
+| Timer 结束不重置 | R3 (`30679b9`) |
+| Widget 数据陈旧 | R3 (`30679b9`) |
+| Body Journey 不实时更新 | R3 (`30679b9`) |
+| Tab tint 全局污染 | R3 (`d184535`) |
+| Settings 风格不统一 | R3 (`ac73b51`) |
+| TimerView.progress 除零 | R2 |
+| CompanionEngine phaseMessage 简化 | R2 |
+| 4th Tab 架构混乱 | R2 |
+| Phase 模型碎片化 | R2 |
+| ActionButton 游离 | R2 |
 
 ---
 
 ## 总结
 
-**本轮改动的核心贡献**:
-1. **4 种表盘风格** — 从单一进度环升级为 Simple/Clock/Plate/Solar 四选一，SolarDial 的光楔效果达到 ADA 视觉水准
-2. **统一阶段模型** — 11 个科学阶段 + 陪伴语合并为一个清晰的数据源
-3. **布局重构** — Action Button 内嵌、Mood 卡片简化、Tab 精简
+**本轮核心贡献**:
+1. **Buchinger 身心福祉量表** — 从简单 emoji 升级为医学量表级评估，App 的科学性上了一个台阶
+2. **CalendarService 智能调度** — 基于真实日历数据自动调整断食方案，是同类 App 的差异化杀手锏
+3. **PlanCalculator 安全增强** — 健康筛查 + 压力/睡眠自适应，体现了对用户安全的重视
+4. **一批关键 bug 修复** — Timer/Widget/Body Journey 三连修，用户体验明显改善
+5. **死代码清理** — StatisticsView 删除是正确的减法
 
-**核心短板（与上次相同）**:
-1. **健壮性** — 5 个 P0 崩溃/数据风险仍未修复
-2. **本地化** — 硬编码英文随表盘增加反而扩散了
-3. **性能** — 热路径的 DateFormatter/Canvas/O(n²) 依然存在
-4. **无障碍** — VoiceOver 阻断性缺陷未动
+**最紧迫的 2 个问题**:
+1. **Onboarding 安全检查可被滑动绕过** — 这是用户健康安全问题，不是 UI 打磨，必须第一时间修
+2. **CalendarService 授权逻辑错误** — `.writeOnly` ≠ 可读取，智能调度引擎在此授权下完全失效
 
-**新引入的风险**:
-- SolarDial 和 PlateDial 的浅色模式适配是发布前必须解决的视觉 bug
-- 表盘切换的可发现性问题会导致这个精心设计的功能被浪费
-
-**建议**: 在继续增加新功能（表盘、视觉效果）之前，优先处理 P0 健壮性问题和本地化。一个会崩溃的 App 再好看也没用。
+**总体趋势**: 功能在快速生长，但基础设施（健壮性、性能、无障碍、本地化）的技术债在持续累积。建议暂停新功能开发 1-2 个迭代，集中偿还 P0/P1 技术债。一个会在 Onboarding 安全检查上留下漏洞的 App，再多的 Buchinger 量表也无法弥补。
