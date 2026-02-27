@@ -46,10 +46,6 @@ struct TimerView: View {
                 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Week strip
-                        weekStrip
-                            .padding(.horizontal, 20)
-                        
                         // Timer card (dial + pills + action button — all in one)
                         timerCard
                             .padding(.horizontal, 20)
