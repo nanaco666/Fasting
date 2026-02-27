@@ -42,7 +42,7 @@ struct TimerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                GradientBackground()
+                TableclothBackground(theme: ThemeManager.shared.currentTheme)
                 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
