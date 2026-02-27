@@ -396,7 +396,7 @@ struct MoodCheckInView: View {
             )
             .overlay(
                 Capsule()
-                    .stroke(selected ? chipColor.opacity(0.35) : .clear, lineWidth: 1.5)
+                    .stroke(selected ? chipColor.opacity(0.35) : Color.clear, lineWidth: 1.5)
             )
             .foregroundStyle(selected ? .primary : .secondary)
         }
@@ -456,7 +456,7 @@ struct MoodCheckInView: View {
                                 .frame(width: 24, height: 24)
                                 .overlay(
                                     Circle()
-                                        .stroke(selected ? .primary : .clear, lineWidth: 2)
+                                        .stroke(selected ? Color.primary : Color.clear, lineWidth: 2)
                                 )
                             Text(level.mmolRange)
                                 .font(.caption2.weight(.medium).monospacedDigit())
