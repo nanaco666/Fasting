@@ -206,7 +206,8 @@ final class FastingService {
                 startTime: fast.startTime,
                 targetDuration: fast.targetDuration,
                 presetName: fast.presetType.displayName,
-                lastUpdated: Date()
+                lastUpdated: Date(),
+                themeId: ThemeManager.shared.currentTheme.id
             ))
         } else {
             SharedFastingData.save(.idle)

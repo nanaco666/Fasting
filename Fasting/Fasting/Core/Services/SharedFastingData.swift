@@ -15,6 +15,7 @@ struct SharedFastingState: Codable {
     var targetDuration: TimeInterval
     var presetName: String
     var lastUpdated: Date
+    var themeId: String
     
     /// Elapsed seconds since start
     var elapsed: TimeInterval {
@@ -40,7 +41,7 @@ struct SharedFastingState: Codable {
     static let idle = SharedFastingState(
         isFasting: false, startTime: nil,
         targetDuration: 0, presetName: "",
-        lastUpdated: Date()
+        lastUpdated: Date(), themeId: "classic"
     )
 }
 

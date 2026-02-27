@@ -2,6 +2,8 @@
 //  FastingWidget.swift
 //  FastingWidget
 //
+//  Widget with plate theme integration — matches main app tablecloth + colors
+//
 
 import WidgetKit
 import SwiftUI
@@ -24,7 +26,6 @@ struct FastingTimelineProvider: TimelineProvider {
         let now = Date()
         
         if state.isFasting {
-            // Update every minute for live countdown
             for minuteOffset in 0..<60 {
                 let date = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: now)!
                 entries.append(FastingEntry(date: date, state: state))
@@ -36,7 +37,6 @@ struct FastingTimelineProvider: TimelineProvider {
         let policy: TimelineReloadPolicy = .after(
             Calendar.current.date(byAdding: .minute, value: state.isFasting ? 30 : 15, to: now)!
         )
-        
         completion(Timeline(entries: entries, policy: policy))
     }
 }
@@ -64,21 +64,6 @@ struct FastingEntry: TimelineEntry {
     var isGoalAchieved: Bool {
         state.isFasting && elapsed >= state.targetDuration
     }
-    
-    /// For display: use Date() for real-time in views that support it
-    var liveElapsed: TimeInterval {
-        guard state.isFasting, let start = state.startTime else { return 0 }
-        return Date().timeIntervalSince(start)
-    }
-    
-    var liveProgress: Double {
-        guard state.isFasting, state.targetDuration > 0 else { return 0 }
-        return min(liveElapsed / state.targetDuration, 1.0)
-    }
-    
-    var liveRemaining: TimeInterval {
-        max(state.targetDuration - liveElapsed, 0)
-    }
 }
 
 extension SharedFastingState {
@@ -87,14 +72,82 @@ extension SharedFastingState {
         startTime: Date().addingTimeInterval(-6 * 3600),
         targetDuration: 16 * 3600,
         presetName: "16:8",
-        lastUpdated: Date()
+        lastUpdated: Date(),
+        themeId: "classic"
     )
 }
 
-// MARK: - Widget Views
+// MARK: - Widget Theme Colors (lightweight, no PlateTheme dependency)
+
+private struct WidgetThemeColors {
+    let accent: Color
+    let track: Color
+    let tableclothAsset: String?  // nil = solid bg
+    let blendColor: Color
+    
+    static func from(themeId: String) -> WidgetThemeColors {
+        switch themeId {
+        case "minimal":
+            return WidgetThemeColors(
+                accent: .green, track: .gray.opacity(0.15),
+                tableclothAsset: nil, blendColor: .clear
+            )
+        case "classic":
+            return WidgetThemeColors(
+                accent: .green, track: .gray.opacity(0.15),
+                tableclothAsset: "tablecloth_linen",
+                blendColor: Color(red: 0.96, green: 0.94, blue: 0.90)
+            )
+        case "ironwood":
+            return WidgetThemeColors(
+                accent: .orange, track: .white.opacity(0.08),
+                tableclothAsset: "tablecloth_darkwood",
+                blendColor: Color(red: 0.12, green: 0.10, blue: 0.08)
+            )
+        case "marble":
+            return WidgetThemeColors(
+                accent: .teal, track: .teal.opacity(0.1),
+                tableclothAsset: "tablecloth_marble",
+                blendColor: Color(red: 0.92, green: 0.92, blue: 0.93)
+            )
+        case "washi":
+            return WidgetThemeColors(
+                accent: .green, track: .brown.opacity(0.1),
+                tableclothAsset: "tablecloth_washi",
+                blendColor: Color(red: 0.95, green: 0.93, blue: 0.88)
+            )
+        default:
+            return .from(themeId: "classic")
+        }
+    }
+}
+
+// MARK: - Themed Widget Background
+
+private struct WidgetThemeBackground: View {
+    let colors: WidgetThemeColors
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var body: some View {
+        if let asset = colors.tableclothAsset {
+            ZStack {
+                (colorScheme == .dark ? Color(.systemBackground) : colors.blendColor)
+                Image(asset)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .opacity(colorScheme == .dark ? 0.3 : 0.6)
+            }
+        } else {
+            Color(.systemBackground)
+        }
+    }
+}
+
+// MARK: - Small Widget
 
 struct FastingWidgetSmall: View {
     let entry: FastingEntry
+    private var tc: WidgetThemeColors { .from(themeId: entry.state.themeId) }
     
     var body: some View {
         if entry.state.isFasting {
@@ -110,31 +163,37 @@ struct FastingWidgetSmall: View {
     
     private var fastingView: some View {
         VStack(spacing: 0) {
-            // Top right: ring
             HStack {
                 Spacer()
+                // Mini plate ring
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 5)
+                        .stroke(tc.track, lineWidth: 5)
                     Circle()
                         .trim(from: 0, to: entry.progress)
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .stroke(tc.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
+                    
+                    if entry.isGoalAchieved {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(tc.accent)
+                    }
                 }
                 .frame(width: 36, height: 36)
             }
             
             Spacer()
             
-            // Main content: left aligned
             VStack(alignment: .leading, spacing: 4) {
                 Text("Remaining")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 
                 if entry.isGoalAchieved {
-                    Text("Done ✅")
-                        .font(.system(.title2, design: .rounded, weight: .bold))
+                    Label("Complete", systemImage: "checkmark.seal.fill")
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundStyle(tc.accent)
                 } else {
                     Text(endDate, style: .timer)
                         .font(.system(.title, design: .rounded, weight: .bold))
@@ -156,7 +215,10 @@ struct FastingWidgetSmall: View {
                 Spacer()
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 5)
+                        .stroke(tc.track, lineWidth: 5)
+                    Image(systemName: "fork.knife")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
                 }
                 .frame(width: 36, height: 36)
             }
@@ -176,8 +238,11 @@ struct FastingWidgetSmall: View {
     }
 }
 
+// MARK: - Medium Widget
+
 struct FastingWidgetMedium: View {
     let entry: FastingEntry
+    private var tc: WidgetThemeColors { .from(themeId: entry.state.themeId) }
     
     var body: some View {
         if entry.state.isFasting {
@@ -193,35 +258,44 @@ struct FastingWidgetMedium: View {
     
     private var fastingView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Top row: preset + ring
             HStack(alignment: .top) {
                 Text(entry.state.presetName)
                     .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(tc.accent)
                 
                 Spacer()
                 
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 6)
+                        .stroke(tc.track, lineWidth: 6)
                     Circle()
                         .trim(from: 0, to: entry.progress)
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .stroke(tc.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                         .rotationEffect(.degrees(-90))
+                    
+                    if entry.isGoalAchieved {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.body)
+                            .foregroundStyle(tc.accent)
+                    } else {
+                        Text("\(Int(entry.progress * 100))%")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .frame(width: 50, height: 50)
             }
             
             Spacer()
             
-            // Bottom: label + big timer
             Text("Remaining")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
             if entry.isGoalAchieved {
-                Text("Done ✅")
+                Label("Complete", systemImage: "checkmark.seal.fill")
                     .font(.system(.title, design: .rounded, weight: .bold))
+                    .foregroundStyle(tc.accent)
             } else {
                 Text(endDate, style: .timer)
                     .font(.system(size: 34, weight: .regular, design: .rounded))
@@ -239,7 +313,10 @@ struct FastingWidgetMedium: View {
                 Spacer()
                 ZStack {
                     Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 6)
+                        .stroke(tc.track, lineWidth: 6)
+                    Image(systemName: "fork.knife")
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
                 }
                 .frame(width: 50, height: 50)
             }
@@ -256,7 +333,8 @@ struct FastingWidgetMedium: View {
     }
 }
 
-// Lock screen widget
+// MARK: - Lock Screen Widget
+
 struct FastingWidgetAccessory: View {
     let entry: FastingEntry
     
@@ -264,7 +342,6 @@ struct FastingWidgetAccessory: View {
         if entry.state.isFasting {
             ZStack {
                 AccessoryWidgetBackground()
-                
                 VStack(spacing: 2) {
                     Gauge(value: entry.progress) {
                         Image(systemName: "flame.fill")
@@ -313,8 +390,11 @@ struct FastingWidget: Widget {
     
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: FastingTimelineProvider()) { entry in
+            let tc = WidgetThemeColors.from(themeId: entry.state.themeId)
             FastingWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(for: .widget) {
+                    WidgetThemeBackground(colors: tc)
+                }
                 .widgetURL(URL(string: "fasting://timer"))
         }
         .configurationDisplayName("Fasting Timer")
@@ -334,10 +414,7 @@ private extension TimeInterval {
         let total = Int(self)
         let h = total / 3600
         let m = (total % 3600) / 60
-        if h > 0 {
-            return "\(h)h \(m)m"
-        }
-        return "\(m)m"
+        return h > 0 ? "\(h)h \(m)m" : "\(m)m"
     }
 }
 
