@@ -491,7 +491,7 @@ struct OnboardingFlow: View {
                 .glassCard(cornerRadius: CornerRadius.large)
                 
                 // Activity feedback
-                if activityLevel == .active || activityLevel == .veryActive {
+                if activityLevel == .active || activityLevel == .intense {
                     scienceTip("onboarding_active_tip".localized, icon: "bolt.fill")
                 }
                 
@@ -725,10 +725,8 @@ struct OnboardingFlow: View {
     private var goalTip: String {
         switch goal {
         case .fatLoss: return "onboarding_goal_fatloss_tip".localized
-        case .metabolicHealth: return "onboarding_goal_metabolic_tip".localized
-        case .mentalClarity: return "onboarding_goal_clarity_tip".localized
-        case .longevity: return "onboarding_goal_longevity_tip".localized
-        case .gutReset: return "onboarding_goal_gut_tip".localized
+        case .maintenance: return "onboarding_goal_metabolic_tip".localized
+        case .metabolicReset: return "onboarding_goal_clarity_tip".localized
         }
     }
     
