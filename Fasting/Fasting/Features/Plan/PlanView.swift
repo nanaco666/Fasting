@@ -115,40 +115,35 @@ struct PlanView: View {
     private func activePlanContent(plan: FastingPlan, profile: UserProfile) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: Spacing.xl) {
-                // 📅 Calendar — past records + future events
-                calendarSection
-                    .padding(.horizontal, Spacing.lg)
-                
-                // Selected day detail
-                dayDetailSection
-                    .padding(.horizontal, Spacing.lg)
-                
-                // Stats row
-                statsRow
-                    .padding(.horizontal, Spacing.lg)
-                
-                // 📅 This Week — smart schedule with calendar events
-                WeekScheduleView(basePlan: plan.recommendedPreset, profile: profile)
-                    .padding(.horizontal, Spacing.lg)
-                
-                // Overview card
+                // 1. Progress + Milestones
                 overviewCard(plan: plan)
                     .padding(.horizontal, Spacing.lg)
                 
-                // Nutrition card
+                milestonesSection(plan: plan)
+                    .padding(.horizontal, Spacing.lg)
+                
+                // 2. Calendar
+                calendarSection
+                    .padding(.horizontal, Spacing.lg)
+                
+                dayDetailSection
+                    .padding(.horizontal, Spacing.lg)
+                
+                statsRow
+                    .padding(.horizontal, Spacing.lg)
+                
+                WeekScheduleView(basePlan: plan.recommendedPreset, profile: profile)
+                    .padding(.horizontal, Spacing.lg)
+                
+                // 3. Nutrition
                 nutritionCard(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
                 
-                // Activity & Exercise
+                // 4. Fitness
                 activitySection(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
                 
-                // Fitness advice
                 fitnessAdviceSection(plan: plan, profile: profile)
-                    .padding(.horizontal, Spacing.lg)
-                
-                // Milestones
-                milestonesSection(plan: plan)
                     .padding(.horizontal, Spacing.lg)
             }
             .padding(.vertical, Spacing.lg)
