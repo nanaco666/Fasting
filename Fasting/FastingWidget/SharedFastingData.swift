@@ -14,11 +14,12 @@ struct SharedFastingState: Codable {
     var targetDuration: TimeInterval
     var presetName: String
     var lastUpdated: Date
+    var themeId: String
     
     static let idle = SharedFastingState(
         isFasting: false, startTime: nil,
         targetDuration: 0, presetName: "",
-        lastUpdated: Date()
+        lastUpdated: Date(), themeId: "classic"
     )
 }
 
