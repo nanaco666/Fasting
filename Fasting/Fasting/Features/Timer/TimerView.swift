@@ -195,15 +195,26 @@ struct TimerView: View {
             let _ = context.date
             VStack(spacing: 16) {
                 // Timer dial (switchable styles)
-                TimerDial(
-                    style: dialStyle,
-                    progress: fastingService.isFasting ? progress : 0,
-                    elapsed: fastingService.isFasting ? elapsed : 0,
-                    target: fastingService.currentFast?.targetDuration ?? 0,
-                    startTime: fastingService.currentFast?.startTime,
-                    isFasting: fastingService.isFasting,
-                    isGoalAchieved: isGoalAchieved
-                )
+                ZStack {
+                    // Plate texture (behind dial)
+                    if let plateImg = ThemeManager.shared.currentTheme.plateImage {
+                        Image(plateImg)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: 320)
+                            .opacity(0.9)
+                    }
+                    
+                    TimerDial(
+                        style: dialStyle,
+                        progress: fastingService.isFasting ? progress : 0,
+                        elapsed: fastingService.isFasting ? elapsed : 0,
+                        target: fastingService.currentFast?.targetDuration ?? 0,
+                        startTime: fastingService.currentFast?.startTime,
+                        isFasting: fastingService.isFasting,
+                        isGoalAchieved: isGoalAchieved
+                    )
+                }
                 .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)

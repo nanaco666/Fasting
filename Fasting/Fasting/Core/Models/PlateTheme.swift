@@ -44,7 +44,7 @@ extension PlateTheme {
         localizedName: "theme_classic".localized,
         tableclothImage: "tablecloth_linen",
         tableclothTint: Color(red: 0.96, green: 0.94, blue: 0.90),
-        plateImage: nil,
+        plateImage: "plate_castiron",
         plateRimColor: Color.gray.opacity(0.15),
         plateSurfaceColor: Color.white.opacity(0.9),
         progressColor: Color.fastingGreen,
