@@ -2,16 +2,15 @@
 //  CompanionEngine.swift
 //  Fasting
 //
-//  陪伴引擎 — 情绪觉知 + 安全守护
-//  Phase messages now come from unified FastingPhase model
-//  CompanionEngine focuses on: mood response, safety checks, completion
+//  陪伴引擎 — 身心福祉响应 + 安全守护
+//  基于布辛格断食监测量表，提供科学指导与温暖陪伴
 //
 
 import Foundation
 
 enum CompanionEngine {
     
-    // MARK: - Phase Message (delegates to unified FastingPhase)
+    // MARK: - Phase Message
     
     struct PhaseMessage {
         let title: String
@@ -19,7 +18,6 @@ enum CompanionEngine {
         let emoji: String
     }
     
-    /// Returns unified phase info: science name + companion message
     static func phaseMessage(hours: Double) -> PhaseMessage {
         let phase = FastingPhaseManager.currentPhase(for: hours * 3600)
         return PhaseMessage(
@@ -29,65 +27,186 @@ enum CompanionEngine {
         )
     }
     
-    // MARK: - Mood Response
+    // MARK: - Wellbeing Response (New: PWB + EWB based)
     
-    static func moodResponse(mood: Mood, hours: Double, symptoms: [MoodSymptom]) -> String {
+    static func wellbeingResponse(
+        pwb: Int,
+        ewb: Int,
+        isHungry: Bool,
+        ketone: KetoneLevel?,
+        symptoms: [MoodSymptom],
+        hours: Double
+    ) -> String {
         var parts: [String] = []
         
-        parts.append(baseMoodResponse(mood: mood, hours: hours))
+        // 1. Core wellbeing feedback
+        parts.append(wellbeingFeedback(pwb: pwb, ewb: ewb, hours: hours))
         
+        // 2. Hunger guidance (research-backed)
+        if isHungry {
+            parts.append(hungerGuidance(hours: hours))
+        }
+        
+        // 3. Ketone interpretation
+        if let ketone = ketone {
+            parts.append(ketoneGuidance(level: ketone, hours: hours))
+        }
+        
+        // 4. Symptom-specific advice
         let negativeSymptoms = symptoms.filter { $0.isNegative }
         if !negativeSymptoms.isEmpty {
             parts.append(symptomAdvice(symptoms: negativeSymptoms, hours: hours))
         }
         
+        // 5. Positive reinforcement
         let positiveSymptoms = symptoms.filter { !$0.isNegative }
         if !positiveSymptoms.isEmpty {
-            parts.append(positiveReinforcement(symptoms: positiveSymptoms))
+            parts.append(positiveReinforcement(symptoms: positiveSymptoms, hours: hours))
         }
         
-        if let safety = safetyCheck(mood: mood, symptoms: symptoms, hours: hours) {
+        // 6. Safety check (always last, always present if needed)
+        if let safety = safetyCheck(pwb: pwb, ewb: ewb, symptoms: symptoms, hours: hours) {
             parts.append(safety)
         }
         
         return parts.joined(separator: "\n\n")
     }
     
-    private static func baseMoodResponse(mood: Mood, hours: Double) -> String {
-        let bucket = hourBucket(hours)
-        let key = "companion_\(mood.rawValue)_\(bucket)"
-        let result = key.localized
-        if result == key {
-            return "companion_\(mood.rawValue)_general".localized
+    // MARK: - Legacy mood response (backward compat)
+    
+    static func moodResponse(mood: Mood, hours: Double, symptoms: [MoodSymptom]) -> String {
+        let pwb: Int
+        let ewb: Int
+        switch mood {
+        case .great: pwb = 9; ewb = 9
+        case .good: pwb = 7; ewb = 7
+        case .neutral: pwb = 5; ewb = 5
+        case .tough: pwb = 3; ewb = 3
+        case .struggling: pwb = 1; ewb = 1
         }
-        return result
+        return wellbeingResponse(pwb: pwb, ewb: ewb, isHungry: false, ketone: nil, symptoms: symptoms, hours: hours)
     }
     
+    // MARK: - Wellbeing Feedback
+    
+    private static func wellbeingFeedback(pwb: Int, ewb: Int, hours: Double) -> String {
+        let bucket = hourBucket(hours)
+        let avg = Double(pwb + ewb) / 2.0
+        
+        // Divergence detection: body and mind feel very different
+        let gap = abs(pwb - ewb)
+        if gap >= 4 {
+            if pwb > ewb {
+                return "companion_diverge_body_strong".localized
+            } else {
+                return "companion_diverge_mind_strong".localized
+            }
+        }
+        
+        // Overall level
+        let mood = Mood.from(pwb: pwb, ewb: ewb)
+        let key = "companion_\(mood.rawValue)_\(bucket)"
+        let result = key.localized
+        if result != key { return result }
+        return "companion_\(mood.rawValue)_general".localized
+    }
+    
+    // MARK: - Hunger Guidance
+    
+    private static func hungerGuidance(hours: Double) -> String {
+        // Research: 93.2% of fasters report hunger disappearing after initial phase
+        if hours < 4 {
+            return "hunger_guidance_early".localized
+        } else if hours < 12 {
+            return "hunger_guidance_mid".localized
+        } else if hours < 18 {
+            return "hunger_guidance_late".localized
+        } else {
+            return "hunger_guidance_extended".localized
+        }
+    }
+    
+    // MARK: - Ketone Guidance
+    
+    private static func ketoneGuidance(level: KetoneLevel, hours: Double) -> String {
+        switch level {
+        case .negative:
+            if hours >= 12 {
+                return "ketone_guidance_negative_late".localized
+            }
+            return "ketone_guidance_negative_early".localized
+        case .trace:
+            return "ketone_guidance_trace".localized
+        case .small:
+            return "ketone_guidance_small".localized
+        case .moderate:
+            return "ketone_guidance_moderate".localized
+        case .large, .veryLarge:
+            return "ketone_guidance_high".localized
+        }
+    }
+    
+    // MARK: - Symptom Advice
+    
     private static func symptomAdvice(symptoms: [MoodSymptom], hours: Double) -> String {
-        let priority: [MoodSymptom] = [.dizzy, .headache, .anxious, .foggy, .irritable, .hungry]
+        let priority: [MoodSymptom] = [.dizzy, .nausea, .headache, .anxious, .foggy, .irritable, .coldHands, .muscleAche, .restless]
         let main = priority.first { symptoms.contains($0) } ?? symptoms.first!
         return "symptom_advice_\(main.rawValue)".localized
     }
     
-    private static func positiveReinforcement(symptoms: [MoodSymptom]) -> String {
-        if symptoms.contains(.energetic) && symptoms.contains(.clearMinded) {
+    // MARK: - Positive Reinforcement
+    
+    private static func positiveReinforcement(symptoms: [MoodSymptom], hours: Double) -> String {
+        let has = { (s: MoodSymptom) in symptoms.contains(s) }
+        
+        if has(.energetic) && has(.clearMinded) {
             return "companion_positive_both".localized
         }
-        if symptoms.contains(.energetic) {
+        if has(.calm) && has(.lightBody) {
+            return "companion_positive_serene".localized
+        }
+        if has(.energetic) {
             return "companion_positive_energy".localized
         }
-        return "companion_positive_clarity".localized
+        if has(.clearMinded) {
+            return "companion_positive_clarity".localized
+        }
+        if has(.calm) {
+            return "companion_positive_calm".localized
+        }
+        if has(.lightBody) {
+            return "companion_positive_light".localized
+        }
+        return "companion_positive_general".localized
     }
     
-    private static func safetyCheck(mood: Mood, symptoms: [MoodSymptom], hours: Double) -> String? {
-        if mood == .struggling && (symptoms.contains(.dizzy) || symptoms.contains(.anxious)) {
+    // MARK: - Safety Check
+    
+    private static func safetyCheck(pwb: Int, ewb: Int, symptoms: [MoodSymptom], hours: Double) -> String? {
+        // Critical: very low scores
+        if pwb <= 2 || ewb <= 2 {
+            return "companion_safety_critical".localized
+        }
+        
+        // Dangerous symptom combos
+        if symptoms.contains(.dizzy) && (symptoms.contains(.nausea) || symptoms.contains(.anxious)) {
             return "companion_safety_stop".localized
         }
-        if hours >= 14 && (mood == .tough || mood == .struggling) {
+        
+        // Extended + struggling
+        if hours >= 14 && (pwb <= 3 || ewb <= 3) {
             return "companion_safety_14h".localized
         }
+        
+        // Low scores warning
+        if pwb <= 3 || ewb <= 3 {
+            return "companion_safety_low".localized
+        }
+        
         return nil
     }
+    
+    // MARK: - Helpers
     
     private static func hourBucket(_ hours: Double) -> String {
         if hours < 4 { return "early" }

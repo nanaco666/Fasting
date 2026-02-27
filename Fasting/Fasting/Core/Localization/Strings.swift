@@ -818,8 +818,6 @@ static let all: [String: [String: String]] = [
     "phase_remodel_detail": ["en": "Your body enters deep metabolic remodeling. New homeostasis is forming, but watch for muscle loss risk. ⚠️ This phase requires professional medical supervision, especially for those with diabetes, low BMI, or eating disorder history.", "zh-Hans": "身体进入深度代谢重塑阶段。新的稳态正在建立，但也需要警惕肌肉流失风险。⚠️ 此阶段必须在专业医疗监督下进行。"],
     "mood_recorded_at": ["en": "Recorded at", "zh-Hans": "记录于"],
     "mood_update": ["en": "Update", "zh-Hans": "更新"],
-    "mood_checkin_title": ["en": "How are you feeling?", "zh-Hans": "你现在感觉怎么样？"],
-    "mood_checkin_subtitle": ["en": "Quick check-in, we're here for you", "zh-Hans": "快速记录，我们陪着你"],
     "mood_very_unpleasant": ["en": "VERY UNPLEASANT", "zh-Hans": "非常不舒服"],
     "mood_very_pleasant": ["en": "VERY PLEASANT", "zh-Hans": "非常舒适"],
     "mood_question": ["en": "How are you feeling right now?", "zh-Hans": "你现在感觉怎么样？"],
@@ -941,5 +939,106 @@ static let all: [String: [String: String]] = [
     "schedule_free_weekend": ["en": "Free day — great for a deeper fast!", "zh-Hans": "空闲日——适合尝试更深度的断食！"],
     "schedule_consecutive_social": ["en": "Multiple social days. Stick to baseline — don't overcompensate.", "zh-Hans": "连续社交活动。保持基线——不要过度补偿。"],
     "schedule_reduced_intensity": ["en": "Gentle mode — your body needs recovery.", "zh-Hans": "温和模式——身体需要恢复。"],
+
+    // ========== Wellbeing Check-in (Buchinger) ==========
+    
+    // Greeting
+    "checkin_greeting_early": ["en": "How are you settling in?", "zh-Hans": "感觉怎么样？"],
+    "checkin_greeting_mid": ["en": "How's your body and mind?", "zh-Hans": "身心状态如何？"],
+    "checkin_greeting_late": ["en": "You've come a long way. How are you?", "zh-Hans": "已经走了很远。你还好吗？"],
+    "checkin_greeting_extended": ["en": "Deep into the journey. Let's check in.", "zh-Hans": "旅程深处。让我们看看你的状态。"],
+    "checkin_hours": ["en": "Hour %d of your fast", "zh-Hans": "断食第 %d 小时"],
+    
+    // Body (PWB)
+    "checkin_body_title": ["en": "Body", "zh-Hans": "身体"],
+    "checkin_body_question": ["en": "How does your body feel right now?", "zh-Hans": "现在身体感觉怎么样？"],
+    "checkin_body_low_hint": ["en": "Low energy is common during metabolic transition. Electrolytes and rest help.", "zh-Hans": "代谢切换期能量低是正常的。补充电解质和休息会有帮助。"],
+    
+    // Mind (EWB)
+    "checkin_mind_title": ["en": "Mind", "zh-Hans": "心理"],
+    "checkin_mind_question": ["en": "How's your mood and mental clarity?", "zh-Hans": "心情和思维清晰度怎么样？"],
+    "checkin_mind_low_hint": ["en": "Emotional dips around 24-48h are linked to cortisol shifts. This is temporary.", "zh-Hans": "24-48小时的情绪低落与皮质醇波动有关。这是暂时的。"],
+    
+    // Wellbeing levels
+    "wellbeing_excellent": ["en": "Excellent", "zh-Hans": "极好"],
+    "wellbeing_good": ["en": "Good", "zh-Hans": "不错"],
+    "wellbeing_moderate": ["en": "Moderate", "zh-Hans": "一般"],
+    "wellbeing_poor": ["en": "Poor", "zh-Hans": "较差"],
+    "wellbeing_veryPoor": ["en": "Very Poor", "zh-Hans": "很差"],
+    
+    // Hunger
+    "checkin_hunger_question": ["en": "Feeling hungry?", "zh-Hans": "有饥饿感吗？"],
+    "checkin_yes": ["en": "Yes", "zh-Hans": "有"],
+    "checkin_no": ["en": "No", "zh-Hans": "没有"],
+    
+    // Hunger guidance (research: 93.2% hunger disappears after initial phase)
+    "hunger_guidance_early": ["en": "Hunger in the first few hours is usually habit, not need. It often fades in 15-20 minutes. Try warm water or tea.", "zh-Hans": "最初几小时的饥饿感通常是习惯，不是真正的需要。一般15-20分钟后会消退。试试温水或茶。"],
+    "hunger_guidance_mid": ["en": "Your body is at the metabolic crossover. Hunger waves are normal and they pass. Research shows 93% of fasters report hunger vanishing after this phase.", "zh-Hans": "身体正处于代谢切换点。饥饿感一阵一阵的，会过去的。研究显示93%的断食者在这个阶段后饥饿感完全消失。"],
+    "hunger_guidance_late": ["en": "Still hungry this far in? Check hydration and electrolytes first. True hunger at this stage is uncommon — it might be thirst or boredom.", "zh-Hans": "到这个阶段还饿？先检查水分和电解质。这个阶段真正的饥饿不常见——可能是口渴或无聊。"],
+    "hunger_guidance_extended": ["en": "Persistent hunger beyond 18h deserves attention. Have some salt water. If it doesn't fade, your body might be asking you to refeed.", "zh-Hans": "超过18小时持续饥饿需要注意。喝点盐水。如果不消退，身体可能在要求进食。"],
+    
+    // Symptoms (new ones)
+    "nausea": ["en": "Nausea", "zh-Hans": "恶心"],
+    "muscleAche": ["en": "Muscle ache", "zh-Hans": "肌肉酸痛"],
+    "coldHands": ["en": "Cold hands", "zh-Hans": "手脚冰凉"],
+    "restless": ["en": "Restless", "zh-Hans": "坐立不安"],
+    "calm": ["en": "Calm", "zh-Hans": "平静"],
+    "lightBody": ["en": "Light body", "zh-Hans": "身体轻盈"],
+    "checkin_symptoms_title": ["en": "Anything else to note?", "zh-Hans": "还有什么想记录的？"],
+    "checkin_symptoms_physical": ["en": "Physical", "zh-Hans": "身体感受"],
+    "checkin_symptoms_mental": ["en": "Mental", "zh-Hans": "心理感受"],
+    
+    // Symptom advice (new)
+    "symptom_advice_nausea": ["en": "Nausea during fasting is often from stomach acid on an empty stomach. Try small sips of warm water or ginger tea.", "zh-Hans": "断食期间恶心通常是空腹胃酸引起的。试试小口温水或姜茶。"],
+    "symptom_advice_muscleAche": ["en": "Muscle soreness can be from electrolyte shifts. Magnesium-rich mineral water or a pinch of salt in water helps.", "zh-Hans": "肌肉酸痛可能是电解质变化引起的。含镁矿泉水或水里加一小撮盐会有帮助。"],
+    "symptom_advice_coldHands": ["en": "Cold extremities are normal — your body is conserving energy by reducing peripheral blood flow. It's a sign the metabolic switch is happening.", "zh-Hans": "手脚冰凉是正常的——身体在通过减少外周血流来节省能量。这是代谢切换正在发生的信号。"],
+    "symptom_advice_restless": ["en": "Restlessness is often from elevated adrenaline — your body's natural response to fasting. A walk or light stretching can channel this energy.", "zh-Hans": "坐立不安通常是肾上腺素升高——身体对断食的自然反应。散步或轻度拉伸可以释放这股能量。"],
+    
+    // Positive reinforcement (new)
+    "companion_positive_serene": ["en": "Calm and light — this is the fasting sweet spot. Your body has found its rhythm. Enjoy this feeling.", "zh-Hans": "平静且轻盈——这是断食的甜蜜点。身体找到了节奏。享受这种感觉。"],
+    "companion_positive_calm": ["en": "That sense of calm is real — elevated GABA and ketones create a natural tranquility. Your brain is thriving.", "zh-Hans": "那种平静感是真实的——升高的GABA和酮体创造了自然的宁静。大脑状态很好。"],
+    "companion_positive_light": ["en": "Feeling light is a sign your body has efficiently switched to fat metabolism. Less inflammation, less water retention.", "zh-Hans": "感觉轻盈说明身体已经高效切换到脂肪代谢。炎症减少，水肿减少。"],
+    "companion_positive_general": ["en": "Your body is sending positive signals. Trust the process — you're doing great.", "zh-Hans": "身体在发出积极信号。相信过程——你做得很好。"],
+    
+    // Divergence (body vs mind mismatch)
+    "companion_diverge_body_strong": ["en": "Interesting — your body feels better than your mind. Emotional dips during fasting are biochemical, not personal. Try a short walk or call a friend.", "zh-Hans": "有意思——身体感觉比心理好。断食期间的情绪低落是生化反应，不是你的问题。试试短暂散步或跟朋友聊天。"],
+    "companion_diverge_mind_strong": ["en": "Your mind is clear but your body is struggling. This often happens during the metabolic transition. Focus on hydration and electrolytes — the body will catch up.", "zh-Hans": "思维很清晰但身体在挣扎。这在代谢过渡期很常见。注意补水和电解质——身体会跟上来的。"],
+    
+    // Safety
+    "companion_safety_critical": ["en": "⚠️ Your wellbeing score is very low. Please consider ending your fast. No fast is worth compromising your health. There will always be another chance.", "zh-Hans": "⚠️ 你的身心评分很低。请考虑结束断食。没有任何一次断食值得牺牲健康。永远会有下一次机会。"],
+    "companion_safety_low": ["en": "Your scores suggest you're having a tough time. Remember: listening to your body is not giving up — it's wisdom. Consider a shorter fast today.", "zh-Hans": "你的评分显示状态不太好。记住：听从身体不是放弃——而是智慧。考虑今天缩短断食时间。"],
+    
+    // Ketone
+    "checkin_ketone_title": ["en": "Urine Ketones", "zh-Hans": "尿酮监测"],
+    "checkin_optional": ["en": "Optional", "zh-Hans": "选填"],
+    "checkin_ketone_question": ["en": "If you tested, match the color on your strip:", "zh-Hans": "如果你做了检测，选择试纸对应的颜色："],
+    "ketone_negative": ["en": "Negative — not yet in ketosis", "zh-Hans": "阴性——尚未进入酮症"],
+    "ketone_trace": ["en": "Trace — ketosis is beginning", "zh-Hans": "微量——酮症正在启动"],
+    "ketone_small": ["en": "Small — light nutritional ketosis", "zh-Hans": "少量——轻度营养性酮症"],
+    "ketone_moderate": ["en": "Moderate — optimal fasting ketosis", "zh-Hans": "中等——最佳断食酮症"],
+    "ketone_large": ["en": "Large — deep ketosis", "zh-Hans": "大量——深度酮症"],
+    "ketone_veryLarge": ["en": "Very large — monitor closely", "zh-Hans": "极大量——需密切关注"],
+    
+    // Ketone guidance
+    "ketone_guidance_negative_early": ["en": "No ketones yet — perfectly normal. Your body is still using glycogen stores. Ketones typically appear after 12-16 hours.", "zh-Hans": "还没有酮体——完全正常。身体还在消耗糖原储备。酮体通常在12-16小时后出现。"],
+    "ketone_guidance_negative_late": ["en": "No ketones after 12+ hours is uncommon. Ensure you haven't consumed anything with calories. Some people naturally produce less urinary ketones.", "zh-Hans": "12小时后还没有酮体不太常见。确认没有摄入任何有热量的东西。有些人天然尿酮产生较少。"],
+    "ketone_guidance_trace": ["en": "Ketosis is starting! Your liver is beginning to produce ketone bodies. BHB (the brain's premium fuel) is on its way.", "zh-Hans": "酮症正在启动！肝脏开始产生酮体。BHB（大脑的优质燃料）正在路上。"],
+    "ketone_guidance_small": ["en": "You're in light nutritional ketosis. Fat burning is active. Many people start feeling mental clarity around this level.", "zh-Hans": "你已进入轻度营养性酮症。脂肪燃烧已激活。很多人在这个水平开始感受到思维清晰。"],
+    "ketone_guidance_moderate": ["en": "Optimal fasting zone! Autophagy is likely active. This is where the Buchinger studies showed the steepest wellbeing improvements.", "zh-Hans": "最佳断食区间！细胞自噬可能已激活。布辛格研究显示这个区间身心福祉改善最显著。"],
+    "ketone_guidance_high": ["en": "Deep ketosis — powerful for autophagy but ensure adequate hydration and electrolytes. If you feel unwell, please end the fast.", "zh-Hans": "深度酮症——对细胞自噬很强效，但请确保充足的水分和电解质。如果感觉不适，请结束断食。"],
+    
+    // Ketone info sheet
+    "ketone_info_title": ["en": "About Urine Ketones", "zh-Hans": "关于尿酮检测"],
+    "ketone_info_what": ["en": "During fasting, your liver converts fat into ketone bodies (BHB, AcAc, acetone) as alternative fuel. Urine test strips (like Ketostix) detect acetoacetate — an overflow indicator of ketosis.\n\nThis is a simple way to confirm your body has switched to fat-burning mode. It's not a precise measurement, but a helpful directional signal.", "zh-Hans": "断食期间，肝脏将脂肪转化为酮体（BHB、AcAc、丙酮）作为替代燃料。尿酮试纸（如Ketostix）检测乙酰乙酸——酮症的溢出指标。\n\n这是确认身体已切换到脂肪燃烧模式的简单方法。不是精确测量，但是很有用的方向性信号。"],
+    "ketone_info_guide_title": ["en": "Color Guide", "zh-Hans": "颜色对照"],
+    "ketone_info_tips": ["en": "Tips: Test in the morning for most consistent readings. Hydration affects concentration — very dilute urine may show lower readings even in ketosis.", "zh-Hans": "小贴士：早晨检测结果最稳定。水分影响浓度——即使在酮症中，尿液很稀也可能显示较低读数。"],
+    "ketone_info_safety": ["en": "Very high ketone levels (large/very large) sustained for multiple days warrant medical attention, especially for people with diabetes.", "zh-Hans": "极高酮体水平（大量/极大量）持续多天需要就医，特别是糖尿病患者。"],
+    
+    // Check-in UI
+    "checkin_guidance_title": ["en": "Your Companion Says", "zh-Hans": "陪伴指导"],
+    "checkin_save": ["en": "Record", "zh-Hans": "记录"],
+    "mood_checkin_title": ["en": "How are you feeling?", "zh-Hans": "你现在感觉如何？"],
+    "mood_checkin_subtitle": ["en": "Tap to check in — we're here for you", "zh-Hans": "点击记录——我们陪着你"],
+
 ]
 }
