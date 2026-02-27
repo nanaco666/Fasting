@@ -1115,5 +1115,15 @@ static let all: [String: [String: String]] = [
     "onboarding_your_profile": ["en": "Your Profile", "zh-Hans": "你的档案"],
     "onboarding_closing_message": ["en": "Remember: every fast teaches your body something. We'll be with you every step — adjusting, guiding, and celebrating your progress. You're not doing this alone.", "zh-Hans": "记住：每次断食都在教会身体一些东西。我们会陪你走每一步——调整、指导、庆祝你的进步。你不是一个人在做这件事。"],
 
+
+    // ========== Plate Themes ==========
+    
+    "theme_classic": ["en": "Classic", "zh-Hans": "经典白瓷"],
+    "theme_ironwood": ["en": "Ironwood", "zh-Hans": "铸铁木桌"],
+    "theme_marble": ["en": "Marble", "zh-Hans": "大理石"],
+    "theme_washi": ["en": "Washi", "zh-Hans": "和纸木盘"],
+    "theme_section_title": ["en": "Table Setting", "zh-Hans": "餐桌布置"],
+    "theme_current": ["en": "Current", "zh-Hans": "当前"],
+
 ]
 }
