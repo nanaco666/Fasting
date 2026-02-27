@@ -34,7 +34,7 @@ enum WellbeingLevel: String {
         case .good: return .fastingTeal
         case .moderate: return .secondary
         case .poor: return .fastingOrange
-        case .veryPoor: return .red
+        case .veryPoor: return .fastingOrange
         }
     }
     
@@ -57,12 +57,12 @@ enum KetoneLevel: String, Codable, CaseIterable, Identifiable {
     
     var color: Color {
         switch self {
-        case .negative: return Color(red: 0.95, green: 0.9, blue: 0.75)
-        case .trace: return Color(red: 0.9, green: 0.75, blue: 0.7)
-        case .small: return Color(red: 0.8, green: 0.55, blue: 0.6)
-        case .moderate: return Color(red: 0.65, green: 0.35, blue: 0.5)
-        case .large: return Color(red: 0.5, green: 0.2, blue: 0.45)
-        case .veryLarge: return Color(red: 0.35, green: 0.1, blue: 0.35)
+        case .negative: return .secondary.opacity(0.3)
+        case .trace: return .fastingGreen.opacity(0.4)
+        case .small: return .fastingGreen.opacity(0.7)
+        case .moderate: return .fastingTeal
+        case .large: return .fastingOrange.opacity(0.8)
+        case .veryLarge: return .fastingOrange
         }
     }
     

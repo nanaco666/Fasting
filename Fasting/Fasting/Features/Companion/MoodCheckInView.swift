@@ -42,7 +42,7 @@ struct MoodCheckInView: View {
         if avg >= 7 { return Color.fastingGreen }
         if avg >= 5 { return Color.fastingTeal }
         if avg >= 3 { return Color.fastingOrange }
-        return .red.opacity(0.8)
+        return Color.fastingOrange
     }
     
     var body: some View {
@@ -167,7 +167,7 @@ struct MoodCheckInView: View {
             // Score display
             HStack {
                 Text("\(Int(pwb.rounded()))")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .font(AppFont.stat())
                     .foregroundStyle(pwbLevel.color)
                     .contentTransition(.numericText())
                     .animation(.fastSpring, value: Int(pwb.rounded()))
@@ -215,7 +215,7 @@ struct MoodCheckInView: View {
             
             HStack {
                 Text("\(Int(ewb.rounded()))")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .font(AppFont.stat())
                     .foregroundStyle(ewbLevel.color)
                     .contentTransition(.numericText())
                     .animation(.fastSpring, value: Int(ewb.rounded()))
@@ -459,7 +459,7 @@ struct MoodCheckInView: View {
                                         .stroke(selected ? .primary : .clear, lineWidth: 2)
                                 )
                             Text(level.mmolRange)
-                                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                .font(.caption2.weight(.medium).monospacedDigit())
                                 .foregroundStyle(selected ? .primary : .quaternary)
                         }
                     }
