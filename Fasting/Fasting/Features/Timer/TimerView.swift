@@ -195,38 +195,40 @@ struct TimerView: View {
     private var plateWithDial: some View {
         let theme = ThemeManager.shared.currentTheme
         
-        return ZStack {
-            // Plate image — larger than dial, acts as container
-            if let plateImg = theme.plateImage {
-                Image(plateImg)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .shadow(color: Color.black.opacity(0.15), radius: 16, y: 8)
+        return GeometryReader { geo in
+            let size = min(geo.size.width - 40, geo.size.height)
+            ZStack {
+                if let plateImg = theme.plateImage {
+                    Image(plateImg)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .shadow(color: Color.black.opacity(0.12), radius: 12, y: 6)
+                }
+                
+                TimerDial(
+                    style: dialStyle,
+                    progress: fastingService.isFasting ? progress : 0,
+                    elapsed: fastingService.isFasting ? elapsed : 0,
+                    target: fastingService.currentFast?.targetDuration ?? 0,
+                    startTime: fastingService.currentFast?.startTime,
+                    isFasting: fastingService.isFasting,
+                    isGoalAchieved: isGoalAchieved
+                )
+                .scaleEffect(theme.hasPlate ? 1.0 / theme.plateScale : 1.0)
             }
-            
-            // Dial sits centered on the plate
-            TimerDial(
-                style: dialStyle,
-                progress: fastingService.isFasting ? progress : 0,
-                elapsed: fastingService.isFasting ? elapsed : 0,
-                target: fastingService.currentFast?.targetDuration ?? 0,
-                startTime: fastingService.currentFast?.startTime,
-                isFasting: fastingService.isFasting,
-                isGoalAchieved: isGoalAchieved
-            )
-            .scaleEffect(theme.hasPlate ? 1.0 / theme.plateScale : 1.0)
+            .frame(width: size, height: size)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20)
+        .aspectRatio(1, contentMode: .fit)
+        .padding(.horizontal, 20)
     }
     
     private var timerCard: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
-            VStack(spacing: 16) {
+            VStack(spacing: 8) {
                 // Timer dial (switchable styles)
                 plateWithDial
-                .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)
                 .onLongPressGesture(perform: switchDialStyle)
@@ -284,7 +286,7 @@ struct TimerView: View {
                 // Action button inside card
                 actionButton
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 12)
             }
             .glassCard(cornerRadius: CornerRadius.extraLarge)
             .onChange(of: isGoalAchieved) { _, achieved in
