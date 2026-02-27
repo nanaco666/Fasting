@@ -381,7 +381,7 @@ struct PlanView: View {
             let events = (schedule?.events ?? []).filter { event in
                 guard let h = holiday else { return true }
                 return !event.title.localizedCaseInsensitiveContains(h.localizedName)
-                    && !event.title.localizedCaseInsensitiveContains(h.englishName)
+                    && !event.title.localizedCaseInsensitiveContains(h.name)
             }
             
             if events.isEmpty && holiday == nil { return nil }
