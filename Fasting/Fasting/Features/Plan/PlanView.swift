@@ -219,6 +219,7 @@ struct PlanView: View {
     }
     
     private func stageProgressBar(milestones: [PlanMilestone], totalWeeks: Int, currentWeek: Int) -> some View {
+        VStack(spacing: 0) {
         GeometryReader { geo in
             let width = geo.size.width
             let progress = CGFloat(currentWeek) / CGFloat(totalWeeks)
@@ -277,6 +278,7 @@ struct PlanView: View {
                 }
             }
             .frame(height: 16)
+        }
         }
     }
     
@@ -369,11 +371,10 @@ struct PlanView: View {
         let today = cal.startOfDay(for: Date())
         
         // Build 14-day list: merge weekSchedule (7 days) + holidays
-        let days: [(date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: DaySuggestion?)] = (0..<14).compactMap { offset in
+        let days: [(date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: FastingSuggestion?)] = (0..<14).compactMap { offset in
             guard let date = cal.date(byAdding: .day, value: offset, to: today) else { return nil }
             let schedule = calendarService.weekSchedule.first(where: { cal.isDate($0.date, inSameDayAs: date) })
             let holiday = HolidayService.holiday(on: date)
-            // Only show days with events or holidays
             if schedule?.events.isEmpty ?? true, holiday == nil { return nil }
             return (date, schedule?.events ?? [], holiday, schedule?.suggestion)
         }
@@ -402,7 +403,7 @@ struct PlanView: View {
         }
     }
     
-    private func upcomingDayRow(_ date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: DaySuggestion?) -> some View {
+    private func upcomingDayRow(_ date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: FastingSuggestion?) -> some View {
         let cal = Calendar.current
         
         return HStack(alignment: .top, spacing: Spacing.md) {
