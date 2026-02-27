@@ -150,8 +150,11 @@ struct GlassCard: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.08), radius: 8, x: 0, y: 4)
+                    .fill(colorScheme == .dark
+                        ? AnyShapeStyle(Color(white: 0.14))
+                        : AnyShapeStyle(.ultraThinMaterial)
+                    )
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.08), radius: 8, x: 0, y: 4)
             }
     }
 }

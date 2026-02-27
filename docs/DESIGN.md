@@ -18,6 +18,8 @@ Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 - Feature code must NEVER define custom RGB. Use only these 3 + system semantic colors.
 - Always prefix with `Color.` in `.fill()`, `.stroke()`, `.foregroundStyle()` — bare `.fastingGreen` fails ShapeStyle inference.
 - Dark mode: system handles it. These map to `Color.green`, `.teal`, `.orange`.
+- In dark mode, AVOID `.foregroundStyle(.tertiary)` for anything that needs to be read — use `.secondary` minimum.
+- Pill/inner backgrounds: `opacity(0.12)` minimum in dark mode (NOT `0.06` — invisible).
 - Opacity variations for backgrounds: `Color.fastingGreen.opacity(0.06)` for pill bg, `0.08` for section bg, `0.12` for track.
 
 **Color assignments by domain:**
@@ -67,7 +69,12 @@ Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 .glassCard(cornerRadius: CornerRadius.extraLarge)  // 28pt — standard for all feature cards
 ```
 
-Implementation: `.ultraThinMaterial` background + shadow `(0.08 light / 0.3 dark, radius: 8, y: 4)`.
+Implementation:
+- **Light mode**: `.ultraThinMaterial` background
+- **Dark mode**: `Color(white: 0.14)` solid elevated surface (NOT material — too dim)
+- Shadow: `0.08 light / 0.4 dark, radius: 8, y: 4`
+
+Flighty pattern: dark mode cards are opaque, slightly elevated surfaces. Material blur makes text unreadable on dark backgrounds.
 
 ### Card Header Pattern (mandatory for all cards)
 
@@ -134,7 +141,7 @@ VStack(spacing: 4) {
 ```
 
 **Rules:**
-- Background: `Color.gray.opacity(0.06)` — NOT the domain color
+- Background: domain `color.opacity(0.12)` — visible in both light and dark mode
 - Corner radius: `12pt` for pills (hardcoded, not from CornerRadius enum)
 - Labels: UPPERCASE, tracking 0.5, `.tertiary`
 - Values: `.monospacedDigit()` always

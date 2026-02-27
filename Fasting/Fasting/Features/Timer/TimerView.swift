@@ -276,7 +276,7 @@ struct TimerView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                            .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
                     }
@@ -310,7 +310,7 @@ struct TimerView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
     }
     
     @AppStorage("defaultPreset") private var idleDefaultPreset: String = "sixteen8"
@@ -349,7 +349,7 @@ struct TimerView: View {
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 20))
+                .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 20))
             }
             .buttonStyle(.plain)
         } else {

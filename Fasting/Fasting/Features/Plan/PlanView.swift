@@ -199,7 +199,7 @@ struct PlanView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
@@ -313,7 +313,7 @@ struct PlanView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(color.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
     }
     
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -442,7 +442,7 @@ struct PlanView: View {
                             .frame(width: 6, height: 6)
                         Text(event.title).font(.subheadline).lineLimit(1)
                         Spacer()
-                        Text(event.timeRange).font(.caption).foregroundStyle(.tertiary)
+                        Text(event.timeRange).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 
@@ -779,7 +779,7 @@ struct PlanView: View {
                             .frame(width: 6, height: 6)
                         Text(event.title).font(.subheadline).lineLimit(1)
                         Spacer()
-                        Text(event.timeRange).font(.caption).foregroundStyle(.tertiary)
+                        Text(event.timeRange).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 HStack(spacing: 4) {
@@ -794,7 +794,7 @@ struct PlanView: View {
             }
         }
         .padding(12)
-        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
     }
     
     private func holidayCard(_ h: Holiday) -> some View {
@@ -808,7 +808,7 @@ struct PlanView: View {
             presetBadge(h.fastingAdvice.suggestedPreset)
         }
         .padding(12)
-        .background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
     }
     
     // MARK: - Calendar Helpers
