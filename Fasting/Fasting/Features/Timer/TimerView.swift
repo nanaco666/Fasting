@@ -45,11 +45,12 @@ struct TimerView: View {
                         // Health-style cards
                         if fastingService.isFasting {
                             TimelineView(.periodic(from: .now, by: 1)) { _ in
-                                moodCard
-                                    .padding(.horizontal, 20)
-                                
-                                bodyPhaseCard
-                                    .padding(.horizontal, 20)
+                                VStack(spacing: 20) {
+                                    moodCard
+                                    
+                                    bodyPhaseCard
+                                }
+                                .padding(.horizontal, 20)
                             }
                         } else {
                             BodyJourneyIdleCard()
