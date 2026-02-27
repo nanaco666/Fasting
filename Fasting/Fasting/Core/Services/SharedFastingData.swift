@@ -56,6 +56,7 @@ enum SharedFastingData {
     static func save(_ state: SharedFastingState) {
         guard let data = try? JSONEncoder().encode(state) else { return }
         defaults?.set(data, forKey: stateKey)
+        defaults?.synchronize()
         // Tell widget to refresh
         WidgetCenter.shared.reloadAllTimelines()
     }

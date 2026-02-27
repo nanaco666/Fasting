@@ -33,9 +33,9 @@ struct FastingTimelineProvider: TimelineProvider {
             entries.append(FastingEntry(date: now, state: state))
         }
         
-        let policy: TimelineReloadPolicy = state.isFasting ? .after(
-            Calendar.current.date(byAdding: .minute, value: 30, to: now)!
-        ) : .never
+        let policy: TimelineReloadPolicy = .after(
+            Calendar.current.date(byAdding: .minute, value: state.isFasting ? 30 : 15, to: now)!
+        )
         
         completion(Timeline(entries: entries, policy: policy))
     }

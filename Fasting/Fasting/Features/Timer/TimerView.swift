@@ -44,11 +44,13 @@ struct TimerView: View {
                         
                         // Health-style cards
                         if fastingService.isFasting {
-                            moodCard
-                                .padding(.horizontal, 20)
-                            
-                            bodyPhaseCard
-                                .padding(.horizontal, 20)
+                            TimelineView(.periodic(from: .now, by: 1)) { _ in
+                                moodCard
+                                    .padding(.horizontal, 20)
+                                
+                                bodyPhaseCard
+                                    .padding(.horizontal, 20)
+                            }
                         } else {
                             BodyJourneyIdleCard()
                                 .padding(.horizontal, 20)
@@ -188,9 +190,9 @@ struct TimerView: View {
                 // Timer dial (switchable styles)
                 TimerDial(
                     style: dialStyle,
-                    progress: progress,
-                    elapsed: fastingService.isFasting ? elapsed : (lastCompleted?.actualDuration ?? 0),
-                    target: fastingService.currentFast?.targetDuration ?? (lastCompleted?.targetDuration ?? 0),
+                    progress: fastingService.isFasting ? progress : 0,
+                    elapsed: fastingService.isFasting ? elapsed : 0,
+                    target: fastingService.currentFast?.targetDuration ?? 0,
                     startTime: fastingService.currentFast?.startTime,
                     isFasting: fastingService.isFasting,
                     isGoalAchieved: isGoalAchieved
@@ -440,50 +442,52 @@ struct TimerView: View {
         let phase = FastingPhaseManager.currentPhase(for: elapsed)
         
         return VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(alignment: .firstTextBaseline) {
-                Image(systemName: "figure.equestrian.sports")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.fastingGreen)
-                Text("Body Journey".localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.fastingGreen)
-                
-                Spacer()
-                
-                if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
-                    Text(formatShortInterval(timeToNext))
+            // Header + collapsed summary — entire area tappable
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    Image(systemName: "figure.equestrian.sports")
                         .font(.subheadline)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.fastingGreen)
+                    Text("Body Journey".localized)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.fastingGreen)
+                    
+                    Spacer()
+                    
+                    if let timeToNext = FastingPhaseManager.timeToNextPhase(for: elapsed) {
+                        Text(formatShortInterval(timeToNext))
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.quaternary)
+                        .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
                 }
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.quaternary)
-                    .rotationEffect(.degrees(isPhaseExpanded ? 180 : 0))
+                .padding(16)
+                
+                // Phase summary (only when collapsed)
+                if !isPhaseExpanded {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(phase.name)
+                            .font(.title2.weight(.bold))
+                        
+                        Text(phase.companionMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(2)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
             }
-            .padding(16)
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.fastSpring) {
                     isPhaseExpanded.toggle()
                 }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            }
-            
-            // Phase summary (only when collapsed)
-            if !isPhaseExpanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(phase.name)
-                        .font(.title2.weight(.bold))
-                    
-                    Text(phase.companionMessage)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(2)
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 14)
             }
             
             // Expanded: phase timeline with auto-scroll to current
@@ -576,15 +580,9 @@ struct TimerView: View {
     }
     
     private var progress: Double {
-        if fastingService.isFasting {
-            guard let target = fastingService.currentFast?.targetDuration, target > 0 else { return 0 }
-            return min(elapsed / target, 1.0)
-        }
-        // Show last fast's real progress when idle
-        if let last = lastCompleted, let actual = last.actualDuration, last.targetDuration > 0 {
-            return min(actual / last.targetDuration, 1.0)
-        }
-        return 0
+        guard fastingService.isFasting,
+              let target = fastingService.currentFast?.targetDuration, target > 0 else { return 0 }
+        return min(elapsed / target, 1.0)
     }
     
     private var isGoalAchieved: Bool {
@@ -600,9 +598,6 @@ struct TimerView: View {
     private var formattedElapsed: String {
         if fastingService.isFasting {
             return FastingRecord.formatDuration(elapsed)
-        }
-        if let last = lastCompleted, let actual = last.actualDuration {
-            return FastingRecord.formatDuration(actual)
         }
         return FastingRecord.formatDuration(0)
     }
