@@ -27,6 +27,8 @@ struct TimerView: View {
     @State private var showConfirmEnd = false
     @State private var showEditStart = false
     @State private var editedStartTime = Date()
+    @State private var showEditGoal = false
+    @State private var editedGoalHours: Double = 16
     @State private var hasShownGoalCelebration = false
     @State private var showMoodCheckIn = false
     @State private var showRefeedGuide = false
@@ -125,6 +127,14 @@ struct TimerView: View {
                 EditStartTimeSheet(startTime: $editedStartTime) {
                     fastingService.currentFast?.startTime = editedStartTime
                     try? modelContext.save()
+                }
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showEditGoal) {
+                EditGoalSheet(targetHours: $editedGoalHours) {
+                    fastingService.currentFast?.targetDuration = editedGoalHours * 3600
+                    try? modelContext.save()
+                    fastingService.syncToWidget()
                 }
                 .presentationDetents([.medium])
             }
@@ -246,10 +256,17 @@ struct TimerView: View {
                         }
                         .buttonStyle(.plain)
                         
-                        // Fasting: GOAL display
+                        // Fasting: GOAL — tappable to edit
                         if let targetDur = fastingService.currentFast?.targetDuration {
                             let preset = fastingService.currentFast?.presetType.displayName ?? ""
-                            timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(targetDur)))
+                            Button {
+                                editedGoalHours = targetDur / 3600
+                                showEditGoal = true
+                                Haptic.light()
+                            } label: {
+                                timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(targetDur)))
+                            }
+                            .buttonStyle(.plain)
                         }
                     } else {
                         // Idle: START = now
