@@ -68,19 +68,12 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            // History
-            HistoryView()
-                .tabItem {
-                    Label(L10n.Tab.history, systemImage: "calendar")
-                }
-                .tag(1)
-            
-            // Plan
+            // Plan (includes calendar + history)
             PlanView()
                 .tabItem {
                     Label("Plan".localized, systemImage: "target")
                 }
-                .tag(2)
+                .tag(1)
             
 
         }

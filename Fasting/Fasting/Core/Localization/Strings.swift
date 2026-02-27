@@ -1126,5 +1126,7 @@ static let all: [String: [String: String]] = [
     "theme_current": ["en": "Current", "zh-Hans": "当前"],
 
     "theme_minimal": ["en": "Minimal", "zh-Hans": "极简"],
+    "plan_suggested_window": ["en": "Suggested: %@ — eating window %@", "zh-Hans": "建议: %@ — 进食窗口 %@"],
+    "plan_free_day": ["en": "No events — great day for a longer fast!", "zh-Hans": "没有活动——适合挑战更长的断食！"],
 ]
 }
