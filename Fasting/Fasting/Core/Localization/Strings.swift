@@ -1132,11 +1132,10 @@ static let all: [String: [String: String]] = [
 
     "theme_minimal": ["en": "Minimal", "zh-Hans": "极简"],
     "plan_suggested_window": ["en": "Suggested: %@ — eating window %@", "zh-Hans": "建议: %@ — 进食窗口 %@"],
-    "plan_free_day"
-        "edit_goal": ["en": "Edit Goal", "zh-Hans": "修改目标"],
-        "goal_current": ["en": "Current Goal", "zh-Hans": "当前目标"],
-        "save": ["en": "Save", "zh-Hans": "保存"],
-        : ["en": "No events — great day for a longer fast!", "zh-Hans": "没有活动——适合挑战更长的断食！"],
+    "edit_goal": ["en": "Edit Goal", "zh-Hans": "修改目标"],
+    "goal_current": ["en": "Current Goal", "zh-Hans": "当前目标"],
+    "save": ["en": "Save", "zh-Hans": "保存"],
+    "plan_free_day": ["en": "No events — great day for a longer fast!", "zh-Hans": "没有活动——适合挑战更长的断食！"],
     "plan_empty_desc": ["en": "Create a personalized fasting plan\nbased on your body and goals.", "zh-Hans": "根据你的身体状况和目标\n创建个性化断食方案"],
     "plan_week_of": ["en": "Week %d of %d", "zh-Hans": "第 %d / %d 周"],
     "plan_weeks_left": ["en": "%d weeks left", "zh-Hans": "还剩 %d 周"],

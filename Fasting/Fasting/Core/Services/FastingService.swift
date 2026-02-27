@@ -199,7 +199,7 @@ final class FastingService {
     
     // MARK: - Widget Sync
     
-    private func syncToWidget() {
+    func syncToWidget() {
         if let fast = currentFast, fast.status == .inProgress {
             SharedFastingData.save(SharedFastingState(
                 isFasting: true,
