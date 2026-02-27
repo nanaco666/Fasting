@@ -39,9 +39,9 @@ struct MoodCheckInView: View {
     // Blended color from PWB + EWB
     private var ambientColor: Color {
         let avg = (pwb + ewb) / 2.0
-        if avg >= 7 { return .fastingGreen }
-        if avg >= 5 { return .fastingTeal }
-        if avg >= 3 { return .fastingOrange }
+        if avg >= 7 { return Color.fastingGreen }
+        if avg >= 5 { return Color.fastingTeal }
+        if avg >= 3 { return Color.fastingOrange }
         return .red.opacity(0.8)
     }
     
@@ -441,7 +441,7 @@ struct MoodCheckInView: View {
             
             // Ketone level pills
             HStack(spacing: 6) {
-                ForEach(KetoneLevel.allCases) { level in
+                ForEach(KetoneLevel.allCases, id: \.self) { level in
                     let selected = ketoneLevel == level
                     Button {
                         withAnimation(.fastSpring) {
@@ -506,7 +506,7 @@ struct MoodCheckInView: View {
                         Text("ketone_info_guide_title".localized)
                             .font(.subheadline.weight(.semibold))
                         
-                        ForEach(KetoneLevel.allCases) { level in
+                        ForEach(KetoneLevel.allCases, id: \.self) { level in
                             HStack(spacing: 12) {
                                 Circle()
                                     .fill(level.color)
@@ -534,7 +534,7 @@ struct MoodCheckInView: View {
                     // Safety note
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.fastingOrange)
+                            .foregroundStyle(Color.fastingOrange)
                         Text("ketone_info_safety".localized)
                             .font(.caption)
                             .foregroundStyle(.secondary)
