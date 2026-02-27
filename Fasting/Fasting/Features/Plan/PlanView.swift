@@ -2,8 +2,7 @@
 //  PlanView.swift
 //  Fasting
 //
-//  Plan = 日历(过去记录+未来events) + 方案 + 营养 + 运动
-//  "重新获得控制感"
+//  5 cards: Overview+Milestones → Nutrition → Calendar → Activity → Fitness
 //
 
 import SwiftUI
@@ -17,9 +16,14 @@ struct PlanView: View {
     @Query private var profiles: [UserProfile]
     
     @State private var showOnboarding = false
+    @State private var showFullCalendar = false
+    @State private var selectedRecord: FastingRecord?
+    
+    // Full calendar state
     @State private var displayedMonth = Date()
     @State private var selectedDate: Date?
-    @State private var selectedRecord: FastingRecord?
+    
+    @StateObject private var calendarService = CalendarService.shared
     
     private var healthService: HealthKitService { HealthKitService.shared }
     
@@ -57,9 +61,10 @@ struct PlanView: View {
                 }
             }
             .fullScreenCover(isPresented: $showOnboarding) {
-                OnboardingFlow { _, _ in
-                    showOnboarding = false
-                }
+                OnboardingFlow { _, _ in showOnboarding = false }
+            }
+            .sheet(isPresented: $showFullCalendar) {
+                fullCalendarSheet
             }
             .sheet(item: $selectedRecord) { record in
                 RecordDetailSheet(record: record)
@@ -82,7 +87,7 @@ struct PlanView: View {
             Text("No Plan Yet".localized)
                 .font(.title.bold())
             
-            Text("Create a personalized fasting plan\nbased on your body and goals.".localized)
+            Text("plan_empty_desc".localized)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -115,35 +120,24 @@ struct PlanView: View {
     private func activePlanContent(plan: FastingPlan, profile: UserProfile) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: Spacing.xl) {
-                // 1. Progress + Milestones
-                overviewCard(plan: plan)
+                // Card 1: Plan Overview + Milestones
+                planOverviewCard(plan: plan)
                     .padding(.horizontal, Spacing.lg)
                 
-                milestonesSection(plan: plan)
-                    .padding(.horizontal, Spacing.lg)
-                
-                // 2. Calendar
-                calendarSection
-                    .padding(.horizontal, Spacing.lg)
-                
-                dayDetailSection
-                    .padding(.horizontal, Spacing.lg)
-                
-                statsRow
-                    .padding(.horizontal, Spacing.lg)
-                
-                WeekScheduleView(basePlan: plan.recommendedPreset, profile: profile)
-                    .padding(.horizontal, Spacing.lg)
-                
-                // 3. Nutrition
+                // Card 2: Daily Nutrition
                 nutritionCard(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
                 
-                // 4. Fitness
-                activitySection(plan: plan, profile: profile)
+                // Card 3: Calendar (2-week preview, tap for full)
+                calendarPreviewCard(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
                 
-                fitnessAdviceSection(plan: plan, profile: profile)
+                // Card 4: Today's Activity
+                activityCard(plan: plan, profile: profile)
+                    .padding(.horizontal, Spacing.lg)
+                
+                // Card 5: Fitness Advice
+                fitnessAdviceCard(plan: plan, profile: profile)
                     .padding(.horizontal, Spacing.lg)
             }
             .padding(.vertical, Spacing.lg)
@@ -154,311 +148,144 @@ struct PlanView: View {
                 await healthService.fetchTodayData()
                 await healthService.fetchWeekData()
             }
+            if calendarService.isAuthorized {
+                await calendarService.generateWeekSchedule(basePlan: plan.recommendedPreset, profile: profile)
+            }
         }
     }
     
-    // MARK: - Calendar Section (from History)
+    // ┌─────────────────────────────────────────────────┐
+    // │  Card 1: Plan Overview + Stage Progress Bar     │
+    // └─────────────────────────────────────────────────┘
     
-    private var calendarSection: some View {
-        VStack(spacing: Spacing.lg) {
-            // Month nav
-            HStack {
-                Button { changeMonth(-1) } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.headline)
+    private func planOverviewCard(plan: FastingPlan) -> some View {
+        let milestones = plan.milestones
+        let totalWeeks = max(plan.durationWeeks, 1)
+        let currentWeek = min(plan.weeksElapsed + 1, totalWeeks)
+        
+        return VStack(spacing: Spacing.lg) {
+            // Header: plan name + stats
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(plan.recommendedPreset.displayName)
+                        .font(.title2.bold())
+                    Text("plan_week_of".localized(currentWeek, totalWeeks))
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 
                 Spacer()
                 
-                Text(monthTitle)
-                    .font(.title2.bold())
-                
-                Spacer()
-                
-                Button { changeMonth(1) } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 4) {
+                    if plan.expectedWeeklyLossKg > 0 {
+                        HStack(alignment: .lastTextBaseline, spacing: 2) {
+                            Text(String(format: "%.1f", plan.expectedWeeklyLossKg))
+                                .font(.title3.bold())
+                                .foregroundStyle(Color.fastingGreen)
+                            Text("kg/wk".localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    let remaining = max(totalWeeks - plan.weeksElapsed, 0)
+                    Text("plan_weeks_left".localized(remaining))
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
             }
             
-            // Weekday headers
-            weekdayHeader
+            // Stage progress bar with milestones
+            stageProgressBar(
+                milestones: milestones,
+                totalWeeks: totalWeeks,
+                currentWeek: currentWeek
+            )
             
-            // Day grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: Spacing.md) {
-                ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, item in
-                    if let date = item {
-                        DayRingCell(
-                            date: date,
-                            progress: dayProgress(date),
-                            isToday: Calendar.current.isDateInToday(date),
-                            isSelected: selectedDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false,
-                            holiday: HolidayService.holiday(on: date)
-                        ) {
-                            withAnimation(.fastSpring) { selectedDate = date }
-                        }
-                    } else {
-                        Color.clear.frame(height: 48)
-                    }
+            // Current milestone description
+            if let current = milestones.last(where: { $0.weekNumber <= currentWeek }) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: current.icon)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.fastingGreen)
+                    Text(current.localizedDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .padding(Spacing.lg)
+        .padding(Spacing.xl)
         .glassCard(cornerRadius: CornerRadius.large)
     }
     
-    private var weekdayHeader: some View {
-        HStack {
-            ForEach(HistoryFormatters.weekdaySymbols, id: \.self) { sym in
-                Text(sym)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
+    private func stageProgressBar(milestones: [PlanMilestone], totalWeeks: Int, currentWeek: Int) -> some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let progress = CGFloat(currentWeek) / CGFloat(totalWeeks)
+            
+            ZStack(alignment: .leading) {
+                // Track
+                Capsule()
+                    .fill(Color.gray.opacity(0.12))
+                    .frame(height: 8)
+                
+                // Fill
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.fastingGreen, Color.fastingTeal],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(width: width * progress, height: 8)
+                    .animation(.smoothSpring, value: progress)
+                
+                // Milestone markers
+                ForEach(milestones) { m in
+                    let x = width * CGFloat(m.weekNumber) / CGFloat(totalWeeks)
+                    let reached = currentWeek >= m.weekNumber
+                    
+                    Circle()
+                        .fill(reached ? Color.fastingGreen : Color.gray.opacity(0.3))
+                        .frame(width: 16, height: 16)
+                        .overlay(
+                            Group {
+                                if reached {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                        )
+                        .position(x: min(max(x, 8), width - 8), y: 4)
+                }
             }
         }
-    }
-    
-    // MARK: - Day Detail
-    
-    private var dayDetailSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            if let date = selectedDate {
-                let dayRecords = recordsOn(date)
-                let isFuture = date > Calendar.current.startOfDay(for: Date())
-                
-                Text(dayTitle(date))
-                    .font(.title3.bold())
-                    .padding(.horizontal, Spacing.xs)
-                
-                // Holiday advice
-                if let h = HolidayService.holiday(on: date) {
-                    holidayAdviceCard(h)
-                }
-                
-                if isFuture {
-                    // Future: show calendar events + suggestion
-                    futureDayCard(date)
-                } else if dayRecords.isEmpty {
-                    emptyDayCard
-                } else {
-                    ForEach(dayRecords) { record in
-                        RecordRowCard(record: record) {
-                            selectedRecord = record
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    private func futureDayCard(_ date: Date) -> some View {
-        let schedule = CalendarService.shared.weekSchedule.first(where: {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
-        })
+        .frame(height: 16)
         
-        return VStack(alignment: .leading, spacing: Spacing.sm) {
-            if let schedule, !schedule.events.isEmpty {
-                ForEach(schedule.events.prefix(4)) { event in
-                    HStack(spacing: Spacing.sm) {
-                        Circle()
-                            .fill(event.isMealRelated ? Color.fastingOrange : Color.fastingTeal)
-                            .frame(width: 8, height: 8)
-                        Text(event.title)
-                            .font(.subheadline)
-                            .lineLimit(1)
-                        Spacer()
-                        Text(event.timeRange)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                if schedule.hasConflicts {
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.caption)
-                            .foregroundStyle(Color.fastingOrange)
-                        Text(schedule.suggestion.reason.localized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 4)
-                }
-                
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "timer")
-                        .font(.caption)
-                        .foregroundStyle(Color.fastingGreen)
-                    Text(String(format: "plan_suggested_window".localized,
-                               schedule.suggestion.preset.displayName,
-                               schedule.suggestion.eatingWindowDescription))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "sparkles")
-                        .font(.caption)
-                        .foregroundStyle(Color.fastingGreen)
-                    Text("plan_free_day".localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        // Milestone labels below bar
+        if !milestones.isEmpty {
+            GeometryReader { geo in
+                let width = geo.size.width
+                ForEach(milestones) { m in
+                    let x = width * CGFloat(m.weekNumber) / CGFloat(max(totalWeeks, 1))
+                    Text(m.title.localized)
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .position(x: min(max(x, 20), width - 20), y: 8)
                 }
             }
-        }
-        .padding(Spacing.md)
-        .glassCard(cornerRadius: CornerRadius.medium)
-    }
-    
-    private func holidayAdviceCard(_ h: Holiday) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text(h.fastingAdvice.emoji)
-                    .font(.title2)
-                Text(h.localizedName)
-                    .font(.headline)
-                Spacer()
-                presetBadge(h.fastingAdvice.suggestedPreset)
-            }
-            
-            Text(h.fastingAdvice.localizedDetail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(Spacing.lg)
-        .glassCard(cornerRadius: CornerRadius.medium)
-    }
-    
-    private func presetBadge(_ preset: SuggestedPreset) -> some View {
-        let (text, color): (String, Color) = switch preset {
-        case .normal: ("Normal".localized, Color.fastingGreen)
-        case .shorter: ("14:10", Color.fastingOrange)
-        case .skip: ("Skip".localized, Color.gray)
-        case .flexible: ("Flexible".localized, Color.fastingTeal)
-        case .extended: ("Extended".localized, Color.fastingOrange)
-        }
-        return Text(text)
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color, in: Capsule())
-    }
-    
-    private var emptyDayCard: some View {
-        VStack(spacing: Spacing.sm) {
-            Image(systemName: "moon.zzz")
-                .font(.title2)
-                .foregroundStyle(.tertiary)
-            Text("No fasts this day".localized)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.xl)
-        .glassCard(cornerRadius: CornerRadius.medium)
-    }
-    
-    // MARK: - Stats Row
-    
-    private var statsRow: some View {
-        HStack(spacing: Spacing.md) {
-            statCard(title: "Completed".localized, value: "\(monthCompleted)", unit: L10n.History.times, color: Color.fastingGreen)
-            statCard(title: "Current Streak".localized, value: "\(currentStreak)", unit: L10n.Timer.days, color: Color.fastingOrange)
-            statCard(title: "Longest Streak".localized, value: "\(longestStreak)", unit: L10n.Timer.days, color: Color.fastingTeal)
+            .frame(height: 16)
         }
     }
     
-    private func statCard(title: String, value: String, unit: String, color: Color) -> some View {
-        VStack(spacing: Spacing.xs) {
-            HStack(alignment: .lastTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.title2.bold())
-                Text(unit)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.lg)
-        .glassCard(cornerRadius: CornerRadius.medium)
-    }
-    
-    // MARK: - Overview Card
-    
-    private func overviewCard(plan: FastingPlan) -> some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .stroke(Color.fastingGreen.opacity(0.12), lineWidth: 12)
-                    .frame(width: 120, height: 120)
-                
-                Circle()
-                    .trim(from: 0, to: plan.progress)
-                    .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .frame(width: 120, height: 120)
-                    .rotationEffect(.degrees(-90))
-                
-                VStack(spacing: 0) {
-                    Text(String(format: "week_number".localized, min(plan.weeksElapsed + 1, plan.durationWeeks)))
-                        .font(.title3.bold())
-                    Text("/\(plan.durationWeeks)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .animation(.smoothSpring, value: plan.progress)
-            
-            HStack(spacing: 0) {
-                VStack(spacing: 4) {
-                    Text(plan.recommendedPreset.displayName)
-                        .font(.title2.bold())
-                    Text("Fasting Plan".localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                
-                if plan.expectedWeeklyLossKg > 0 {
-                    VStack(spacing: 4) {
-                        Text(String(format: "%.1f kg", plan.expectedWeeklyLossKg))
-                            .font(.title2.bold())
-                            .foregroundStyle(Color.fastingGreen)
-                        Text("per week".localized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                
-                VStack(spacing: 4) {
-                    let remaining = max(plan.durationWeeks - plan.weeksElapsed, 0)
-                    Text("\(remaining)")
-                        .font(.title2.bold())
-                    Text("weeks left".localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(28)
-        .frame(maxWidth: .infinity)
-        .glassCard(cornerRadius: 24)
-    }
-    
-    // MARK: - Nutrition Card
+    // ┌─────────────────────────────────────────────────┐
+    // │  Card 2: Daily Nutrition                        │
+    // └─────────────────────────────────────────────────┘
     
     private func nutritionCard(plan: FastingPlan, profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Daily Nutrition".localized)
                 .font(.title3.bold())
             
@@ -493,9 +320,376 @@ struct PlanView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
     
-    // MARK: - Activity Section
+    // ┌─────────────────────────────────────────────────┐
+    // │  Card 3: Calendar Preview (next 14 days)        │
+    // └─────────────────────────────────────────────────┘
     
-    private func activitySection(plan: FastingPlan, profile: UserProfile) -> some View {
+    private func calendarPreviewCard(plan: FastingPlan, profile: UserProfile) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack {
+                Text("Upcoming".localized)
+                    .font(.title3.bold())
+                Spacer()
+                
+                if calendarService.isAuthorized {
+                    Button {
+                        showFullCalendar = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("plan_view_all".localized)
+                                .font(.caption.weight(.medium))
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                        }
+                        .foregroundStyle(Color.fastingTeal)
+                    }
+                }
+            }
+            
+            if calendarService.isAuthorized {
+                if calendarService.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.lg)
+                } else {
+                    upcomingDaysList
+                }
+            } else {
+                calendarConnectPrompt(plan: plan, profile: profile)
+            }
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(cornerRadius: CornerRadius.large)
+    }
+    
+    /// Show next 14 days with events or holidays
+    private var upcomingDaysList: some View {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        
+        // Build 14-day list: merge weekSchedule (7 days) + holidays
+        let days: [(date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: DaySuggestion?)] = (0..<14).compactMap { offset in
+            guard let date = cal.date(byAdding: .day, value: offset, to: today) else { return nil }
+            let schedule = calendarService.weekSchedule.first(where: { cal.isDate($0.date, inSameDayAs: date) })
+            let holiday = HolidayService.holiday(on: date)
+            // Only show days with events or holidays
+            if schedule?.events.isEmpty ?? true, holiday == nil { return nil }
+            return (date, schedule?.events ?? [], holiday, schedule?.suggestion)
+        }
+        
+        return VStack(spacing: 0) {
+            if days.isEmpty {
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "sparkles")
+                        .font(.title2)
+                        .foregroundStyle(Color.fastingGreen)
+                    Text("plan_clear_schedule".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.lg)
+            } else {
+                ForEach(Array(days.enumerated()), id: \.offset) { idx, day in
+                    upcomingDayRow(day.date, events: day.events, holiday: day.holiday, suggestion: day.suggestion)
+                    
+                    if idx < days.count - 1 {
+                        Divider().padding(.leading, 52)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func upcomingDayRow(_ date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: DaySuggestion?) -> some View {
+        let cal = Calendar.current
+        
+        return HStack(alignment: .top, spacing: Spacing.md) {
+            // Date column
+            VStack(spacing: 0) {
+                Text(HistoryFormatters.dayOfWeekShort(date))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("\(cal.component(.day, from: date))")
+                    .font(.headline.weight(cal.isDateInToday(date) ? .black : .medium))
+                    .foregroundStyle(cal.isDateInToday(date) ? Color.fastingGreen : .primary)
+            }
+            .frame(width: 36)
+            
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                // Holiday
+                if let h = holiday {
+                    HStack(spacing: 4) {
+                        Text(h.fastingAdvice.emoji).font(.caption)
+                        Text(h.localizedName).font(.subheadline.weight(.medium))
+                        Spacer()
+                        presetBadge(h.fastingAdvice.suggestedPreset)
+                    }
+                }
+                
+                // Events
+                ForEach(events.prefix(3)) { event in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(event.isMealRelated ? Color.fastingOrange : Color.fastingTeal)
+                            .frame(width: 6, height: 6)
+                        Text(event.title)
+                            .font(.caption)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(event.timeRange)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                
+                // Suggestion
+                if let s = suggestion, events.contains(where: { $0.isMealRelated || $0.isSocialEvent }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.fastingOrange)
+                        Text(s.eatingWindowDescription + " " + s.preset.displayName)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 2)
+                }
+            }
+        }
+        .padding(.vertical, Spacing.sm)
+    }
+    
+    private func calendarConnectPrompt(plan: FastingPlan, profile: UserProfile) -> some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.fastingTeal)
+            
+            Text("calendar_connect_plan_desc".localized)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button {
+                Task {
+                    let granted = await calendarService.requestAccess()
+                    if granted {
+                        await calendarService.generateWeekSchedule(basePlan: plan.recommendedPreset, profile: profile)
+                    }
+                }
+            } label: {
+                Text("Connect Calendar".localized)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, 8)
+                    .background(Color.fastingTeal, in: Capsule())
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.md)
+    }
+    
+    private func presetBadge(_ preset: SuggestedPreset) -> some View {
+        let (text, color): (String, Color) = switch preset {
+        case .normal: ("Normal".localized, Color.fastingGreen)
+        case .shorter: ("14:10", Color.fastingOrange)
+        case .skip: ("Skip".localized, Color.gray)
+        case .flexible: ("Flexible".localized, Color.fastingTeal)
+        case .extended: ("Extended".localized, Color.fastingOrange)
+        }
+        return Text(text)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color, in: Capsule())
+    }
+    
+    // MARK: - Full Calendar Sheet
+    
+    private var fullCalendarSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    calendarGrid
+                    
+                    // Day detail
+                    if let date = selectedDate {
+                        dayDetailView(date)
+                    }
+                }
+                .padding(Spacing.lg)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Calendar".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(L10n.General.done) { showFullCalendar = false }
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+    
+    private var calendarGrid: some View {
+        VStack(spacing: Spacing.md) {
+            // Month nav
+            HStack {
+                Button { changeMonth(-1) } label: {
+                    Image(systemName: "chevron.left").font(.headline).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(HistoryFormatters.monthYear.string(from: displayedMonth))
+                    .font(.title3.bold())
+                Spacer()
+                Button { changeMonth(1) } label: {
+                    Image(systemName: "chevron.right").font(.headline).foregroundStyle(.secondary)
+                }
+            }
+            
+            // Weekday headers
+            HStack {
+                ForEach(HistoryFormatters.weekdaySymbols, id: \.self) { sym in
+                    Text(sym)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            
+            // Day grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: Spacing.md) {
+                ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, item in
+                    if let date = item {
+                        DayRingCell(
+                            date: date,
+                            progress: dayProgress(date),
+                            isToday: Calendar.current.isDateInToday(date),
+                            isSelected: selectedDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false,
+                            holiday: HolidayService.holiday(on: date)
+                        ) {
+                            withAnimation(.fastSpring) { selectedDate = date }
+                        }
+                    } else {
+                        Color.clear.frame(height: 48)
+                    }
+                }
+            }
+        }
+        .padding(Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+    }
+    
+    private func dayDetailView(_ date: Date) -> some View {
+        let dayRecords = recordsOn(date)
+        let isFuture = date > Calendar.current.startOfDay(for: Date())
+        
+        return VStack(alignment: .leading, spacing: Spacing.md) {
+            Text(dayTitle(date))
+                .font(.title3.bold())
+            
+            if let h = HolidayService.holiday(on: date) {
+                holidayAdviceCard(h)
+            }
+            
+            if isFuture {
+                futureDayDetail(date)
+            } else if dayRecords.isEmpty {
+                emptyDayCard
+            } else {
+                ForEach(dayRecords) { record in
+                    RecordRowCard(record: record) {
+                        selectedRecord = record
+                    }
+                }
+            }
+        }
+    }
+    
+    private func futureDayDetail(_ date: Date) -> some View {
+        let schedule = calendarService.weekSchedule.first(where: {
+            Calendar.current.isDate($0.date, inSameDayAs: date)
+        })
+        
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
+            if let schedule, !schedule.events.isEmpty {
+                ForEach(schedule.events.prefix(6)) { event in
+                    HStack(spacing: Spacing.sm) {
+                        Circle()
+                            .fill(event.isMealRelated ? Color.fastingOrange : Color.fastingTeal)
+                            .frame(width: 8, height: 8)
+                        Text(event.title).font(.subheadline).lineLimit(1)
+                        Spacer()
+                        Text(event.timeRange).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.caption)
+                        .foregroundStyle(Color.fastingOrange)
+                    Text(schedule.suggestion.reason.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
+            } else {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "sparkles")
+                        .font(.caption)
+                        .foregroundStyle(Color.fastingGreen)
+                    Text("plan_free_day".localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(Spacing.md)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+    
+    private func holidayAdviceCard(_ h: Holiday) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text(h.fastingAdvice.emoji).font(.title2)
+                Text(h.localizedName).font(.headline)
+                Spacer()
+                presetBadge(h.fastingAdvice.suggestedPreset)
+            }
+            Text(h.fastingAdvice.localizedDetail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+    
+    private var emptyDayCard: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "moon.zzz")
+                .font(.title2)
+                .foregroundStyle(.tertiary)
+            Text("No fasts this day".localized)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xl)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+    
+    // ┌─────────────────────────────────────────────────┐
+    // │  Card 4: Today's Activity                       │
+    // └─────────────────────────────────────────────────┘
+    
+    private func activityCard(plan: FastingPlan, profile: UserProfile) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Today's Activity".localized)
                 .font(.title3.bold())
@@ -533,7 +727,7 @@ struct PlanView: View {
                     Image(systemName: "heart.fill")
                         .font(.title2)
                         .foregroundStyle(Color.fastingOrange)
-                    Text("Connect Apple Health to track your exercise and calorie burn.".localized)
+                    Text("health_connect_desc".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -577,9 +771,11 @@ struct PlanView: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
     
-    // MARK: - Fitness Advice
+    // ┌─────────────────────────────────────────────────┐
+    // │  Card 5: Fitness Advice                         │
+    // └─────────────────────────────────────────────────┘
     
-    private func fitnessAdviceSection(plan: FastingPlan, profile: UserProfile) -> some View {
+    private func fitnessAdviceCard(plan: FastingPlan, profile: UserProfile) -> some View {
         let recommendations = FitnessAdvisor.recommendations(for: profile, plan: plan)
         
         return VStack(alignment: .leading, spacing: Spacing.md) {
@@ -622,49 +818,13 @@ struct PlanView: View {
         }
     }
     
-    // MARK: - Milestones
-    
-    private func milestonesSection(plan: FastingPlan) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Milestones".localized)
-                .font(.title3.bold())
-            
-            ForEach(plan.milestones) { milestone in
-                let isReached = plan.weeksElapsed >= milestone.weekNumber
-                HStack(alignment: .top, spacing: 16) {
-                    Image(systemName: isReached ? "checkmark.circle.fill" : milestone.icon)
-                        .font(.title2)
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(isReached ? Color.fastingGreen : .secondary)
-                        .frame(width: 36)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack {
-                            Text(milestone.title.localized).font(.body.weight(.semibold)).foregroundStyle(isReached ? .primary : .secondary)
-                            Spacer()
-                            Text("Week \(milestone.weekNumber)").font(.caption).foregroundStyle(.tertiary)
-                        }
-                        Text(milestone.localizedDescription).font(.subheadline).foregroundStyle(isReached ? .secondary : .tertiary).fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(Spacing.md)
-                .background(isReached ? Color.fastingGreen.opacity(0.05) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-            }
-        }
-    }
-    
-    // MARK: - Calendar Data
-    
-    private var monthTitle: String {
-        HistoryFormatters.monthYear.string(from: displayedMonth)
-    }
+    // MARK: - Calendar Helpers
     
     private var daysInMonth: [Date?] {
         let cal = Calendar.current
         let interval = cal.dateInterval(of: .month, for: displayedMonth)!
         let firstWeekday = cal.component(.weekday, from: interval.start)
         let lastDay = cal.date(byAdding: .day, value: -1, to: interval.end)!
-        
         var days: [Date?] = Array(repeating: nil, count: firstWeekday - 1)
         var d = interval.start
         while d <= lastDay {
@@ -676,9 +836,7 @@ struct PlanView: View {
     
     private func dayProgress(_ date: Date) -> Double {
         let cal = Calendar.current
-        let dayRecords = records.filter {
-            $0.status == .completed && cal.isDate($0.startTime, inSameDayAs: date)
-        }
+        let dayRecords = records.filter { $0.status == .completed && cal.isDate($0.startTime, inSameDayAs: date) }
         guard let best = dayRecords.max(by: { ($0.actualDuration ?? 0) < ($1.actualDuration ?? 0) }) else { return 0 }
         guard best.targetDuration > 0 else { return 0 }
         return min((best.actualDuration ?? 0) / best.targetDuration, 1.0)
@@ -693,48 +851,6 @@ struct PlanView: View {
         if Calendar.current.isDateInToday(date) { return "Today".localized }
         if Calendar.current.isDateInYesterday(date) { return "Yesterday".localized }
         return HistoryFormatters.dayDetail.string(from: date)
-    }
-    
-    private var monthCompleted: Int {
-        let cal = Calendar.current
-        return records.filter {
-            $0.status == .completed
-            && ($0.actualDuration ?? 0) >= $0.targetDuration
-            && cal.isDate($0.startTime, equalTo: displayedMonth, toGranularity: .month)
-        }.count
-    }
-    
-    private var currentStreak: Int {
-        let cal = Calendar.current
-        var streak = 0
-        var check = cal.startOfDay(for: Date())
-        while true {
-            let has = records.contains {
-                $0.status == .completed && ($0.actualDuration ?? 0) >= $0.targetDuration && cal.isDate($0.startTime, inSameDayAs: check)
-            }
-            if has {
-                streak += 1
-                check = cal.date(byAdding: .day, value: -1, to: check)!
-            } else { break }
-        }
-        return streak
-    }
-    
-    private var longestStreak: Int {
-        let cal = Calendar.current
-        let completedDays = Set(records.filter {
-            $0.status == .completed && ($0.actualDuration ?? 0) >= $0.targetDuration
-        }.map { cal.startOfDay(for: $0.startTime) })
-        guard !completedDays.isEmpty else { return 0 }
-        let sorted = completedDays.sorted()
-        var longest = 1, current = 1
-        for i in 1..<sorted.count {
-            if cal.date(byAdding: .day, value: 1, to: sorted[i-1]) == sorted[i] {
-                current += 1
-                longest = max(longest, current)
-            } else { current = 1 }
-        }
-        return longest
     }
     
     private func changeMonth(_ delta: Int) {

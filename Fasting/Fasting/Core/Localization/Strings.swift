@@ -133,6 +133,11 @@ extension String {
         // 3. Return key as-is
         return self
     }
+    
+    /// Localized with format arguments
+    func localized(_ args: CVarArg...) -> String {
+        String(format: self.localized, arguments: args)
+    }
 }
 
 // MARK: - Language Manager
@@ -1128,5 +1133,14 @@ static let all: [String: [String: String]] = [
     "theme_minimal": ["en": "Minimal", "zh-Hans": "极简"],
     "plan_suggested_window": ["en": "Suggested: %@ — eating window %@", "zh-Hans": "建议: %@ — 进食窗口 %@"],
     "plan_free_day": ["en": "No events — great day for a longer fast!", "zh-Hans": "没有活动——适合挑战更长的断食！"],
+    "plan_empty_desc": ["en": "Create a personalized fasting plan\nbased on your body and goals.", "zh-Hans": "根据你的身体状况和目标\n创建个性化断食方案"],
+    "plan_week_of": ["en": "Week %d of %d", "zh-Hans": "第 %d / %d 周"],
+    "plan_weeks_left": ["en": "%d weeks left", "zh-Hans": "还剩 %d 周"],
+    "kg/wk": ["en": "kg/wk", "zh-Hans": "kg/周"],
+    "plan_view_all": ["en": "View All", "zh-Hans": "查看全部"],
+    "plan_clear_schedule": ["en": "Clear schedule ahead — perfect for consistency!", "zh-Hans": "接下来日程空闲——正适合坚持断食！"],
+    "health_connect_desc": ["en": "Connect Apple Health to track your exercise and calorie burn.", "zh-Hans": "连接 Apple 健康以追踪运动和消耗"],
+    "Upcoming": ["en": "Upcoming", "zh-Hans": "接下来"],
+    "Calendar": ["en": "Calendar", "zh-Hans": "日历"],
 ]
 }

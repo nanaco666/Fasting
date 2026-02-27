@@ -27,6 +27,14 @@ enum HistoryFormatters {
         let f = DateFormatter(); f.locale = Locale.current
         return f.veryShortWeekdaySymbols ?? ["S","M","T","W","T","F","S"]
     }()
+    
+    private static let shortWeekday: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE"; return f
+    }()
+    
+    static func dayOfWeekShort(_ date: Date) -> String {
+        shortWeekday.string(from: date)
+    }
 }
 
 struct HistoryView: View {
