@@ -45,7 +45,7 @@ enum WellbeingLevel: String {
 
 // MARK: - Ketone Level (Ketostix color grades)
 
-enum KetoneLevel: String, Codable, CaseIterable, Identifiable {
+enum KetoneLevel: String, Codable, CaseIterable, Identifiable, Hashable {
     case negative
     case trace
     case small
