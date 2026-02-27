@@ -412,7 +412,7 @@ struct MoodCheckInView: View {
             HStack {
                 Image(systemName: "drop.fill")
                     .font(.subheadline)
-                    .foregroundStyle(.fastingTeal)
+                    .foregroundStyle(Color.fastingTeal)
                 
                 Text("checkin_ketone_title".localized)
                     .font(.subheadline.weight(.semibold))
@@ -490,7 +490,7 @@ struct MoodCheckInView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "drop.fill")
                             .font(.largeTitle)
-                            .foregroundStyle(.fastingTeal)
+                            .foregroundStyle(Color.fastingTeal)
                         Text("ketone_info_title".localized)
                             .font(.title3.weight(.bold))
                     }
