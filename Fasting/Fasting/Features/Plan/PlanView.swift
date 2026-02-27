@@ -372,7 +372,7 @@ struct PlanView: View {
         let today = cal.startOfDay(for: Date())
         
         // Build 14-day list, dedup: if a holiday matches an event title, skip the event
-        let days: [(date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: FastingSuggestion?)] = (0..<14).compactMap { offset in
+        let days: [(date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: FastingSuggestion?)] = (0..<14).compactMap { offset -> (date: Date, events: [CalendarEvent], holiday: Holiday?, suggestion: FastingSuggestion?)? in
             guard let date = cal.date(byAdding: .day, value: offset, to: today) else { return nil }
             let schedule = calendarService.weekSchedule.first(where: { cal.isDate($0.date, inSameDayAs: date) })
             let holiday = HolidayService.holiday(on: date)
