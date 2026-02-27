@@ -149,7 +149,7 @@ enum CompanionEngine {
     
     private static func symptomAdvice(symptoms: [MoodSymptom], hours: Double) -> String {
         let priority: [MoodSymptom] = [.dizzy, .nausea, .headache, .anxious, .foggy, .irritable, .coldHands, .muscleAche, .restless]
-        let main = priority.first { symptoms.contains($0) } ?? symptoms.first!
+        guard let main = priority.first(where: { symptoms.contains($0) }) ?? symptoms.first else { return "" }
         return "symptom_advice_\(main.rawValue)".localized
     }
     

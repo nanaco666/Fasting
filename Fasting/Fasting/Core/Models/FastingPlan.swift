@@ -96,7 +96,8 @@ final class FastingPlan {
     
     /// Plan progress (0.0 - 1.0)
     var progress: Double {
-        min(Double(weeksElapsed) / Double(durationWeeks), 1.0)
+        guard durationWeeks > 0 else { return 0 }
+        return min(Double(weeksElapsed) / Double(durationWeeks), 1.0)
     }
     
     /// End date

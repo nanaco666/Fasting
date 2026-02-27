@@ -302,6 +302,7 @@ final class UserProfile {
     /// BMI
     var bmi: Double {
         let heightM = heightCm / 100
+        guard heightM > 0 else { return 0 }
         return weightKg / (heightM * heightM)
     }
     

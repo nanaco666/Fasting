@@ -144,7 +144,8 @@ final class FastingRecord {
     
     /// 进度百分比 (0.0 - 1.0)
     var progress: Double {
-        min(currentDuration / targetDuration, 1.0)
+        guard targetDuration > 0 else { return 0 }
+        return min(currentDuration / targetDuration, 1.0)
     }
     
     // MARK: - Initializer

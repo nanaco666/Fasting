@@ -6,6 +6,18 @@
 import SwiftUI
 import SwiftData
 
+private enum TimerFormatters {
+    static let weekday: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE"; return f
+    }()
+    static let timeShort: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE, HH:mm"; return f
+    }()
+    static let hourMinute: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f
+    }()
+}
+
 struct TimerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
@@ -168,9 +180,7 @@ struct TimerView: View {
     }
     
     private func weekdayLabel(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE"
-        return f.string(from: date).uppercased()
+        TimerFormatters.weekday.string(from: date).uppercased()
     }
     
     private func dayCompleted(_ date: Date) -> Bool {
@@ -291,9 +301,7 @@ struct TimerView: View {
     }
     
     private func formatTimeShort(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE, HH:mm"
-        return f.string(from: date).uppercased()
+        TimerFormatters.timeShort.string(from: date).uppercased()
     }
     
     private func switchDialStyle() {
@@ -546,9 +554,7 @@ struct TimerView: View {
 
     
     private func formatTime(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm"
-        return f.string(from: date)
+        TimerFormatters.hourMinute.string(from: date)
     }
 
     // MARK: - Plan Progress (Week Timeline)
@@ -710,10 +716,7 @@ struct PlanWeekTimeline: View {
     }
     
     private func dayLabel(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateFormat = "EEE"
-        return String(formatter.string(from: date).prefix(2))
+        String(TimerFormatters.weekday.string(from: date).prefix(2))
     }
 }
 

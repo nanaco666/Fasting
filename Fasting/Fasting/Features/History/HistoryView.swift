@@ -6,6 +6,29 @@
 import SwiftUI
 import SwiftData
 
+private enum HistoryFormatters {
+    static let monthYear: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMM yyyy", options: 0, locale: .current)
+        return f
+    }()
+    static let dayDetail: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMd EEEE", options: 0, locale: .current)
+        return f
+    }()
+    static let hourMinute: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f
+    }()
+    static let dateShort: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d, HH:mm"; return f
+    }()
+    static let weekdaySymbols: [String] = {
+        let f = DateFormatter(); f.locale = Locale.current
+        return f.veryShortWeekdaySymbols ?? ["S","M","T","W","T","F","S"]
+    }()
+}
+
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
@@ -232,15 +255,11 @@ struct HistoryView: View {
     // MARK: - Data
     
     private var weekdaySymbols: [String] {
-        let f = DateFormatter()
-        f.locale = Locale.current
-        return f.veryShortWeekdaySymbols ?? ["S","M","T","W","T","F","S"]
+        HistoryFormatters.weekdaySymbols
     }
     
     private var monthTitle: String {
-        let f = DateFormatter()
-        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMM yyyy", options: 0, locale: .current)
-        return f.string(from: displayedMonth)
+        HistoryFormatters.monthYear.string(from: displayedMonth)
     }
     
     private var daysInMonth: [Date?] {
@@ -278,9 +297,7 @@ struct HistoryView: View {
     private func dayTitle(_ date: Date) -> String {
         if Calendar.current.isDateInToday(date) { return "Today".localized }
         if Calendar.current.isDateInYesterday(date) { return "Yesterday".localized }
-        let f = DateFormatter()
-        f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMd EEEE", options: 0, locale: .current)
-        return f.string(from: date)
+        return HistoryFormatters.dayDetail.string(from: date)
     }
     
     private var monthCompleted: Int {
@@ -438,11 +455,9 @@ struct RecordRowCard: View {
     }
     
     private var timeString: String {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm"
-        var s = f.string(from: record.startTime)
+        var s = HistoryFormatters.hourMinute.string(from: record.startTime)
         if let end = record.endTime {
-            s += " → " + f.string(from: end)
+            s += " → " + HistoryFormatters.hourMinute.string(from: end)
         }
         return s
     }
@@ -509,9 +524,7 @@ struct RecordDetailSheet: View {
     }
     
     private func formatDate(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d, HH:mm"
-        return f.string(from: d)
+        HistoryFormatters.dateShort.string(from: d)
     }
     
     private func formatDur(_ t: TimeInterval) -> String {

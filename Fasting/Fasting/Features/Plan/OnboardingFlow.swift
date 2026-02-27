@@ -69,6 +69,7 @@ struct OnboardingFlow: View {
                     summaryStep.tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .scrollDisabled(true)
                 .animation(.smoothSpring, value: step)
                 
                 navigationButtons

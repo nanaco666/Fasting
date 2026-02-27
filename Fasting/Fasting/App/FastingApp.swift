@@ -29,15 +29,20 @@ struct FastingApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Fallback: try without CloudKit, then in-memory
+            let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            if let container = try? ModelContainer(for: schema, configurations: [fallbackConfig]) {
+                return container
+            }
+            // Last resort: in-memory so the app at least launches
+            let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            return try! ModelContainer(for: schema, configurations: [memoryConfig])
         }
     }()
     
     // MARK: - Body
     
-    init() {
-        NotificationService.requestPermission()
-    }
+    // Notification permission is now requested at first fast start, not app launch
     
     var body: some Scene {
         WindowGroup {
@@ -100,5 +105,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [FastingRecord.self, UserSettings.self, UserProfile.self, FastingPlan.self], inMemory: true)
+        .modelContainer(for: [FastingRecord.self, UserSettings.self, UserProfile.self, FastingPlan.self, MoodRecord.self], inMemory: true)
 }
