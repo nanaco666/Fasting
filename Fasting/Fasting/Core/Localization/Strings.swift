@@ -1039,5 +1039,81 @@ static let all: [String: [String: String]] = [
     "mood_checkin_title": ["en": "How are you feeling?", "zh-Hans": "你现在感觉如何？"],
     "mood_checkin_subtitle": ["en": "Tap to check in — we're here for you", "zh-Hans": "点击记录——我们陪着你"],
 
+
+    // ========== Onboarding Flow ==========
+    
+    "onboarding_title": ["en": "Your Plan", "zh-Hans": "你的方案"],
+    "onboarding_next": ["en": "Continue", "zh-Hans": "继续"],
+    "onboarding_back": ["en": "Back", "zh-Hans": "返回"],
+    "onboarding_skip": ["en": "Skip this step", "zh-Hans": "跳过这一步"],
+    "onboarding_create": ["en": "Start My Journey", "zh-Hans": "开始我的旅程"],
+    
+    // Step 1: Body
+    "onboarding_body_title": ["en": "Let's get to know you", "zh-Hans": "让我们了解你"],
+    "onboarding_body_subtitle": ["en": "This helps us calculate your nutritional needs and design a safe plan.", "zh-Hans": "这帮助我们计算你的营养需求，设计安全的方案。"],
+    "onboarding_sex": ["en": "Biological Sex", "zh-Hans": "生理性别"],
+    "onboarding_age": ["en": "Age", "zh-Hans": "年龄"],
+    "onboarding_height": ["en": "Height", "zh-Hans": "身高"],
+    "onboarding_weight": ["en": "Weight", "zh-Hans": "体重"],
+    "onboarding_bmi_under": ["en": "Underweight", "zh-Hans": "偏瘦"],
+    "onboarding_bmi_normal": ["en": "Normal", "zh-Hans": "正常"],
+    "onboarding_bmi_over": ["en": "Overweight", "zh-Hans": "偏重"],
+    "onboarding_bmi_obese": ["en": "Obese", "zh-Hans": "肥胖"],
+    "onboarding_elderly_tip": ["en": "At 65+, muscle preservation is critical. We'll ensure your protein target is at least 1.2g/kg to prevent sarcopenia.", "zh-Hans": "65岁以上，肌肉保护至关重要。我们会确保蛋白质目标至少1.2g/kg，预防肌少症。"],
+    "onboarding_protein_preview": ["en": "Based on your weight, your daily protein target will be %@ — this prevents muscle loss during fasting.", "zh-Hans": "根据你的体重，每日蛋白质目标为 %@——这能防止断食期间肌肉流失。"],
+    
+    // Step 2: Health
+    "onboarding_health_title": ["en": "Your safety comes first", "zh-Hans": "你的安全最重要"],
+    "onboarding_health_subtitle": ["en": "We'll adjust your plan based on your health. Select any that apply.", "zh-Hans": "我们会根据你的健康状况调整方案。选择符合的选项。"],
+    "onboarding_contraindication_note": ["en": "Some conditions require medical guidance before fasting. We'll recommend a gentler approach or suggest consulting your doctor.", "zh-Hans": "某些状况在断食前需要医疗指导。我们会推荐更温和的方案，或建议咨询医生。"],
+    "onboarding_reduced_note": ["en": "We'll reduce fasting intensity to keep you safe. Shorter windows, gentler transitions.", "zh-Hans": "我们会降低断食强度来保护你。更短的窗口，更温和的过渡。"],
+    "onboarding_health_clear": ["en": "Great — no health concerns. You're cleared for the full range of fasting plans.", "zh-Hans": "很好——没有健康顾虑。你可以使用全部断食方案。"],
+    
+    // Step 3: Lifestyle
+    "onboarding_lifestyle_title": ["en": "Your daily life", "zh-Hans": "你的日常生活"],
+    "onboarding_lifestyle_subtitle": ["en": "Activity level affects how many calories you need and how your body responds to fasting.", "zh-Hans": "运动水平影响你需要多少热量，以及身体对断食的反应。"],
+    "onboarding_activity": ["en": "Activity Level", "zh-Hans": "运动水平"],
+    "onboarding_diet": ["en": "Diet Preference", "zh-Hans": "饮食偏好"],
+    "onboarding_active_tip": ["en": "Active lifestyles need more protein (1.4-1.6g/kg) to maintain muscle. We'll increase your target accordingly.", "zh-Hans": "活跃的生活方式需要更多蛋白质(1.4-1.6g/kg)来维持肌肉。我们会相应提高你的目标。"],
+    "onboarding_vegan_tip": ["en": "Plant protein has lower bioavailability. We'll set protein at the higher end and recommend B12, vitamin D, calcium, iron, zinc, and omega-3 supplementation.", "zh-Hans": "植物蛋白生物利用率较低。我们会将蛋白质设在高端，并建议补充B12、维D、钙、铁、锌和omega-3。"],
+    
+    // Step 4: Mood & Stress
+    "onboarding_mood_title": ["en": "How are you feeling?", "zh-Hans": "你最近状态怎么样？"],
+    "onboarding_mood_subtitle": ["en": "Stress and sleep directly affect fasting tolerance. We'll calibrate your plan to match.", "zh-Hans": "压力和睡眠直接影响断食耐受度。我们会校准方案来匹配你的状态。"],
+    "onboarding_stress": ["en": "Stress Level", "zh-Hans": "压力水平"],
+    "onboarding_sleep": ["en": "Sleep Quality", "zh-Hans": "睡眠质量"],
+    "onboarding_stress_sleep_tip": ["en": "High stress or poor sleep raises cortisol, making fasting harder. We'll start you with a gentler plan and build up gradually.", "zh-Hans": "高压力或睡眠差会升高皮质醇，让断食更困难。我们会从更温和的方案开始，循序渐进。"],
+    
+    // Step 5: Goal
+    "onboarding_goal_title": ["en": "What's your goal?", "zh-Hans": "你的目标是什么？"],
+    "onboarding_goal_subtitle": ["en": "This determines fasting intensity and how long your plan will run.", "zh-Hans": "这决定了断食强度和方案持续时间。"],
+    "onboarding_goal_fatloss_tip": ["en": "Fat burning truly begins 12 hours after your last meal. With 16:8, you get ~4 hours of active fat burning daily. Clinical studies show 8-12 weeks for meaningful results (>5% body weight).", "zh-Hans": "真正的脂肪燃烧在最后一餐12小时后开始。16:8方案每天有约4小时活跃燃脂。临床研究显示8-12周可获得有意义的减重效果(>5%体重)。"],
+    "onboarding_goal_metabolic_tip": ["en": "Fasting improves insulin sensitivity and blood sugar regulation. The metabolic switch happens around 12-16 hours — that's when your body shifts from glucose to fat fuel.", "zh-Hans": "断食改善胰岛素敏感性和血糖调节。代谢切换在12-16小时左右发生——此时身体从葡萄糖燃料转向脂肪燃料。"],
+    "onboarding_goal_clarity_tip": ["en": "Ketone bodies (BHB) are a premium brain fuel. Most people notice mental clarity improvements after 14-16 hours of fasting, when ketone production ramps up.", "zh-Hans": "酮体(BHB)是大脑的优质燃料。大多数人在断食14-16小时后注意到思维清晰度提升，此时酮体产生加速。"],
+    "onboarding_goal_longevity_tip": ["en": "Autophagy — cellular self-cleaning — accelerates after 16-18 hours. This process recycles damaged proteins and is linked to longevity in numerous studies.", "zh-Hans": "细胞自噬——细胞自我清洁——在16-18小时后加速。这个过程回收受损蛋白质，众多研究表明与长寿相关。"],
+    "onboarding_goal_gut_tip": ["en": "Your gut lining renews every 3-5 days. Fasting gives the digestive system a rest, reducing inflammation and promoting microbiome diversity.", "zh-Hans": "肠道内壁每3-5天更新一次。断食让消化系统得到休息，减少炎症并促进肠道菌群多样性。"],
+    
+    // Step 6: Calendar
+    "onboarding_calendar_title": ["en": "Smart Scheduling", "zh-Hans": "智能日程"],
+    "onboarding_calendar_subtitle": ["en": "Connect your calendar so we can adjust fasting around your social events.", "zh-Hans": "连接日历，我们可以根据你的社交活动调整断食安排。"],
+    "onboarding_calendar_desc": ["en": "We'll detect meals, dinners, and social events to automatically adjust your fasting windows. Your data stays on your device.", "zh-Hans": "我们会检测聚餐和社交活动，自动调整断食窗口。数据仅保存在你的设备上。"],
+    "onboarding_calendar_connect": ["en": "Connect Calendar", "zh-Hans": "连接日历"],
+    "onboarding_calendar_privacy": ["en": "We only read event times and titles. Nothing leaves your device.", "zh-Hans": "我们只读取事件时间和标题。数据不会离开你的设备。"],
+    "onboarding_calendar_connected_tip": ["en": "We'll automatically adjust your fasting plan on days with social events — shorter windows when you need flexibility.", "zh-Hans": "有社交活动的日子，我们会自动调整断食方案——需要灵活性时缩短窗口。"],
+    
+    // Step 7: Summary
+    "onboarding_summary_title": ["en": "Your journey begins", "zh-Hans": "旅程开始了"],
+    "onboarding_summary_subtitle": ["en": "Here's what we've designed for you, based on everything you shared.", "zh-Hans": "基于你分享的信息，这是我们为你设计的方案。"],
+    "onboarding_your_plan": ["en": "Your Fasting Plan", "zh-Hans": "你的断食方案"],
+    "onboarding_plan_duration": ["en": "%d-week program", "zh-Hans": "%d 周计划"],
+    "onboarding_per_week": ["en": "per week", "zh-Hans": "每周"],
+    "onboarding_nutrition": ["en": "Daily Nutrition", "zh-Hans": "每日营养"],
+    "onboarding_calories": ["en": "Calories", "zh-Hans": "热量"],
+    "onboarding_deficit": ["en": "Deficit", "zh-Hans": "热量缺口"],
+    "onboarding_protein": ["en": "Protein", "zh-Hans": "蛋白质"],
+    "onboarding_carb_fiber": ["en": "Carb:Fiber", "zh-Hans": "碳水:纤维"],
+    "onboarding_your_profile": ["en": "Your Profile", "zh-Hans": "你的档案"],
+    "onboarding_closing_message": ["en": "Remember: every fast teaches your body something. We'll be with you every step — adjusting, guiding, and celebrating your progress. You're not doing this alone.", "zh-Hans": "记住：每次断食都在教会身体一些东西。我们会陪你走每一步——调整、指导、庆祝你的进步。你不是一个人在做这件事。"],
+
 ]
 }
