@@ -530,6 +530,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "我们读取日历来自动调整断食安排，合理设置社交活动。";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We read your activity and workout data to personalize your fasting plan and track exercise calories.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -576,6 +577,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "我们读取日历来自动调整断食安排，合理设置社交活动。";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We read your activity and workout data to personalize your fasting plan and track exercise calories.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

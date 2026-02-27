@@ -9,6 +9,18 @@ import Combine
 import EventKit
 import Foundation
 
+private enum CalendarFormatters {
+    static let weekday: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current; f.dateFormat = "EEE"; return f
+    }()
+    static let shortDate: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "M/d"; return f
+    }()
+    static let hourMinute: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f
+    }()
+}
+
 // MARK: - Day Schedule
 
 struct DaySchedule: Identifiable {
@@ -18,16 +30,11 @@ struct DaySchedule: Identifiable {
     let suggestion: FastingSuggestion
     
     var dayOfWeek: String {
-        let fmt = DateFormatter()
-        fmt.locale = Locale.current
-        fmt.dateFormat = "EEE"
-        return fmt.string(from: date)
+        CalendarFormatters.weekday.string(from: date)
     }
     
     var shortDate: String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "M/d"
-        return fmt.string(from: date)
+        CalendarFormatters.shortDate.string(from: date)
     }
     
     var isToday: Bool { Calendar.current.isDateInToday(date) }
@@ -48,9 +55,7 @@ struct CalendarEvent: Identifiable {
     
     var timeRange: String {
         if isAllDay { return "All day".localized }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "HH:mm"
-        return "\(fmt.string(from: startDate))-\(fmt.string(from: endDate))"
+        return "\(CalendarFormatters.hourMinute.string(from: startDate))-\(CalendarFormatters.hourMinute.string(from: endDate))"
     }
     
     var isMealRelated: Bool {
@@ -125,27 +130,43 @@ final class CalendarService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
+        // Fetch events off main thread
+        let store = self.store
+        let allEvents: [[(String, String, Date, Date, Bool)]] = await Task.detached {
+            let cal = Calendar.current
+            let today = cal.startOfDay(for: Date())
+            var result: [[(String, String, Date, Date, Bool)]] = []
+            for dayOffset in 0..<7 {
+                guard let dayStart = cal.date(byAdding: .day, value: dayOffset, to: today),
+                      let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart) else {
+                    result.append([])
+                    continue
+                }
+                let predicate = store.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
+                let ekEvents = store.events(matching: predicate)
+                result.append(ekEvents.map { (
+                    $0.eventIdentifier ?? UUID().uuidString,
+                    $0.title ?? "",
+                    $0.startDate,
+                    $0.endDate,
+                    $0.isAllDay
+                )})
+            }
+            return result
+        }.value
+        
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         var schedules: [DaySchedule] = []
         var consecutiveSocialDays = 0
         
         for dayOffset in 0..<7 {
-            guard let dayStart = cal.date(byAdding: .day, value: dayOffset, to: today),
-                  let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart) else { continue }
+            guard let dayStart = cal.date(byAdding: .day, value: dayOffset, to: today) else { continue }
             
-            let predicate = store.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
-            let ekEvents = store.events(matching: predicate)
+            let rawEvents = dayOffset < allEvents.count ? allEvents[dayOffset] : []
+            let events = rawEvents.map { CalendarEvent(id: $0.0, title: $0.1, startDate: $0.2, endDate: $0.3, isAllDay: $0.4) }
             
-            let events = ekEvents.map { ek in
-                CalendarEvent(
-                    id: ek.eventIdentifier ?? UUID().uuidString,
-                    title: ek.title ?? "",
-                    startDate: ek.startDate,
-                    endDate: ek.endDate,
-                    isAllDay: ek.isAllDay
-                )
-            }
+
             
             let hasSocial = events.contains(where: { $0.isMealRelated || $0.isSocialEvent })
             if hasSocial { consecutiveSocialDays += 1 } else { consecutiveSocialDays = 0 }
