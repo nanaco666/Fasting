@@ -238,11 +238,11 @@ final class MoodRecord {
     var note: String?
     
     // Buchinger PWB/EWB scores (0-10)
-    var physicalWellbeing: Int
-    var emotionalWellbeing: Int
+    var physicalWellbeing: Int = 5
+    var emotionalWellbeing: Int = 5
     
     // Hunger
-    var isHungry: Bool
+    var isHungry: Bool = false
     
     // Ketone (optional)
     var ketoneLevelRaw: String?
