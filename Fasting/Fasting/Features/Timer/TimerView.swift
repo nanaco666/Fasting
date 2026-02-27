@@ -103,7 +103,7 @@ struct TimerView: View {
                     lastFastDuration = elapsed
                     lastFastGoalMet = isGoalAchieved
                     fastingService.endFasting()
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    Haptic.success()
                     // Show refeed guide after a brief delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         showRefeedGuide = true
@@ -240,7 +240,7 @@ struct TimerView: View {
                         Button {
                             editedStartTime = start
                             showEditStart = true
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            Haptic.light()
                         } label: {
                             timeInfoPill(label: "STARTED", value: formatTimeShort(start))
                         }
@@ -258,7 +258,7 @@ struct TimerView: View {
                         // Idle: GOAL — tappable, opens preset picker & starts
                         Button {
                             showPresetSheet = true
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            Haptic.light()
                         } label: {
                             VStack(spacing: 4) {
                                 Text("GOAL")
@@ -292,7 +292,7 @@ struct TimerView: View {
             .onChange(of: isGoalAchieved) { _, achieved in
                 if achieved && !hasShownGoalCelebration {
                     hasShownGoalCelebration = true
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    Haptic.success()
                 }
             }
         }
@@ -338,7 +338,7 @@ struct TimerView: View {
         if fastingService.isFasting {
             // End fast — subtle, not prominent
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Haptic.medium()
                 showConfirmEnd = true
             } label: {
                 HStack(spacing: Spacing.sm) {
@@ -355,7 +355,7 @@ struct TimerView: View {
         } else {
             // Start button in idle
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Haptic.medium()
                 let preset = FastingPreset(rawValue: idleDefaultPreset) ?? .sixteen8
                 fastingService.startFasting(preset: preset, customDuration: nil)
             } label: {
@@ -422,7 +422,7 @@ struct TimerView: View {
     private var moodCard: some View {
         Button {
             showMoodCheckIn = true
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Haptic.light()
         } label: {
             VStack(alignment: .leading, spacing: 12) {
                 // Header
@@ -516,7 +516,7 @@ struct TimerView: View {
                 withAnimation(.fastSpring) {
                     isPhaseExpanded.toggle()
                 }
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Haptic.light()
             }
             
             // Expanded: phase timeline with auto-scroll to current

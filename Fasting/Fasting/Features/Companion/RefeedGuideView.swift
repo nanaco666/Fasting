@@ -156,6 +156,6 @@ struct RefeedGuideView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange.opacity(0.06), in: RoundedRectangle(cornerRadius: 20))
+        .background(Color.fastingOrange.opacity(0.06), in: RoundedRectangle(cornerRadius: 20))
     }
 }

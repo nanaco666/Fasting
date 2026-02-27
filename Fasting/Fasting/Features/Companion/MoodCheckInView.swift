@@ -271,7 +271,7 @@ struct MoodCheckInView: View {
                                     let clamped = min(max(snapped, 0), 10)
                                     value.wrappedValue = clamped
                                     if abs(clamped - lastHaptic.wrappedValue) >= 1.0 {
-                                        UISelectionFeedbackGenerator().selectionChanged()
+                                        Haptic.selection()
                                         lastHaptic.wrappedValue = clamped
                                     }
                                 }
@@ -311,7 +311,7 @@ struct MoodCheckInView: View {
                 withAnimation(.fastSpring) {
                     isHungry.toggle()
                 }
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Haptic.light()
                 updateResponse()
             } label: {
                 Text(isHungry ? "checkin_yes".localized : "checkin_no".localized)
@@ -379,7 +379,7 @@ struct MoodCheckInView: View {
                     selectedSymptoms.insert(symptom)
                 }
             }
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Haptic.light()
             updateResponse()
         } label: {
             HStack(spacing: 4) {
@@ -447,7 +447,7 @@ struct MoodCheckInView: View {
                         withAnimation(.fastSpring) {
                             ketoneLevel = selected ? nil : level
                         }
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Haptic.light()
                         updateResponse()
                     } label: {
                         VStack(spacing: 4) {
@@ -582,7 +582,7 @@ struct MoodCheckInView: View {
     private var saveButton: some View {
         Button {
             save()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            Haptic.success()
             dismiss()
         } label: {
             Text("checkin_save".localized)

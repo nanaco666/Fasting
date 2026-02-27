@@ -44,6 +44,12 @@ Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 | **Supporting** | Descriptions, secondary | `.caption` with `.foregroundStyle(.secondary)` |
 | **Micro** | Pill labels, timestamps | `.caption2.weight(.semibold)` + `.tracking(0.5)` + `.tertiary` |
 
+### Minimum Font Sizes
+- **Content text** (descriptions, suggestions, event titles): `.subheadline` (15pt) minimum
+- **Pill labels**: `.caption` (12pt) — ONLY for UPPERCASE labels with `.tracking(0.5)`
+- **Badge text**: `.caption2` (11pt) — ONLY inside colored capsule badges
+- **NEVER** use `.caption` or `.caption2` for readable body content
+
 ### Rules
 - Numbers: always `.monospacedDigit()` — prevents jumping on update
 - Timer/countdown: `.contentTransition(.numericText())`

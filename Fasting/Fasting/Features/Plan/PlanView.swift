@@ -88,7 +88,7 @@ struct PlanView: View {
             }
             
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Haptic.medium()
                 showOnboarding = true
             } label: {
                 HStack(spacing: Spacing.sm) {
@@ -231,7 +231,7 @@ struct PlanView: View {
                     let isExpanded = expandedMilestone == m.id
                     
                     Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Haptic.light()
                         expandedMilestone = isExpanded ? nil : m.id
                     } label: {
                         ZStack {
@@ -334,7 +334,7 @@ struct PlanView: View {
                 
                 if calendarService.isAuthorized {
                     Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Haptic.light()
                         showFullCalendar = true
                     } label: {
                         HStack(spacing: 4) {
@@ -440,9 +440,9 @@ struct PlanView: View {
                         Circle()
                             .fill(event.isMealRelated ? Color.fastingOrange : Color.fastingTeal.opacity(0.6))
                             .frame(width: 6, height: 6)
-                        Text(event.title).font(.caption).lineLimit(1)
+                        Text(event.title).font(.subheadline).lineLimit(1)
                         Spacer()
-                        Text(event.timeRange).font(.caption2).foregroundStyle(.tertiary)
+                        Text(event.timeRange).font(.caption).foregroundStyle(.tertiary)
                     }
                 }
                 
@@ -474,7 +474,7 @@ struct PlanView: View {
                 .multilineTextAlignment(.center)
             
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Haptic.medium()
                 Task {
                     let granted = await calendarService.requestAccess()
                     if granted {
@@ -503,7 +503,7 @@ struct PlanView: View {
         case .extended: ("Extended".localized, Color.fastingOrange)
         }
         return Text(text)
-            .font(.caption2.weight(.medium))
+            .font(.caption.weight(.medium))
             .foregroundStyle(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -546,13 +546,13 @@ struct PlanView: View {
                                             .font(.caption)
                                             .foregroundStyle(Color.fastingTeal)
                                             .frame(width: 20)
-                                        Text(workout.typeName).font(.caption)
+                                        Text(workout.typeName).font(.subheadline)
                                         Spacer()
                                         Text(workout.durationFormatted)
                                             .font(.caption2)
                                             .foregroundStyle(.tertiary)
                                         Text("\(Int(workout.calories)) kcal")
-                                            .font(.caption2.weight(.medium))
+                                            .font(.caption.weight(.medium))
                                             .foregroundStyle(Color.fastingOrange)
                                     }
                                 }
@@ -569,7 +569,7 @@ struct PlanView: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                         Button {
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            Haptic.medium()
                             Task {
                                 let authorized = await healthService.requestAuthorization()
                                 if authorized {
@@ -679,7 +679,7 @@ struct PlanView: View {
         VStack(spacing: Spacing.md) {
             HStack {
                 Button {
-                    UISelectionFeedbackGenerator().selectionChanged()
+                    Haptic.selection()
                     changeMonth(-1)
                 } label: {
                     Image(systemName: "chevron.left").font(.headline).foregroundStyle(.secondary)
@@ -690,7 +690,7 @@ struct PlanView: View {
                     .contentTransition(.interpolate)
                 Spacer()
                 Button {
-                    UISelectionFeedbackGenerator().selectionChanged()
+                    Haptic.selection()
                     changeMonth(1)
                 } label: {
                     Image(systemName: "chevron.right").font(.headline).foregroundStyle(.secondary)
@@ -716,7 +716,7 @@ struct PlanView: View {
                             isSelected: selectedDate.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false,
                             holiday: HolidayService.holiday(on: date)
                         ) {
-                            UISelectionFeedbackGenerator().selectionChanged()
+                            Haptic.selection()
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
                                 selectedDate = date
                             }
@@ -751,7 +751,7 @@ struct PlanView: View {
                     Spacer()
                     VStack(spacing: 6) {
                         Image(systemName: "moon.zzz").font(.title3).foregroundStyle(.tertiary)
-                        Text("No fasts this day".localized).font(.caption).foregroundStyle(.secondary)
+                        Text("No fasts this day".localized).font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
                 }
@@ -777,19 +777,19 @@ struct PlanView: View {
                         Circle()
                             .fill(event.isMealRelated ? Color.fastingOrange : Color.fastingTeal)
                             .frame(width: 6, height: 6)
-                        Text(event.title).font(.caption).lineLimit(1)
+                        Text(event.title).font(.subheadline).lineLimit(1)
                         Spacer()
-                        Text(event.timeRange).font(.caption2).foregroundStyle(.tertiary)
+                        Text(event.timeRange).font(.caption).foregroundStyle(.tertiary)
                     }
                 }
                 HStack(spacing: 4) {
                     Image(systemName: "lightbulb.fill").font(.system(size: 9)).foregroundStyle(Color.fastingOrange)
-                    Text(schedule.suggestion.reason.localized).font(.caption).foregroundStyle(.secondary)
+                    Text(schedule.suggestion.reason.localized).font(.subheadline).foregroundStyle(.secondary)
                 }
             } else {
                 HStack(spacing: 6) {
-                    Image(systemName: "sparkles").font(.caption).foregroundStyle(Color.fastingGreen)
-                    Text("plan_free_day".localized).font(.caption).foregroundStyle(.secondary)
+                    Image(systemName: "sparkles").font(.subheadline).foregroundStyle(Color.fastingGreen)
+                    Text("plan_free_day".localized).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }
@@ -802,7 +802,7 @@ struct PlanView: View {
             Text(h.fastingAdvice.emoji).font(.title3)
             VStack(alignment: .leading, spacing: 2) {
                 Text(h.localizedName).font(.subheadline.weight(.medium))
-                Text(h.fastingAdvice.localizedDetail).font(.caption).foregroundStyle(.secondary)
+                Text(h.fastingAdvice.localizedDetail).font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
             presetBadge(h.fastingAdvice.suggestedPreset)
