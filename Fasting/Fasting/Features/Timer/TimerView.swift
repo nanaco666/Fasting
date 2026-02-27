@@ -190,31 +190,41 @@ struct TimerView: View {
     
     // MARK: - Unified Timer Card (ring + elapsed + remaining + STARTED/GOAL)
     
+    // MARK: - Plate + Dial (hero element)
+    
+    private var plateWithDial: some View {
+        let theme = ThemeManager.shared.currentTheme
+        
+        return ZStack {
+            // Plate image — larger than dial, acts as container
+            if let plateImg = theme.plateImage {
+                Image(plateImg)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .shadow(color: Color.black.opacity(0.15), radius: 16, y: 8)
+            }
+            
+            // Dial sits centered on the plate
+            TimerDial(
+                style: dialStyle,
+                progress: fastingService.isFasting ? progress : 0,
+                elapsed: fastingService.isFasting ? elapsed : 0,
+                target: fastingService.currentFast?.targetDuration ?? 0,
+                startTime: fastingService.currentFast?.startTime,
+                isFasting: fastingService.isFasting,
+                isGoalAchieved: isGoalAchieved
+            )
+            .scaleEffect(theme.hasPlate ? 1.0 / theme.plateScale : 1.0)
+        }
+        .frame(maxWidth: theme.hasPlate ? 320 * theme.plateScale : 320)
+    }
+    
     private var timerCard: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
             VStack(spacing: 16) {
                 // Timer dial (switchable styles)
-                ZStack {
-                    // Plate texture (behind dial)
-                    if let plateImg = ThemeManager.shared.currentTheme.plateImage {
-                        Image(plateImg)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 320)
-                            .opacity(0.9)
-                    }
-                    
-                    TimerDial(
-                        style: dialStyle,
-                        progress: fastingService.isFasting ? progress : 0,
-                        elapsed: fastingService.isFasting ? elapsed : 0,
-                        target: fastingService.currentFast?.targetDuration ?? 0,
-                        startTime: fastingService.currentFast?.startTime,
-                        isFasting: fastingService.isFasting,
-                        isGoalAchieved: isGoalAchieved
-                    )
-                }
+                plateWithDial
                 .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)

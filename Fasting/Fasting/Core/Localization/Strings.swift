@@ -1125,5 +1125,6 @@ static let all: [String: [String: String]] = [
     "theme_section_title": ["en": "Table Setting", "zh-Hans": "餐桌布置"],
     "theme_current": ["en": "Current", "zh-Hans": "当前"],
 
+    "theme_minimal": ["en": "Minimal", "zh-Hans": "极简"],
 ]
 }
