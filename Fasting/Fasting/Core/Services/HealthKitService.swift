@@ -143,7 +143,7 @@ final class HealthKitService {
                     WorkoutSummary(
                         type: workout.workoutActivityType,
                         duration: workout.duration,
-                        calories: workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0,
+                        calories: workout.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0,
                         date: workout.startDate
                     )
                 }

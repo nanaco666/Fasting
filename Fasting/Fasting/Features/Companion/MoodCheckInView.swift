@@ -441,8 +441,8 @@ struct MoodCheckInView: View {
             
             // Ketone level pills
             HStack(spacing: 6) {
-                ForEach(KetoneLevel.allCases) { level in
-                    let selected = ketoneLevel == level
+                ForEach(KetoneLevel.allCases) { (level: KetoneLevel) in
+                    let selected: Bool = ketoneLevel == level
                     Button {
                         withAnimation(.fastSpring) {
                             ketoneLevel = selected ? nil : level
@@ -506,7 +506,7 @@ struct MoodCheckInView: View {
                         Text("ketone_info_guide_title".localized)
                             .font(.subheadline.weight(.semibold))
                         
-                        ForEach(KetoneLevel.allCases) { level in
+                        ForEach(KetoneLevel.allCases) { (level: KetoneLevel) in
                             HStack(spacing: 12) {
                                 Circle()
                                     .fill(level.color)

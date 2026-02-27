@@ -99,7 +99,7 @@ final class CalendarService: ObservableObject {
     }
     
     var isAuthorized: Bool {
-        authorizationStatus == .fullAccess || authorizationStatus == .authorized
+        authorizationStatus == .fullAccess || authorizationStatus == .writeOnly
     }
     
     func requestAccess() async -> Bool {
