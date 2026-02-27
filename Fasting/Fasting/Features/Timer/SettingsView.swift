@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("defaultPreset") private var defaultPreset: String = "sixteen8"
     @AppStorage("notificationsOn") private var notificationsOn = true
     @AppStorage("appearanceMode") private var appearanceMode: Int = 0  // 0=system, 1=light, 2=dark
+    @State private var themeManager = ThemeManager.shared
     
     var body: some View {
         List {
@@ -44,6 +45,55 @@ struct SettingsView: View {
                 }
             }
             
+
+            // MARK: - Table Setting (Theme)
+            Section("theme_section_title".localized) {
+                ForEach(PlateTheme.allThemes) { theme in
+                    Button {
+                        withAnimation(.smoothSpring) {
+                            themeManager.currentTheme = theme
+                        }
+                        Haptic.selection()
+                    } label: {
+                        HStack(spacing: 12) {
+                            // Theme preview circle
+                            ZStack {
+                                Circle()
+                                    .fill(theme.progressColor.opacity(0.15))
+                                if let plate = theme.plateImage {
+                                    Image(plate)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .clipShape(Circle())
+                                }
+                                Circle()
+                                    .stroke(theme.progressColor.opacity(0.3), lineWidth: 2)
+                            }
+                            .frame(width: 40, height: 40)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(theme.localizedName)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                if theme.isPremium {
+                                    Text("Premium")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(Color.fastingOrange)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            if themeManager.currentTheme.id == theme.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.fastingGreen)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
             // MARK: - Data
             Section(L10n.Settings.data) {
                 Button {

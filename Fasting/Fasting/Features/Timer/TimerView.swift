@@ -216,7 +216,8 @@ struct TimerView: View {
             )
             .scaleEffect(theme.hasPlate ? 1.0 / theme.plateScale : 1.0)
         }
-        .frame(maxWidth: theme.hasPlate ? 320 * theme.plateScale : 320)
+        .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
     }
     
     private var timerCard: some View {
