@@ -1,333 +1,332 @@
-# 设计规范文档
+# Fasting App — Design Architecture
 
-## 设计理念
-
-### 核心原则
-1. **原生优先**: 尽可能使用系统组件和设计语言
-2. **内容至上**: UI 服务于内容，不喧宾夺主
-3. **一致性**: 与 Apple Health/Fitness 视觉风格保持一致
-4. **可访问性**: 支持 Dynamic Type、VoiceOver 等无障碍功能
-
-### 设计灵感
-- Apple Health 的卡片式布局
-- Apple Fitness 的活动环设计
-- iOS 26 Liquid Glass 材质效果
+> Single source of truth for all UI decisions.
+> Code lives in `UI/Theme/Theme.swift` + `Core/Models/PlateTheme.swift`.
+> If this doc and code disagree, update whichever is wrong.
 
 ---
 
-## 色彩系统
-
-### 语义化颜色
-使用系统语义化颜色，自动适配深色模式：
+## 1. Color Palette — 3 Colors Only
 
 ```swift
-// 主要颜色
-Color.primary          // 主要文本
-Color.secondary        // 次要文本
-Color.accentColor      // 强调色（默认蓝色）
-
-// 背景颜色
-Color(.systemBackground)           // 主背景
-Color(.secondarySystemBackground)  // 次级背景（卡片）
-Color(.tertiarySystemBackground)   // 三级背景
-
-// 分组背景
-Color(.systemGroupedBackground)
-Color(.secondarySystemGroupedBackground)
+Color.fastingGreen   // Hero: active state, progress, success, CTAs
+Color.fastingTeal    // Accent: secondary actions, calendar, fitness
+Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 ```
 
-### 功能性颜色
+**Rules:**
+- Feature code must NEVER define custom RGB. Use only these 3 + system semantic colors.
+- Always prefix with `Color.` in `.fill()`, `.stroke()`, `.foregroundStyle()` — bare `.fastingGreen` fails ShapeStyle inference.
+- Dark mode: system handles it. These map to `Color.green`, `.teal`, `.orange`.
+- Opacity variations for backgrounds: `Color.fastingGreen.opacity(0.06)` for pill bg, `0.08` for section bg, `0.12` for track.
+
+**Color assignments by domain:**
+
+| Domain | Color | Examples |
+|--------|-------|---------|
+| Fasting progress | Green | Timer ring, start button, goal checkmark |
+| Plan / Calendar | Teal | Calendar icon, connect prompts, fitness |
+| Nutrition / Warning | Orange | Calories, meal events, streaks, stop button |
+| Neutral | System grays | `.secondary`, `.tertiary`, `.quaternary` |
+
+---
+
+## 2. Typography — 3 Levels Per Screen, Max
+
+### Type Scale
+
+| Level | Usage | Font |
+|-------|-------|------|
+| **Hero** | Timer digits, big numbers | `AppFont.hero(56)` — `.system(size: 56, weight: .light, design: .rounded)` |
+| **Stat** | Card hero values | `AppFont.stat(34)` — `.system(size: 34, weight: .semibold, design: .rounded)` |
+| **Title** | Card headers, section names | `.title3.bold()` or `.title2.weight(.bold)` |
+| **Body** | Primary content | `.subheadline.weight(.semibold)` (card header labels) |
+| **Supporting** | Descriptions, secondary | `.caption` with `.foregroundStyle(.secondary)` |
+| **Micro** | Pill labels, timestamps | `.caption2.weight(.semibold)` + `.tracking(0.5)` + `.tertiary` |
+
+### Rules
+- Numbers: always `.monospacedDigit()` — prevents jumping on update
+- Timer/countdown: `.contentTransition(.numericText())`
+- UPPERCASE micro labels: always add `.tracking(0.5)` to prevent cramped appearance
+- No custom fonts — SF Pro system only via dynamic type
+- Max 3 distinct sizes visible on any single screen
+
+---
+
+## 3. Card System — Glass Cards
+
+### GlassCard (primary container)
+
 ```swift
-extension Color {
-    // 断食状态颜色
-    static let fastingActive = Color.green      // 断食进行中
-    static let fastingIdle = Color.gray         // 空闲状态
-    static let fastingCompleted = Color.blue    // 完成
-    
-    // 统计颜色
-    static let streakFire = Color.orange        // 连续天数
-    static let chartBar = Color.blue.opacity(0.8)
+.glassCard(cornerRadius: CornerRadius.extraLarge)  // 28pt — standard for all feature cards
+```
+
+Implementation: `.ultraThinMaterial` background + shadow `(0.08 light / 0.3 dark, radius: 8, y: 4)`.
+
+### Card Header Pattern (mandatory for all cards)
+
+Every card follows this header structure:
+
+```swift
+HStack(alignment: .firstTextBaseline) {
+    Image(systemName: "icon.name")
+        .font(.subheadline)
+        .foregroundStyle(Color.fastingXxx)       // Card's domain color
+    Text("Card Title")
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(Color.fastingXxx)       // Same color
+    Spacer()
+    Text("trailing info")                         // Optional
+        .font(.subheadline)
+        .foregroundStyle(.tertiary)
+}
+.padding(16)
+```
+
+### Card Body Padding
+- Internal: `16pt` on all sides (header has its own 16pt padding)
+- Content below header: `.padding(.horizontal, 16).padding(.bottom, 16)`
+
+### Corner Radius System
+
+```swift
+enum CornerRadius {
+    static let small: CGFloat = 10    // Chips, badges, inline pills
+    static let medium: CGFloat = 16   // Inner containers, record cards
+    static let large: CGFloat = 20    // Sheets (legacy)
+    static let extraLarge: CGFloat = 28  // ALL feature cards — the standard
+    static let full: CGFloat = 9999   // Capsule buttons
 }
 ```
 
-### 渐变色
-用于进度环和特殊强调：
-```swift
-let fastingGradient = LinearGradient(
-    colors: [.green, .blue],
-    startPoint: .topLeading,
-    endPoint: .bottomTrailing
-)
-```
+**Rule:** Feature cards always use `.extraLarge`. Inner elements use `.small` (12pt) or `.medium`.
 
 ---
 
-## 字体系统
+## 4. Pill Pattern — Data Display
 
-### 使用 SF Pro (系统默认)
-```swift
-// 标题
-.font(.largeTitle)      // 34pt - 主要数字显示
-.font(.title)           // 28pt - 页面标题
-.font(.title2)          // 22pt - 节标题
-.font(.title3)          // 20pt - 卡片标题
-
-// 正文
-.font(.headline)        // 17pt 加粗 - 强调内容
-.font(.body)            // 17pt - 正文
-.font(.callout)         // 16pt - 次要正文
-.font(.subheadline)     // 15pt - 副标题
-.font(.footnote)        // 13pt - 脚注
-.font(.caption)         // 12pt - 说明文字
-.font(.caption2)        // 11pt - 最小文字
-```
-
-### 数字显示专用
-```swift
-// 计时器大数字
-Text("12:34:56")
-    .font(.system(size: 56, weight: .light, design: .rounded))
-    .monospacedDigit()  // 等宽数字，防止跳动
-
-// 统计数字
-Text("7")
-    .font(.system(size: 48, weight: .bold, design: .rounded))
-```
-
----
-
-## 图标系统
-
-### 使用 SF Symbols
-```swift
-// 导航图标
-Image(systemName: "timer")              // 计时器
-Image(systemName: "calendar")           // 历史
-Image(systemName: "chart.bar.fill")     // 统计
-Image(systemName: "gearshape.fill")     // 设置
-
-// 状态图标
-Image(systemName: "play.fill")          // 开始
-Image(systemName: "stop.fill")          // 结束
-Image(systemName: "checkmark.circle.fill")  // 完成
-
-// 功能图标
-Image(systemName: "flame.fill")         // 连续天数
-Image(systemName: "clock.fill")         // 时长
-Image(systemName: "bell.fill")          // 通知
-```
-
-### 图标变体
-```swift
-// 根据状态切换
-Image(systemName: isFasting ? "stop.fill" : "play.fill")
-    .symbolRenderingMode(.hierarchical)
-    .foregroundStyle(isFasting ? .red : .green)
-```
-
----
-
-## 组件设计
-
-### 1. 进度环 (Progress Ring)
-Apple Fitness 风格的圆形进度指示器：
+For compact data display inside cards (macros, stats, time info):
 
 ```swift
-struct ProgressRing: View {
-    let progress: Double  // 0.0 - 1.0
-    let lineWidth: CGFloat = 20
-    
-    var body: some View {
-        ZStack {
-            // 背景环
-            Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: lineWidth)
-            
-            // 进度环
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    AngularGradient(
-                        colors: [.green, .blue, .green],
-                        center: .center
-                    ),
-                    style: StrokeStyle(
-                        lineWidth: lineWidth,
-                        lineCap: .round
-                    )
-                )
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut, value: progress)
-        }
+VStack(spacing: 4) {
+    Text("LABEL")
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.tertiary)
+        .tracking(0.5)
+    HStack(alignment: .lastTextBaseline, spacing: 2) {
+        Text("123")
+            .font(.title3.bold())
+            .monospacedDigit()
+        Text("unit")
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 }
+.frame(maxWidth: .infinity)
+.padding(.vertical, 12)
+.background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
 ```
 
-### 2. 统计卡片 (Stat Card)
-Health 风格的信息卡片：
+**Rules:**
+- Background: `Color.gray.opacity(0.06)` — NOT the domain color
+- Corner radius: `12pt` for pills (hardcoded, not from CornerRadius enum)
+- Labels: UPPERCASE, tracking 0.5, `.tertiary`
+- Values: `.monospacedDigit()` always
+
+---
+
+## 5. Spacing System
 
 ```swift
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundStyle(color)
-                Text(title)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.subheadline)
-            
-            Text(value)
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
+enum Spacing {
+    static let xs: CGFloat = 4     // Icon-to-label gap
+    static let sm: CGFloat = 8     // Related elements
+    static let md: CGFloat = 16    // Between groups
+    static let lg: CGFloat = 24    // Between sections
+    static let xl: CGFloat = 32    // Hero element breathing room
+    static let xxl: CGFloat = 40   // Page margins (top/bottom)
+    static let xxxl: CGFloat = 56  // Special hero spacing
 }
 ```
 
-### 3. 主操作按钮 (Primary Button)
-大号、突出的操作按钮：
+### Layout Constants (not in Spacing enum)
+
+| Constant | Value | Usage |
+|----------|-------|-------|
+| Card external horizontal | `20pt` | `.padding(.horizontal, 20)` |
+| Card internal padding | `16pt` | `.padding(16)` |
+| Card-to-card gap | `20pt` | `VStack(spacing: 20)` |
+| Bottom safe area | `40pt` | `.padding(.bottom, 40)` |
+| Top content padding | `8pt` | `.padding(.top, 8)` |
+
+**These are the values actually used in TimerView — all cards must match.**
+
+---
+
+## 6. Animation
+
+### Decision Tree
+
+| Trigger | Animation | Constant |
+|---------|-----------|----------|
+| User tap | `.fastSpring` | `spring(response: 0.3, dampingFraction: 0.7)` |
+| State change (no tap) | `.smoothSpring` | `spring(response: 0.5, dampingFraction: 0.8)` |
+| Gentle transitions | `.gentleSpring` | `spring(response: 0.6, dampingFraction: 0.85)` |
+| Number change | `.contentTransition(.numericText())` | automatic |
+| Text change | `.contentTransition(.interpolate)` | automatic |
+| Ambient/decorative | `TimelineView(.animation)` | with sin(t) |
+
+### Rules
+- NEVER use `.easeInOut` for user-initiated actions — always spring
+- NEVER use `.animation(_, value:)` without explicit value (no implicit)
+- Max animation duration: 0.5s for response to tap
+- Expand/collapse: `.opacity.combined(with: .move(edge: .top))` transition
+
+---
+
+## 7. Haptics
+
+Use `Haptic` enum from `HapticService.swift`:
+
+| Interaction | Call | When |
+|------------|------|------|
+| Toggling, expanding, chevron tap | `Haptic.light()` | Expand card, milestone tap |
+| Primary CTA | `Haptic.medium()` | Start fast, connect calendar |
+| Achievement | `Haptic.success()` | Goal reached, plan created |
+| Picker / carousel / date selection | `Haptic.selection()` | Calendar date, month nav |
+
+**Rules:**
+- Every interactive element MUST have haptic feedback
+- `Haptic.selection()` for continuous browsing (carousel, picker)
+- `Haptic.medium()` for commitment actions (start, connect, save)
+- `Haptic.light()` for lightweight reveals (expand, info)
+
+---
+
+## 8. Progressive Disclosure
+
+Cards show summary by default. Tap to expand detail.
+
+**Pattern (from TimerView body phase card):**
 
 ```swift
-struct PrimaryButton: View {
-    let title: String
-    let action: () -> Void
-    var isDestructive: Bool = false
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(isDestructive ? Color.red : Color.accentColor)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-    }
+// Collapsed: header + one-line summary
+// Tapped: expand detail with transition
+
+.transition(.opacity.combined(with: .move(edge: .top)))
+.animation(.fastSpring, value: isExpanded)
+```
+
+**Where used:**
+- Body phase card: tap → full phase timeline
+- Plan milestone: tap node → description card
+- Mood card: tap → full check-in sheet
+
+---
+
+## 9. Theme System — Plate + Tablecloth
+
+### Architecture
+
+```swift
+PlateTheme {
+    id: String                    // "minimal", "classic", "ironwood"...
+    background: ThemeBackground   // .solid / .image / .custom
+    plateImage: String?           // Asset name for plate texture
+    plateScale: CGFloat           // Plate size relative to dial
+    progressColor: Color          // Theme-specific progress ring color
+    progressTrackColor: Color     // Theme-specific track color
 }
 ```
 
----
+### Background Types
+- `.solid(light:dark:)` — Pure gradient, original style (Minimal)
+- `.image(assetName:)` — Built-in tablecloth texture
+- `.custom(fileName:)` — User-uploaded image (future)
 
-## 布局规范
+### Built-in Themes
 
-### 间距系统
-```swift
-// 使用系统标准间距
-let spacing4: CGFloat = 4    // 最小间距
-let spacing8: CGFloat = 8    // 小间距
-let spacing12: CGFloat = 12  // 常规间距
-let spacing16: CGFloat = 16  // 标准间距
-let spacing20: CGFloat = 20  // 大间距
-let spacing24: CGFloat = 24  // 更大间距
-```
+| Theme | Background | Plate | Progress Color |
+|-------|-----------|-------|---------------|
+| Minimal | Solid gradient | None | Green |
+| Classic | Linen tablecloth | Cast iron | Green |
+| Ironwood | Dark wood | Cast iron | Orange |
+| Marble | Marble surface | None | Teal |
+| Washi | Japanese paper | Wood | Green |
 
-### 圆角规范
-```swift
-let cornerRadiusSmall: CGFloat = 8    // 小组件
-let cornerRadiusMedium: CGFloat = 12  // 卡片
-let cornerRadiusLarge: CGFloat = 16   // 大卡片
-let cornerRadiusFull: CGFloat = 9999  // 胶囊形状
-```
-
-### 安全区域
-```swift
-// 始终尊重安全区域
-.safeAreaInset(edge: .bottom) {
-    // 底部操作按钮
-}
-
-// 使用 safeAreaPadding 而不是硬编码
-.safeAreaPadding()
-```
+### Rules
+- Plate IS the hero container — no glassCard wrapping the plate
+- `plateScale` controls plate-to-dial ratio (1.25 = 25% bigger)
+- Image backgrounds fade out via LinearGradient mask (`fadeStart` → `fadeEnd`)
+- Widget syncs theme via `themeId` in `SharedFastingState`
 
 ---
 
-## 动画规范
+## 10. Page Architecture
 
-### 标准动画
-```swift
-// 按钮反馈
-.animation(.easeInOut(duration: 0.2), value: isPressed)
-
-// 数值变化
-.animation(.spring(response: 0.3, dampingFraction: 0.7), value: progress)
-
-// 页面切换
-.animation(.easeInOut(duration: 0.3), value: selectedTab)
+### Tab Structure
+```
+Fasting (timer) | Plan (calendar + plan + nutrition + fitness)
 ```
 
-### 微交互
-```swift
-// 按钮按下效果
-.scaleEffect(isPressed ? 0.95 : 1.0)
+### TimerView Layout
+```
+TableclothBackground
+└── ScrollView
+    ├── Timer Card (.extraLarge glass)
+    │   ├── plateWithDial (hero)
+    │   ├── STARTED / GOAL pills
+    │   └── Action button
+    ├── Mood Card (.extraLarge glass)
+    └── Body Phase Card (.extraLarge glass, expandable)
+```
 
-// 完成震动反馈
-UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+### PlanView Layout
+```
+GradientBackground
+└── ScrollView
+    ├── Card 1: Plan Overview (.extraLarge glass)
+    │   ├── Header: target icon + "Plan Progress" (green)
+    │   ├── Plan name + kg/wk
+    │   ├── Stage progress bar + milestone nodes
+    │   └── Expanded milestone (progressive disclosure)
+    ├── Card 2: Nutrition (.extraLarge glass)
+    │   ├── Header: leaf icon + "Daily Nutrition" (orange)
+    │   └── CALORIES / PROTEIN / CARB:FIBER pills
+    ├── Card 3: Calendar (.extraLarge glass)
+    │   ├── Header: calendar icon + "Upcoming" (teal) + "View All"
+    │   └── 14-day event list OR connect prompt
+    ├── Card 4: Activity (.extraLarge glass)
+    │   ├── Header: flame icon + "Today's Activity" (orange)
+    │   └── ACTIVE CAL / STEPS pills + workouts
+    └── Card 5: Fitness (.extraLarge glass)
+        ├── Header: figure.run icon + "Fitness Advice" (teal)
+        └── Recommendation list
 ```
 
 ---
 
-## 深色模式适配
+## 11. Localization
 
-### 自动适配
-- 使用语义化颜色，自动适配深浅色
-- 避免硬编码颜色值
-
-### 测试清单
-- [ ] 所有文本在两种模式下清晰可读
-- [ ] 图标和图表颜色适配
-- [ ] 分隔线和边框适配
-- [ ] 渐变色适配
+- All user-facing strings go through `Strings.swift` inline dictionary
+- Format: `"key": ["en": "English", "zh-Hans": "中文"]`
+- `"key".localized` for simple, `"key".localized(arg1, arg2)` for format strings
+- NO hardcoded English in views — everything through `.localized`
+- NO emoji in UI — use SF Symbols exclusively
 
 ---
 
-## 无障碍功能
+## 12. Checklist — Before Shipping Any Screen
 
-### VoiceOver
-```swift
-Text("16:34:22")
-    .accessibilityLabel("断食进行中，已断食16小时34分22秒")
-```
-
-### Dynamic Type
-```swift
-// 使用相对字体大小
-.font(.body)
-
-// 限制最大字体（如果需要）
-.dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-```
-
-### 颜色对比
-- 确保文字与背景对比度至少 4.5:1
-- 不仅用颜色传达信息，配合图标或文字
-
----
-
-## Liquid Glass (iOS 26+)
-
-### 材质应用
-```swift
-// 导航栏和工具栏自动应用 Liquid Glass
-// 自定义视图中谨慎使用
-
-.background(.ultraThinMaterial)  // 轻度毛玻璃
-.background(.thinMaterial)       // 标准毛玻璃
-.background(.regularMaterial)    // 常规毛玻璃
-```
-
-### 最佳实践
-- 不要过度使用半透明效果
-- 确保内容在材质上仍可读
-- 避免多层叠加材质
+- [ ] Colors: only `fastingGreen`/`Teal`/`Orange` + system semantics
+- [ ] Typography: max 3 levels visible at once
+- [ ] Cards: `.glassCard(cornerRadius: .extraLarge)` with standard header
+- [ ] Spacing: 20pt horizontal, 16pt internal, 20pt card gap
+- [ ] Animation: spring for user taps, no implicit animations
+- [ ] Haptics: every tap has feedback via `Haptic` enum
+- [ ] Numbers: `.monospacedDigit()`
+- [ ] Dark mode: manually tested
+- [ ] Dynamic Type: verified at large sizes
+- [ ] Localization: all strings through `.localized`
+- [ ] One hero element per screen
+- [ ] Progressive disclosure for dense content
