@@ -57,12 +57,12 @@ enum KetoneLevel: String, Codable, CaseIterable, Identifiable, Hashable {
     
     var color: Color {
         switch self {
-        case .negative: return .secondary.opacity(0.3)
-        case .trace: return .fastingGreen.opacity(0.4)
-        case .small: return .fastingGreen.opacity(0.7)
-        case .moderate: return .fastingTeal
-        case .large: return .fastingOrange.opacity(0.8)
-        case .veryLarge: return .fastingOrange
+        case .negative: return Color.gray.opacity(0.3)
+        case .trace: return Color.fastingGreen.opacity(0.4)
+        case .small: return Color.fastingGreen.opacity(0.7)
+        case .moderate: return Color.fastingTeal
+        case .large: return Color.fastingOrange.opacity(0.8)
+        case .veryLarge: return Color.fastingOrange
         }
     }
     

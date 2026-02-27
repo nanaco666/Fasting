@@ -825,7 +825,6 @@ static let all: [String: [String: String]] = [
     "note_optional": ["en": "Notes (optional)", "zh-Hans": "备注（可选）"],
     "note_placeholder": ["en": "Anything you want to remember about this moment...", "zh-Hans": "想记录下这一刻的任何想法..."],
     "companion_says": ["en": "For you", "zh-Hans": "给你"],
-    "checkin_hours": ["en": "You're %d hours into your fast", "zh-Hans": "你已断食 %d 小时"],
     
     // MARK: - Refeed Foods & Reasons
     "refeed_food_warm_water": ["en": "Warm water", "zh-Hans": "温水"],

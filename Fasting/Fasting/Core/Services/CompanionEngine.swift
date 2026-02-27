@@ -91,7 +91,6 @@ enum CompanionEngine {
     
     private static func wellbeingFeedback(pwb: Int, ewb: Int, hours: Double) -> String {
         let bucket = hourBucket(hours)
-        let avg = Double(pwb + ewb) / 2.0
         
         // Divergence detection: body and mind feel very different
         let gap = abs(pwb - ewb)
