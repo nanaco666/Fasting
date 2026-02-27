@@ -6,7 +6,7 @@
 import SwiftUI
 import SwiftData
 
-private enum HistoryFormatters {
+enum HistoryFormatters {
     static let monthYear: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = DateFormatter.dateFormat(fromTemplate: "MMMM yyyy", options: 0, locale: .current)
