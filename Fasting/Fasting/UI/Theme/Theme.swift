@@ -91,28 +91,31 @@ struct AppGradients {
 
 struct NoiseTexture: View {
     var opacity: Double = 0.03
-    
+
+    // Pre-render a small tile once, then tile it via drawingGroup
+    private static let tileSize: CGFloat = 128
+    private static let tileImage: UIImage = {
+        let size = Int(tileSize)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        return renderer.image { ctx in
+            let cg = ctx.cgContext
+            for _ in 0..<(size * size / 50) {
+                let x = CGFloat.random(in: 0..<CGFloat(size))
+                let y = CGFloat.random(in: 0..<CGFloat(size))
+                let alpha = CGFloat.random(in: 0.02...0.06)
+                cg.setFillColor(UIColor.white.withAlphaComponent(alpha).cgColor)
+                cg.fillEllipse(in: CGRect(x: x, y: y, width: 1, height: 1))
+            }
+        }
+    }()
+
     var body: some View {
         GeometryReader { geometry in
-            Image(systemName: "circle.fill")
-                .resizable()
-                .foregroundStyle(.white.opacity(opacity))
-                .frame(width: 1, height: 1)
-                .blur(radius: 0)
-                .drawingGroup()
-                .overlay {
-                    Canvas { context, size in
-                        for _ in 0..<Int(size.width * size.height * 0.02) {
-                            let x = Double.random(in: 0..<size.width)
-                            let y = Double.random(in: 0..<size.height)
-                            context.fill(
-                                Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)),
-                                with: .color(.white.opacity(Double.random(in: 0.02...0.06)))
-                            )
-                        }
-                    }
-                }
+            Image(uiImage: Self.tileImage)
+                .resizable(resizingMode: .tile)
+                .opacity(opacity)
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                .drawingGroup()
         }
         .allowsHitTesting(false)
     }

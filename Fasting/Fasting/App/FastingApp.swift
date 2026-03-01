@@ -71,7 +71,7 @@ struct ContentView: View {
             // Plan (includes calendar + history)
             PlanView()
                 .tabItem {
-                    Label("Plan".localized, systemImage: "target")
+                    Label(L10n.Tab.plan, systemImage: "target")
                 }
                 .tag(1)
             
@@ -87,9 +87,7 @@ struct ContentView: View {
         .preferredColorScheme(appearanceMode == 1 ? .light : appearanceMode == 2 ? .dark : nil)
         .onOpenURL { url in
             if url.host == "timer" { selectedTab = 0 }
-            else if url.host == "history" { selectedTab = 1 }
-            else if url.host == "plan" { selectedTab = 2 }
-
+            else if url.host == "plan" || url.host == "history" { selectedTab = 1 }
         }
     }
 }

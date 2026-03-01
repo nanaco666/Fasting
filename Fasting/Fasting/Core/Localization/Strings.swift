@@ -13,6 +13,7 @@ enum L10n {
     // MARK: - Tab Bar
     enum Tab {
         static var timer: String { "Timer".localized }
+        static var plan: String { "Plan".localized }
         static var history: String { "History".localized }
         static var insights: String { "Insights".localized }
     }

@@ -23,12 +23,6 @@ enum BiologicalSex: String, Codable, CaseIterable, Identifiable {
         }
     }
     
-    var localizedName: String {
-        switch self {
-        case .male: return "男"
-        case .female: return "女"
-        }
-    }
 }
 
 enum ActivityLevel: String, Codable, CaseIterable, Identifiable {

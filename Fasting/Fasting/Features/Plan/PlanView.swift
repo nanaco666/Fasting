@@ -22,7 +22,7 @@ struct PlanView: View {
     @State private var selectedDate: Date?
     @State private var expandedMilestone: Int?
     
-    @StateObject private var calendarService = CalendarService.shared
+    private var calendarService: CalendarService { CalendarService.shared }
     private var healthService: HealthKitService { HealthKitService.shared }
     
     private var activePlan: FastingPlan? { plans.first(where: { $0.isActive }) }
@@ -495,19 +495,7 @@ struct PlanView: View {
     }
     
     private func presetBadge(_ preset: SuggestedPreset) -> some View {
-        let (text, color): (String, Color) = switch preset {
-        case .normal: ("Normal".localized, Color.fastingGreen)
-        case .shorter: ("14:10", Color.fastingOrange)
-        case .skip: ("Skip".localized, Color.gray)
-        case .flexible: ("Flexible".localized, Color.fastingTeal)
-        case .extended: ("Extended".localized, Color.fastingOrange)
-        }
-        return Text(text)
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color, in: Capsule())
+        PresetBadge(preset: preset)
     }
     
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -814,33 +802,19 @@ struct PlanView: View {
     // MARK: - Calendar Helpers
     
     private var daysInMonth: [Date?] {
-        let cal = Calendar.current
-        let interval = cal.dateInterval(of: .month, for: displayedMonth)!
-        let firstWeekday = cal.component(.weekday, from: interval.start)
-        let lastDay = cal.date(byAdding: .day, value: -1, to: interval.end)!
-        var days: [Date?] = Array(repeating: nil, count: firstWeekday - 1)
-        var d = interval.start
-        while d <= lastDay { days.append(d); d = cal.date(byAdding: .day, value: 1, to: d)! }
-        return days
+        CalendarHelpers.daysInMonth(for: displayedMonth)
     }
-    
+
     private func dayProgress(_ date: Date) -> Double {
-        let cal = Calendar.current
-        let dayRecords = records.filter { $0.status == .completed && cal.isDate($0.startTime, inSameDayAs: date) }
-        guard let best = dayRecords.max(by: { ($0.actualDuration ?? 0) < ($1.actualDuration ?? 0) }) else { return 0 }
-        guard best.targetDuration > 0 else { return 0 }
-        return min((best.actualDuration ?? 0) / best.targetDuration, 1.0)
+        CalendarHelpers.dayProgress(on: date, records: records)
     }
-    
+
     private func recordsOn(_ date: Date) -> [FastingRecord] {
-        let cal = Calendar.current
-        return records.filter { cal.isDate($0.startTime, inSameDayAs: date) }
+        CalendarHelpers.records(on: date, from: records)
     }
-    
+
     private func dayTitle(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date) { return "Today".localized }
-        if Calendar.current.isDateInYesterday(date) { return "Yesterday".localized }
-        return HistoryFormatters.dayDetail.string(from: date)
+        CalendarHelpers.dayTitle(date)
     }
     
     private func changeMonth(_ delta: Int) {

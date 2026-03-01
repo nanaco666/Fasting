@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct WeekScheduleView: View {
-    @StateObject private var calendarService = CalendarService.shared
+    private var calendarService: CalendarService { CalendarService.shared }
     let basePlan: FastingPreset
     let profile: UserProfile?
     

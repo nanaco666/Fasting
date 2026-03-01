@@ -5,7 +5,6 @@
 //  EventKit 集成 — 读取日历事件，生成智能断食调度建议
 //
 
-import Combine
 import EventKit
 import Foundation
 
@@ -90,14 +89,15 @@ struct FastingSuggestion {
 // MARK: - Calendar Service
 
 @MainActor
-final class CalendarService: ObservableObject {
+@Observable
+final class CalendarService {
     static let shared = CalendarService()
-    
+
     private let store = EKEventStore()
-    
-    @Published var authorizationStatus: EKAuthorizationStatus = .notDetermined
-    @Published var weekSchedule: [DaySchedule] = []
-    @Published var isLoading = false
+
+    var authorizationStatus: EKAuthorizationStatus = .notDetermined
+    var weekSchedule: [DaySchedule] = []
+    var isLoading = false
     
     private init() {
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)

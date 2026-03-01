@@ -7,9 +7,6 @@ import SwiftUI
 import SwiftData
 
 private enum TimerFormatters {
-    static let weekday: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "EEE"; return f
-    }()
     static let timeShort: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEE, HH:mm"; return f
     }()
@@ -21,7 +18,6 @@ private enum TimerFormatters {
 struct TimerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
-    @Query(filter: #Predicate<FastingPlan> { $0.isActive }) private var activePlans: [FastingPlan]
     @State private var fastingService = FastingService.shared
     @State private var showPresetSheet = false
     @State private var showConfirmEnd = false
@@ -140,65 +136,6 @@ struct TimerView: View {
             }
         }
     }
-    
-    // MARK: - Week Strip (Zero-style top bar)
-    
-    private var weekStrip: some View {
-        HStack(spacing: 0) {
-            ForEach(weekStripDays, id: \.self) { day in
-                let isToday = Calendar.current.isDateInToday(day)
-                let completed = dayCompleted(day)
-                
-                VStack(spacing: 6) {
-                    Text(weekdayLabel(day))
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(isToday ? .primary : .tertiary)
-                    
-                    ZStack {
-                        Circle()
-                            .stroke(Color.gray.opacity(0.12), lineWidth: 3)
-                        
-                        if completed {
-                            Circle()
-                                .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        } else if isToday && fastingService.isFasting {
-                            Circle()
-                                .trim(from: 0, to: progress)
-                                .stroke(Color.fastingGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                                .rotationEffect(.degrees(-90))
-                        }
-                    }
-                    .frame(width: 32, height: 32)
-                }
-                .frame(maxWidth: .infinity)
-                .onTapGesture {
-                    Haptic.selection()
-                    // Future: Navigate to day details
-                }
-            }
-        }
-    }
-    
-    private var weekStripDays: [Date] {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        return (-6...0).compactMap { cal.date(byAdding: .day, value: $0, to: today) }
-    }
-    
-    private func weekdayLabel(_ date: Date) -> String {
-        TimerFormatters.weekday.string(from: date).uppercased()
-    }
-    
-    private func dayCompleted(_ date: Date) -> Bool {
-        let cal = Calendar.current
-        return records.contains {
-            $0.status == .completed
-            && ($0.actualDuration ?? 0) >= $0.targetDuration
-            && cal.isDate($0.startTime, inSameDayAs: date)
-        }
-    }
-    
-    // MARK: - Unified Timer Card (ring + elapsed + remaining + STARTED/GOAL)
     
     // MARK: - Plate + Dial (hero element)
     
@@ -594,22 +531,6 @@ struct TimerView: View {
         TimerFormatters.hourMinute.string(from: date)
     }
 
-    // MARK: - Plan Progress (Week Timeline)
-    
-    private var planProgressSection: some View {
-        Group {
-            if let plan = activePlans.first {
-                VStack(alignment: .leading, spacing: Spacing.md) {
-                    Text("Plan Progress".localized)
-                        .font(.title3.weight(.bold))
-                        .padding(.horizontal, Spacing.xs)
-                    
-                    PlanWeekTimeline(plan: plan, records: records)
-                }
-            }
-        }
-    }
-    
     // MARK: - Computed
     
     /// Last completed fast (for idle ring display)
@@ -662,100 +583,3 @@ struct TimerView: View {
         FastingRecord.formatShortDuration(remaining)
     }
 }
-
-// MARK: - Plan Week Timeline
-
-struct PlanWeekTimeline: View {
-    let plan: FastingPlan
-    let records: [FastingRecord]
-    
-    private var currentWeek: Int {
-        let weeks = Calendar.current.dateComponents([.weekOfYear], from: plan.startDate, to: Date()).weekOfYear ?? 0
-        return min(max(weeks + 1, 1), plan.durationWeeks)
-    }
-    
-    private var weekDays: [Date] {
-        let calendar = Calendar.current
-        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: startOfWeek) }
-    }
-    
-    var body: some View {
-        VStack(spacing: Spacing.lg) {
-            // Week indicator
-            HStack {
-                Text(String(format: "week_number".localized, currentWeek))
-                    .font(.headline)
-                
-                Spacer()
-                
-                Text(String(format: "week_progress".localized, currentWeek, plan.durationWeeks))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            // Week progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.gray.opacity(0.15))
-                    
-                    Capsule()
-                        .fill(Color.fastingGreen.gradient)
-                        .frame(width: geo.size.width * Double(currentWeek) / Double(max(plan.durationWeeks, 1)))
-                        .animation(.easeInOut, value: currentWeek)
-                }
-            }
-            .frame(height: 8)
-            
-            // This week's days
-            HStack(spacing: 0) {
-                ForEach(weekDays, id: \.self) { day in
-                    let completed = hasFastingRecord(on: day)
-                    let isToday = Calendar.current.isDateInToday(day)
-                    
-                    VStack(spacing: 6) {
-                        Text(dayLabel(day))
-                            .font(.caption)
-                            .foregroundStyle(isToday ? .primary : .secondary)
-                        
-                        ZStack {
-                            Circle()
-                                .fill(completed ? Color.fastingGreen : Color.gray.opacity(0.1))
-                                .frame(width: 36, height: 36)
-                            
-                            if completed {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(.white)
-                            } else if isToday {
-                                Circle()
-                                    .stroke(Color.fastingGreen, lineWidth: 2)
-                                    .frame(width: 36, height: 36)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .padding(Spacing.lg)
-        .glassCard(cornerRadius: CornerRadius.large)
-    }
-    
-    private func hasFastingRecord(on date: Date) -> Bool {
-        let calendar = Calendar.current
-        return records.contains { record in
-            record.status == .completed
-            && calendar.isDate(record.startTime, inSameDayAs: date)
-            && (record.actualDuration ?? 0) >= record.targetDuration
-        }
-    }
-    
-    private func dayLabel(_ date: Date) -> String {
-        String(TimerFormatters.weekday.string(from: date).prefix(2))
-    }
-}
-
-
-
