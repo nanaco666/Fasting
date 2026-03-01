@@ -16,6 +16,7 @@ private enum TimerFormatters {
 }
 
 struct TimerView: View {
+    private var themeColor: Color { ThemeManager.shared.currentTheme.progressColor }
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingRecord.startTime, order: .reverse) private var records: [FastingRecord]
     @State private var fastingService = FastingService.shared
@@ -63,9 +64,6 @@ struct TimerView: View {
                                 .padding(.horizontal, 20)
                         }
                         
-                        // Upcoming holiday
-                        upcomingHolidaySection
-                            .padding(.horizontal, 20)
                     }
                     .padding(.bottom, 40)
                     .padding(.top, 8)
@@ -222,10 +220,10 @@ struct TimerView: View {
                                 HStack(spacing: 4) {
                                     Text(idlePresetLabel)
                                         .font(.callout.weight(.semibold))
-                                        .foregroundStyle(Color.fastingGreen)
+                                        .foregroundStyle(themeColor)
                                     Image(systemName: "chevron.down")
                                         .font(.caption)
-                                        .foregroundStyle(Color.fastingGreen.opacity(0.6))
+                                        .foregroundStyle(themeColor.opacity(0.6))
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -242,7 +240,7 @@ struct TimerView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
             }
-            .glassCard(cornerRadius: CornerRadius.extraLarge)
+            .glassCard(cornerRadius: CornerRadius.large)
             .onChange(of: isGoalAchieved) { _, achieved in
                 if achieved && !hasShownGoalCelebration {
                     hasShownGoalCelebration = true
@@ -260,7 +258,7 @@ struct TimerView: View {
                 .tracking(0.5)
             Text(value)
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(Color.fastingGreen)
+                .foregroundStyle(themeColor)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -321,52 +319,11 @@ struct TimerView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(Color.fastingGreen.gradient, in: RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color.fastingGreen.opacity(0.3), radius: 12, y: 6)
+                .background(themeColor.gradient, in: RoundedRectangle(cornerRadius: 20))
+                .shadow(color: themeColor.opacity(0.3), radius: 12, y: 6)
             }
             .buttonStyle(.plain)
         }
-    }
-    
-    // MARK: - Upcoming Holiday
-    
-    private var upcomingHolidaySection: some View {
-        Group {
-            let upcoming = HolidayService.upcomingHolidays(within: 3)
-            if let (date, holiday) = upcoming.first {
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    HStack {
-                        Text(holiday.fastingAdvice.emoji)
-                            .font(.title3)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(holiday.localizedName)
-                                .font(.subheadline.weight(.semibold))
-                            Text(daysUntilText(date))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Text(holiday.fastingAdvice.localizedSummary)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Text(holiday.fastingAdvice.localizedDetail)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(Spacing.lg)
-                .glassCard(cornerRadius: CornerRadius.large)
-            }
-        }
-    }
-    
-    private func daysUntilText(_ date: Date) -> String {
-        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: Calendar.current.startOfDay(for: date)).day ?? 0
-        if days == 0 { return "Today".localized }
-        if days == 1 { return "Tomorrow".localized }
-        return "\(days) " + "days away".localized
     }
     
     // MARK: - Current Phase (unified: physiology + psychology + guidance + mood)
@@ -430,10 +387,10 @@ struct TimerView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Image(systemName: "figure.equestrian.sports")
                         .font(.subheadline)
-                        .foregroundStyle(Color.fastingGreen)
+                        .foregroundStyle(themeColor)
                     Text("Body Journey".localized)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.fastingGreen)
+                        .foregroundStyle(themeColor)
                     
                     Spacer()
                     
@@ -505,7 +462,7 @@ struct TimerView: View {
                 .transition(.opacity)
             }
         }
-        .glassCard(cornerRadius: CornerRadius.extraLarge)
+        .glassCard(cornerRadius: CornerRadius.large)
         .animation(.fastSpring, value: isPhaseExpanded)
     }
     
