@@ -187,7 +187,7 @@ struct TimerView: View {
                             showEditStart = true
                             Haptic.light()
                         } label: {
-                            timeInfoPill(label: "STARTED", value: formatTimeShort(start))
+                            timeInfoPill(label: L10n.Timer.started, value: formatTimeShort(start))
                         }
                         .buttonStyle(.plain)
                         
@@ -199,13 +199,13 @@ struct TimerView: View {
                                 showEditGoal = true
                                 Haptic.light()
                             } label: {
-                                timeInfoPill(label: "\(preset) GOAL", value: formatTimeShort(start.addingTimeInterval(targetDur)))
+                                timeInfoPill(label: "\(preset) \(L10n.Timer.goal)", value: formatTimeShort(start.addingTimeInterval(targetDur)))
                             }
                             .buttonStyle(.plain)
                         }
                     } else {
                         // Idle: START = now
-                        timeInfoPill(label: "START", value: formatTimeShort(Date()))
+                        timeInfoPill(label: L10n.Timer.start, value: formatTimeShort(Date()))
                         
                         // Idle: GOAL — tappable, opens preset picker & starts
                         Button {
@@ -213,7 +213,7 @@ struct TimerView: View {
                             Haptic.light()
                         } label: {
                             VStack(spacing: 4) {
-                                Text("GOAL")
+                                Text(L10n.Timer.goal)
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.tertiary)
                                     .tracking(0.5)

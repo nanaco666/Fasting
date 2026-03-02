@@ -41,6 +41,9 @@ enum L10n {
     enum Preset {
         static var title: String { "Choose a Plan".localized }
         static var hoursFasting: String { "hours fasting".localized }
+        static var started: String { "STARTED".localized }
+        static var start: String { "START".localized }
+        static var goal: String { "GOAL".localized }
         static var customDuration: String { "Fasting Duration".localized }
         static var hours: String { "hours".localized }
         static var popular: String { "Popular".localized }
@@ -196,7 +199,7 @@ extension Notification.Name {
 enum LocalizedStrings {
 static let all: [String: [String: String]] = [
     // Tab Bar
-    "Timer": ["en": "Fasting", "zh-Hans": "断食"],
+    "Timer": ["en": "Fasting", "zh-Hans": "空盘"],
     "History": ["en": "History", "zh-Hans": "历史"],
     "Insights": ["en": "Insights", "zh-Hans": "统计"],
     
@@ -204,6 +207,9 @@ static let all: [String: [String: String]] = [
     "Fasting": ["en": "Fasting", "zh-Hans": "断食"],
     "Start Fast": ["en": "Start Fast", "zh-Hans": "开始断食"],
     "End Fast": ["en": "End Fast", "zh-Hans": "结束断食"],
+    "STARTED": ["en": "STARTED", "zh-Hans": "已开始"],
+    "START": ["en": "START", "zh-Hans": "开始"],
+    "GOAL": ["en": "GOAL", "zh-Hans": "目标"],
     "Not Fasting": ["en": "Not Fasting", "zh-Hans": "未在断食"],
     "Goal Reached": ["en": "Goal Reached!", "zh-Hans": "目标达成！"],
     "remaining": ["en": "remaining", "zh-Hans": "剩余"],
@@ -1169,7 +1175,7 @@ static let all: [String: [String: String]] = [
 
     // MARK: - Plan Food Groups
     "plan_food_protein": ["en": "Protein", "zh-Hans": "蛋白质"],
-    "plan_food_protein_detail": ["en": "Eggs, chicken, beef, pork — aim for palm-sized portions", "zh-Hans": "鸡蛋、鸡肉、牛肉、猪肉——每份约手掌大小"],
+    "plan_food_protein_detail": ["en": "Eggs, chicken, beef, fish, tofu — prioritize fatty fish 2-3×/week for omega-3", "zh-Hans": "鸡蛋、鸡肉、牛肉、鱼、豆腐——优先每周 2-3 次富脂鱼补充 omega-3"],
     "plan_food_protein_detail_vegan": ["en": "Tofu, tempeh, legumes, seitan — combine sources for complete amino acids", "zh-Hans": "豆腐、天贝、豆类、面筋——搭配食用以获取完整氨基酸"],
     "plan_food_protein_science": ["en": "1.2-1.6g/kg body weight preserves lean mass during fasting (Mettler et al. 2010)", "zh-Hans": "断食期间每公斤体重摄入 1.2-1.6g 蛋白质可保持肌肉量 (Mettler et al. 2010)"],
     "plan_food_protein_science_vegan": ["en": "Plant proteins need 10-20% higher intake to match animal protein bioavailability (van Vliet et al. 2015)", "zh-Hans": "植物蛋白需要多摄入 10-20% 才能匹配动物蛋白的生物利用率 (van Vliet et al. 2015)"],
@@ -1177,7 +1183,7 @@ static let all: [String: [String: String]] = [
     "plan_food_seafood_detail": ["en": "Salmon, sardines, shrimp — rich in omega-3 fatty acids", "zh-Hans": "三文鱼、沙丁鱼、虾——富含 omega-3 脂肪酸"],
     "plan_food_seafood_science": ["en": "2-3 servings/week of fatty fish reduces inflammation markers by 30% (Calder 2017)", "zh-Hans": "每周 2-3 份富脂鱼可降低 30% 的炎症指标 (Calder 2017)"],
     "plan_food_dairy": ["en": "Dairy", "zh-Hans": "乳制品"],
-    "plan_food_dairy_detail": ["en": "Greek yogurt, cheese, milk — prioritize fermented options", "zh-Hans": "希腊酸奶、奶酪、牛奶——优先选择发酵类"],
+    "plan_food_dairy_detail": ["en": "Greek yogurt, kefir, cheese, milk — fermented options boost gut health", "zh-Hans": "希腊酸奶、开菲尔、奶酪、牛奶——发酵类更有益肠道健康"],
     "plan_food_dairy_science": ["en": "Fermented dairy improves gut microbiome diversity during time-restricted eating (Staudacher et al. 2020)", "zh-Hans": "发酵乳制品可改善限时进食期间的肠道微生物多样性 (Staudacher et al. 2020)"],
     "plan_food_vegetables": ["en": "Vegetables", "zh-Hans": "蔬菜"],
     "plan_food_vegetables_detail": ["en": "Leafy greens, cruciferous, colorful variety — fill half your plate", "zh-Hans": "绿叶菜、十字花科、多彩搭配——占满半盘"],
@@ -1208,8 +1214,19 @@ static let all: [String: [String: String]] = [
     "plan_streak": ["en": "🔥 %d day streak", "zh-Hans": "🔥 连续 %d 天"],
     "plan_weekly_completion": ["en": "✅ %d fasts this week", "zh-Hans": "✅ 本周完成 %d 次"],
     "plan_your_rhythm": ["en": "Your Rhythm", "zh-Hans": "你的节奏"],
+    // MARK: - Auth / Welcome
+    "auth_welcome_title": ["en": "Fasting", "zh-Hans": "空盘"],
+    "auth_welcome_subtitle": ["en": "A smarter way to fast,\ntailored to your body.", "zh-Hans": "更聪明的断食方式，\n为你的身体量身定制。"],
+    "auth_feature_timer": ["en": "Smart Timer", "zh-Hans": "智能计时"],
+    "auth_feature_timer_desc": ["en": "Track your fasting windows with precision", "zh-Hans": "精确追踪你的断食窗口"],
+    "auth_feature_insights": ["en": "Body Insights", "zh-Hans": "身体洞察"],
+    "auth_feature_insights_desc": ["en": "Personalized plans based on your physiology", "zh-Hans": "基于你的生理状态定制方案"],
+    "auth_feature_sync": ["en": "Seamless Sync", "zh-Hans": "无缝同步"],
+    "auth_feature_sync_desc": ["en": "Your data, everywhere — powered by iCloud", "zh-Hans": "你的数据随处可用——由 iCloud 驱动"],
+    "auth_skip": ["en": "Continue without signing in", "zh-Hans": "不登录，直接使用"],
+    "auth_privacy_note": ["en": "We only use your Apple ID to sync your data. No tracking, no ads.", "zh-Hans": "我们仅使用你的 Apple ID 同步数据。无追踪，无广告。"],
     // MARK: - Plan Food Serving Sizes (DGA 2025-2030)
-    "plan_food_protein_serving_size": ["en": "1 serving = 85g (3oz) cooked meat, 1 egg, or 30g nuts", "zh-Hans": "1 份 = 85g 熟肉、1 个鸡蛋或 30g 坚果"],
+    "plan_food_protein_serving_size": ["en": "1 serving = 85g (3oz) cooked meat/fish, 1 egg, ¼ cup beans, or 30g nuts", "zh-Hans": "1 份 = 85g 熟肉/鱼、1 个鸡蛋、¼ 杯豆类或 30g 坚果"],
     "plan_food_seafood_serving_size": ["en": "1 serving = 115g (4oz) cooked fish or shellfish", "zh-Hans": "1 份 = 115g 熟鱼或贝类"],
     "plan_food_dairy_serving_size": ["en": "1 serving = 240ml milk, 170g yogurt, or 45g cheese", "zh-Hans": "1 份 = 240ml 牛奶、170g 酸奶或 45g 奶酪"],
     "plan_food_vegetables_serving_size": ["en": "1 serving = 1 cup raw leafy greens or ½ cup cooked", "zh-Hans": "1 份 = 1 杯生菜叶或 ½ 杯熟蔬菜"],

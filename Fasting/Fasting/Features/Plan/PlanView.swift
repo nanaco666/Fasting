@@ -153,11 +153,7 @@ private func foodPyramid(plan: FastingPlan, profile: UserProfile, phase: PlanPha
                   detail: isVegan ? "plan_food_protein_detail_vegan".localized : "plan_food_protein_detail".localized,
                   scienceNote: isVegan ? "plan_food_protein_science_vegan".localized : "plan_food_protein_science".localized,
                   phaseTip: proteinPhaseTip),
-        FoodGroup(name: "plan_food_seafood".localized, icon: "\u{1F41F}", color: Color(red: 0.3, green: 0.6, blue: 0.75),
-                  servings: s.seafood.0, servingCount: s.seafood.1, servingUnit: "plan_servings_per_week".localized,
-                  servingSize: "plan_food_seafood_serving_size".localized,
-                  detail: "plan_food_seafood_detail".localized, scienceNote: "plan_food_seafood_science".localized,
-                  phaseTip: nil),
+
         FoodGroup(name: "plan_food_dairy".localized, icon: "\u{1F95B}", color: Color(red: 0.95, green: 0.9, blue: 0.75),
                   servings: s.dairy.0, servingCount: s.dairy.1, servingUnit: "plan_servings_per_day".localized,
                   servingSize: "plan_food_dairy_serving_size".localized,
@@ -186,14 +182,7 @@ private func foodPyramid(plan: FastingPlan, profile: UserProfile, phase: PlanPha
                   phaseTip: nil),
     ]
     
-    // Fermented foods bonus row
-    groups.append(
-        FoodGroup(name: "plan_food_fermented".localized, icon: "\u{1FAD9}", color: Color(red: 0.6, green: 0.5, blue: 0.7),
-                  servings: "1\u{2013}2", servingCount: 1, servingUnit: "plan_servings_per_day".localized,
-                  servingSize: "plan_food_fermented_serving_size".localized,
-                  detail: "plan_food_fermented_detail".localized, scienceNote: "plan_food_fermented_science".localized,
-                  phaseTip: nil)
-    )
+
     
     return groups
 }
@@ -412,6 +401,9 @@ struct PlanView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
+            foodPlateView(servings: DGAServings(tdee: profile.tdee))
+                .padding(.vertical, Spacing.sm)
+            
             VStack(spacing: Spacing.sm) {
                 ForEach(displayGroups) { group in
                     foodGroupRow(group)
@@ -465,7 +457,44 @@ struct PlanView: View {
         .warmCard()
     }
     
-    private func foodGroupRow(_ group: FoodGroup) -> some View {
+    // MARK: - Food Plate with Serving Labels
+    
+    private var foodPlateAsset: String {
+        ThemeManager.shared.currentTheme.foodImage ?? "Themes/CeramicPlaid/food"
+    }
+    
+    private func foodPlateView(servings: DGAServings) -> some View {
+        HStack(alignment: .center, spacing: Spacing.md) {
+            Image(foodPlateAsset)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: 140)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                plateLabel("🥩", "plan_food_protein".localized, servings.protein.0, "plan_servings_per_day".localized)
+                plateLabel("🥬", "plan_food_vegetables".localized, servings.vegetables.0, "plan_servings_per_day".localized)
+                plateLabel("🫐", "plan_food_fruit".localized, servings.fruit.0, "plan_servings_per_day".localized)
+                plateLabel("🥛", "plan_food_dairy".localized, servings.dairy.0, "plan_servings_per_day".localized)
+                plateLabel("🫒", "plan_food_healthy_fats".localized, servings.fats.0, "plan_servings_per_day".localized)
+                plateLabel("🌾", "plan_food_whole_grains".localized, servings.grains.0, "plan_servings_per_day".localized)
+            }
+        }
+    }
+    
+    private func plateLabel(_ emoji: String, _ name: String, _ count: String, _ unit: String) -> some View {
+        HStack(spacing: 6) {
+            Text(emoji).font(.caption)
+            Text(name).font(.caption2).foregroundStyle(.secondary)
+            Spacer()
+            Text(count)
+                .font(.caption2.weight(.bold).monospacedDigit())
+            Text(unit)
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+        }
+    }
+    
+        private func foodGroupRow(_ group: FoodGroup) -> some View {
         let isExpanded = expandedFoodGroup == group.id
         
         return VStack(spacing: 0) {
@@ -483,8 +512,8 @@ struct PlanView: View {
                         if !isExpanded {
                             Text(group.detail)
                                 .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .lineLimit(1)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
                     }
                     
@@ -512,13 +541,15 @@ struct PlanView: View {
                         .foregroundStyle(.secondary)
                     
                     // Serving size reference
-                    HStack(spacing: 6) {
+                    HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "scalemass.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Text(group.servingSize)
                             .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
+                        Text(group.servingSize)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     
                     HStack(alignment: .top, spacing: 6) {

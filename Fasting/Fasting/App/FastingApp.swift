@@ -55,11 +55,16 @@ struct FastingApp: App {
 // MARK: - Content View
 
 struct ContentView: View {
+    @StateObject private var auth = AuthService.shared
     @State private var selectedTab = 0
     @State private var languageRefresh = UUID()
     @AppStorage("appearanceMode") private var appearanceMode: Int = 0
     
     var body: some View {
+        if !auth.isSignedIn {
+            AuthView()
+                .transition(.opacity)
+        } else {
         TabView(selection: $selectedTab) {
             // Timer
             TimerView()
@@ -89,6 +94,7 @@ struct ContentView: View {
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "plan" || url.host == "history" { selectedTab = 1 }
         }
+        } // else (signed in)
     }
 }
 
