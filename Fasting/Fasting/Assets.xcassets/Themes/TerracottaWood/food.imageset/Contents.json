@@ -1,4 +1,12 @@
 {
-  "images": [{ "filename": "food.png", "idiom": "universal" }],
-  "info": { "author": "xcode", "version": 1 }
+  "images" : [
+    {
+      "filename" : "Frame 10.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
 }

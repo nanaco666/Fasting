@@ -1,4 +1,12 @@
 {
-  "images": [{ "filename": "tablecloth.png", "idiom": "universal" }],
-  "info": { "author": "xcode", "version": 1 }
+  "images" : [
+    {
+      "filename" : "桌布 1.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
 }
