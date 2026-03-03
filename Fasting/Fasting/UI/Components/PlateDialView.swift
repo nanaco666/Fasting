@@ -17,6 +17,7 @@ struct PlateDialView: View {
     let isFasting: Bool
     let isGoalAchieved: Bool
     
+    private var themeColor: Color { ThemeManager.shared.currentTheme.progressColor }
     @State private var breathePhase: CGFloat = 0
     @State private var appeared = false
     
@@ -88,7 +89,7 @@ struct PlateDialView: View {
                 let edgeA = (startA + .degrees(sweepDegrees)).radians
                 let r = dialSize * 0.44 * 0.7
                 Circle()
-                    .fill(Color.fastingGreen.opacity(0.3 + breathePhase * 0.15))
+                    .fill(themeColor.opacity(0.3 + breathePhase * 0.15))
                     .frame(width: 20, height: 20)
                     .blur(radius: 10)
                     .offset(
@@ -103,14 +104,14 @@ struct PlateDialView: View {
         if isGoalAchieved {
             return AnyShapeStyle(
                 AngularGradient(
-                    colors: [.fastingGreen.opacity(0.5), .fastingTeal.opacity(0.4), .fastingGreen.opacity(0.5)],
+                    colors: [themeColor.opacity(0.5), themeColor.opacity(0.4), themeColor.opacity(0.5)],
                     center: .center
                 )
             )
         }
         return AnyShapeStyle(
             AngularGradient(
-                colors: [.fastingGreen.opacity(0.5), .fastingTeal.opacity(0.35), .fastingOrange.opacity(0.4)],
+                colors: [themeColor.opacity(0.5), themeColor.opacity(0.35), themeColor.opacity(0.3)],
                 center: .center,
                 startAngle: .degrees(-90),
                 endAngle: .degrees(-90 + sweep)
@@ -207,7 +208,7 @@ struct PlateDialView: View {
                         Text("COMPLETED")
                             .font(.caption2.weight(.bold))
                     }
-                    .foregroundStyle(Color.fastingGreen)
+                    .foregroundStyle(themeColor)
                     .tracking(1)
                 } else {
                     Text(formattedRemaining)

@@ -8,12 +8,12 @@ import SwiftUI
 struct SettingsView: View {
     @State private var languageManager = LanguageManager.shared
     @State private var healthService = HealthKitService.shared
-    
+
     @AppStorage("defaultPreset") private var defaultPreset: String = "sixteen8"
     @AppStorage("notificationsOn") private var notificationsOn = true
     @AppStorage("appearanceMode") private var appearanceMode: Int = 0  // 0=system, 1=light, 2=dark
     @State private var themeManager = ThemeManager.shared
-    
+
     var body: some View {
         List {
             // MARK: - Fasting
@@ -23,10 +23,10 @@ struct SettingsView: View {
                         Text(preset.displayName).tag(preset.rawValue)
                     }
                 }
-                
+
                 Toggle(L10n.Settings.notifications, isOn: $notificationsOn)
             }
-            
+
             // MARK: - Appearance
             Section("Appearance".localized) {
                 Picker("Appearance".localized, selection: $appearanceMode) {
@@ -34,7 +34,7 @@ struct SettingsView: View {
                     Text("Light".localized).tag(1)
                     Text("Dark".localized).tag(2)
                 }
-                
+
                 Picker(L10n.Settings.language, selection: Binding(
                     get: { languageManager.currentLanguage },
                     set: { languageManager.currentLanguage = $0 }
@@ -44,7 +44,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            
+
 
             // MARK: - Table Setting (Theme)
             Section("theme_section_title".localized) {
@@ -70,7 +70,7 @@ struct SettingsView: View {
                                     .stroke(theme.progressColor.opacity(0.3), lineWidth: 2)
                             }
                             .frame(width: 40, height: 40)
-                            
+
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(theme.localizedName)
                                     .font(.body)
@@ -81,9 +81,9 @@ struct SettingsView: View {
                                         .foregroundStyle(Color.fastingOrange)
                                 }
                             }
-                            
+
                             Spacer()
-                            
+
                             if themeManager.currentTheme.id == theme.id {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(Color.fastingGreen)
@@ -112,7 +112,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 HStack {
                     Text(L10n.Settings.iCloudSync)
                     Spacer()
@@ -120,7 +120,7 @@ struct SettingsView: View {
                         .foregroundStyle(.green)
                 }
             }
-            
+
             // MARK: - About
             Section(L10n.Settings.about) {
                 HStack {
@@ -134,7 +134,7 @@ struct SettingsView: View {
         .navigationTitle(L10n.Settings.title)
         .preferredColorScheme(colorScheme)
     }
-    
+
     private var colorScheme: ColorScheme? {
         switch appearanceMode {
         case 1: return .light

@@ -16,6 +16,7 @@ struct SolarDialView: View {
     let isFasting: Bool
     let isGoalAchieved: Bool
     
+    private var themeColor: Color { ThemeManager.shared.currentTheme.progressColor }
     @State private var breathePhase: CGFloat = 0
     @State private var appeared = false
     
@@ -205,7 +206,7 @@ struct SolarDialView: View {
                 )
                 ctx.fill(
                     Circle().path(in: glowRect),
-                    with: .color(isGoalAchieved ? .fastingTeal.opacity(0.2) : .fastingGreen.opacity(0.15 + breathePhase * 0.1))
+                    with: .color(themeColor.opacity(isGoalAchieved ? 0.2 : 0.15 + breathePhase * 0.1))
                 )
             }
         }
@@ -339,7 +340,7 @@ struct SolarDialView: View {
                         Text("COMPLETED")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                     }
-                    .foregroundStyle(Color.fastingGreen)
+                    .foregroundStyle(themeColor)
                     .tracking(1.5)
                 } else {
                     Text(formattedRemaining)

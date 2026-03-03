@@ -2,351 +2,247 @@
 
 ## 架构概览
 
-本项目采用 **MVVM + Clean Architecture** 的分层架构，确保代码的可维护性、可测试性和可扩展性。
+**轻量 Feature-Sliced 架构**，无 ViewModel 层。View 直接持有 `@Query` 和调用 `@Observable` Service。
 
 ```
 ┌─────────────────────────────────────────────┐
 │                   App Layer                  │
-│  (FastingApp, ContentView, Navigation)       │
+│  FastingApp.swift — TabView + auth gate      │
 ├─────────────────────────────────────────────┤
 │               Features Layer                 │
-│  ┌─────────┐ ┌─────────┐ ┌─────────────┐   │
-│  │  Timer  │ │ History │ │ Statistics  │   │
-│  │  View   │ │  View   │ │    View     │   │
-│  └────┬────┘ └────┬────┘ └──────┬──────┘   │
+│  ┌─────────┐ ┌─────────┐ ┌──────────────┐  │
+│  │  Timer  │ │  Plan   │ │    Auth      │  │
+│  │  Views  │ │  Views  │ │    View      │  │
+│  └────┬────┘ └────┬────┘ └──────┬───────┘  │
 │       │           │              │          │
-│  ┌────┴────┐ ┌────┴────┐ ┌──────┴──────┐   │
-│  │  Timer  │ │ History │ │ Statistics  │   │
-│  │ViewModel│ │ViewModel│ │  ViewModel  │   │
-│  └────┬────┘ └────┬────┘ └──────┬──────┘   │
-├───────┼───────────┼──────────────┼──────────┤
 │       └───────────┼──────────────┘          │
 │                   ▼                          │
 │               Core Layer                     │
-│  ┌─────────────────────────────────────┐   │
-│  │           FastingService             │   │
-│  │    (Business Logic & State Mgmt)     │   │
-│  └─────────────────┬───────────────────┘   │
-│                    │                         │
-│  ┌─────────────────┴───────────────────┐   │
-│  │              Models                  │   │
-│  │  (FastingRecord, UserSettings)       │   │
-│  └─────────────────────────────────────┘   │
+│  ┌─────────┐ ┌─────────┐ ┌──────────────┐  │
+│  │ Models  │ │Services │ │ Localization │  │
+│  └─────────┘ └─────────┘ └──────────────┘  │
+├─────────────────────────────────────────────┤
+│                UI Layer                      │
+│  ┌───────────┐ ┌───────────────────────┐   │
+│  │Components │ │  Theme (Design Sys)   │   │
+│  └───────────┘ └───────────────────────┘   │
 ├─────────────────────────────────────────────┤
 │              Infrastructure                  │
-│  ┌───────────┐ ┌───────────┐ ┌──────────┐  │
-│  │ SwiftData │ │ CloudKit  │ │HealthKit│  │
-│  └───────────┘ └───────────┘ └──────────┘  │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐  │
+│  │SwiftData │ │HealthKit │ │ EventKit  │  │
+│  └──────────┘ └──────────┘ └───────────┘  │
+│  ┌──────────┐ ┌──────────┐ ┌───────────┐  │
+│  │ App Group│ │ Keychain │ │UserNotif  │  │
+│  └──────────┘ └──────────┘ └───────────┘  │
 └─────────────────────────────────────────────┘
 ```
 
 ---
 
-## 目录结构
+## 目录结构（实际）
 
 ```
 Fasting/
-├── App/                        # 应用层
-│   └── FastingApp.swift        # 应用入口 & 依赖注入
+├── App/
+│   └── FastingApp.swift              # 入口、TabView、auth gate、lifecycle
 │
-├── Features/                   # 功能模块层
-│   ├── Timer/                  # 断食计时器
-│   │   ├── TimerView.swift
-│   │   └── TimerViewModel.swift (可选)
+├── Features/
+│   ├── Auth/
+│   │   └── AuthView.swift            # Apple Sign In 登录页
 │   │
-│   ├── History/                # 历史记录
-│   │   ├── HistoryView.swift
-│   │   └── HistoryViewModel.swift (可选)
+│   ├── Timer/                        # 主页 — 断食计时器
+│   │   ├── TimerView.swift           # 主页面（timer card + mood + body phase）
+│   │   ├── BodyJourneyView.swift     # 断食生理阶段旅程（idle + active）
+│   │   ├── BodyVisualization.swift   # 身体可视化效果
+│   │   ├── PresetSelectionSheet.swift # 方案选择 sheet
+│   │   ├── EditStartTimeSheet.swift  # 修改断食开始时间
+│   │   ├── EditGoalSheet.swift       # 修改断食目标
+│   │   ├── QuickThemePickerSheet.swift # 快速主题切换
+│   │   └── SettingsView.swift        # 设置页
 │   │
-│   ├── Statistics/             # 统计数据
-│   │   ├── StatisticsView.swift
-│   │   └── StatisticsViewModel.swift (可选)
+│   ├── Companion/                    # 陪伴系统
+│   │   ├── MoodCheckInView.swift     # 身心签到（布辛格量表）
+│   │   └── RefeedGuideView.swift     # 复食指南
 │   │
-│   └── Settings/               # 设置
-│       └── SettingsView.swift
+│   ├── Plan/                         # 计划系统
+│   │   ├── PlanView.swift            # 计划主页（overview + nutrition + calendar + fitness）
+│   │   ├── OnboardingFlow.swift      # 计划引导流程
+│   │   └── WeekScheduleView.swift    # 周计划视图
+│   │
+│   └── History/
+│       └── HistoryView.swift         # 历史日历视图
 │
-├── Core/                       # 核心层
-│   ├── Models/                 # 数据模型
-│   │   ├── FastingRecord.swift
-│   │   └── UserSettings.swift
+├── Core/
+│   ├── Models/
+│   │   ├── FastingRecord.swift       # 断食记录 (@Model)
+│   │   ├── FastingPlan.swift         # 个性化断食计划 (@Model)
+│   │   ├── FastingPhase.swift        # 断食生理阶段定义
+│   │   ├── MoodRecord.swift          # 身心福祉记录 (@Model)
+│   │   ├── UserProfile.swift         # 用户身体参数 (@Model)
+│   │   ├── UserSettings.swift        # 用户设置
+│   │   └── PlateTheme.swift          # 主题定义 + ThemeManager
 │   │
-│   ├── Services/               # 服务层
-│   │   ├── FastingService.swift
-│   │   ├── NotificationService.swift
-│   │   └── HealthKitService.swift
+│   ├── Services/
+│   │   ├── FastingService.swift      # 断食状态管理（核心）
+│   │   ├── AuthService.swift         # Apple Sign In + Keychain
+│   │   ├── PlanCalculator.swift      # 科学计算引擎（TDEE/BMR/DGA）
+│   │   ├── CompanionEngine.swift     # 陪伴引擎（身心响应 + 安全守护）
+│   │   ├── CalendarService.swift     # EventKit 日历集成
+│   │   ├── HealthKitService.swift    # HealthKit 运动/活动数据
+│   │   ├── NotificationService.swift # 本地通知
+│   │   ├── HapticService.swift       # 触觉反馈
+│   │   └── SharedFastingData.swift   # App ↔ Widget 数据共享
 │   │
-│   └── Extensions/             # 扩展
-│       ├── Date+Extensions.swift
-│       └── Color+Extensions.swift
-│
-├── UI/                         # UI 组件层
-│   ├── Components/             # 可复用组件
-│   │   ├── ProgressRing.swift
-│   │   ├── StatCard.swift
-│   │   └── PrimaryButton.swift
+│   ├── Data/
+│   │   ├── FitnessRecommendations.swift # 健身建议数据
+│   │   ├── HolidayService.swift      # 节假日数据
+│   │   └── RefeedGuide.swift         # 复食指南数据
 │   │
-│   └── Theme/                  # 主题配置
-│       └── Theme.swift
+│   └── Localization/
+│       └── Strings.swift             # 内联翻译字典（en + zh-Hans）
 │
-├── Resources/                  # 资源文件
-│   ├── Assets.xcassets
-│   └── Localizable.strings
+├── UI/
+│   ├── Components/
+│   │   ├── SimpleDialView.swift      # 简约进度环
+│   │   ├── WatchDialView.swift       # 手表风格 dial
+│   │   ├── PlateDialView.swift       # 餐盘扇形 dial
+│   │   ├── SolarDialView.swift       # 日晷风格 dial（暗色专属）
+│   │   ├── TimerDialStyle.swift      # Dial 样式枚举 + TimerDial 分发
+│   │   ├── PrimaryButton.swift       # 主操作按钮
+│   │   ├── CalendarHelpers.swift     # 日历辅助视图
+│   │   └── FlowLayout.swift         # 流式布局
+│   │
+│   └── Theme/
+│       └── Theme.swift               # 设计系统（颜色、字体、间距、GlassCard、OpaqueCard）
 │
-└── Tests/                      # 测试
-    ├── UnitTests/
-    └── UITests/
+└── Resources/
+    └── Assets.xcassets               # 图片资源（含 Themes/ 命名空间）
+
+FastingWidget/                        # Widget 扩展
+├── FastingWidget.swift               # Widget 实现
+├── FastingWidgetBundle.swift         # Widget bundle
+└── SharedFastingData.swift           # 共享数据
 ```
 
 ---
 
 ## 技术选型
 
-### 1. UI 框架: SwiftUI
+| 领域 | 技术 | 最低版本 |
+|------|------|---------|
+| UI | SwiftUI | iOS 17.0 |
+| 持久化 | SwiftData | iOS 17.0 |
+| 状态管理 | `@Observable` (Observation) | iOS 17.0 |
+| 图表 | Swift Charts | iOS 17.0 |
+| 认证 | AuthenticationServices (Apple Sign In) | iOS 17.0 |
+| 日历 | EventKit | — |
+| 健康 | HealthKit | — |
+| 通知 | UserNotifications | — |
+| Widget | WidgetKit + App Groups | — |
+| 异步 | Swift Concurrency (async/await) | — |
 
-**理由**:
-- 原生 Apple 框架，与系统深度集成
-- 声明式语法，代码简洁
-- 自动支持 Dynamic Type、VoiceOver
-- 内置动画系统
-- 支持 Previews，提高开发效率
-
-**最低版本**: iOS 17.0
-
-### 2. 数据持久化: SwiftData
-
-**理由**:
-- Apple 官方推荐的新一代持久化框架
-- 与 SwiftUI 无缝集成
-- 基于 Swift 宏，代码简洁
-- 自动支持 CloudKit 同步
-
-**替代方案**: Core Data (如需支持 iOS 16 及以下)
-
-### 3. 图表: Swift Charts
-
-**理由**:
-- Apple 原生图表框架
-- 与 SwiftUI 完美集成
-- 自动适配深浅色模式
-- 支持动画
-
-### 4. 状态管理: @Observable (Observation 框架)
-
-**理由**:
-- iOS 17 新特性，性能更优
-- 比 ObservableObject 更简洁
-- 细粒度更新，减少不必要的重绘
-
-### 5. 异步编程: Swift Concurrency
-
-**理由**:
-- 原生 async/await 支持
-- 结构化并发
-- Actor 模型保证线程安全
+**零第三方依赖** — 全部 Apple 原生框架。
 
 ---
 
-## 核心组件设计
+## 数据模型
 
-### FastingService
+### SwiftData Models
 
-职责：
-- 管理断食状态（开始/结束/取消）
-- 维护当前断食记录
-- 计算进度和剩余时间
-- 处理应用生命周期
+| Model | 用途 |
+|-------|------|
+| `FastingRecord` | 断食记录（开始/结束时间、方案、状态） |
+| `FastingPlan` | 个性化断食计划（阶段、里程碑、营养目标） |
+| `UserProfile` | 用户身体参数（身高/体重/性别/活动量） |
+| `MoodRecord` | 身心签到（布辛格量表：情绪/能量/饥饿/体感） |
 
-```swift
-@Observable
-final class FastingService {
-    private(set) var currentFast: FastingRecord?
-    var isFasting: Bool { ... }
-    var progress: Double { ... }
-    
-    func startFasting(preset:customDuration:) -> FastingRecord
-    func endFasting()
-    func cancelFasting()
-}
+### 非持久化 Models
+
+| Type | 用途 |
+|------|------|
+| `PlateTheme` | 主题定义（背景、餐盘、颜色） |
+| `FastingPhase` | 断食生理阶段（0-72h 代谢变化） |
+| `FastingPreset` | 预设方案（16:8/18:6/20:4/OMAD/自定义） |
+
+---
+
+## 核心 Services
+
+### FastingService（核心状态机）
 ```
-
-### FastingRecord
-
-职责：
-- 存储断食记录数据
-- 计算衍生属性（进度、是否达标等）
-- 格式化输出
-
-```swift
-@Model
-final class FastingRecord {
-    var id: UUID
-    var startTime: Date
-    var endTime: Date?
-    var targetDuration: TimeInterval
-    var actualDuration: TimeInterval?
-    var presetType: FastingPreset
-    var status: FastingStatus
-}
+Idle → [startFasting] → InProgress → [endFasting] → Completed → Idle
+                                    → [cancelFasting] → Cancelled → Idle
 ```
+- `@Observable` singleton
+- 持有 `currentFast: FastingRecord?`
+- 通过 `SharedFastingData` 同步状态到 Widget
+- `configure(with: ModelContext)` 在 `onAppear` 时注入
+
+### PlanCalculator（科学计算引擎）
+- BMR/TDEE 计算（Mifflin-St Jeor）
+- DGA 2025-2030 营养份量计算
+- 减重速率和阶段规划
+- 生成个性化 `FastingPlan`
+
+### CompanionEngine（陪伴引擎）
+- 断食阶段感知的消息生成
+- 身心福祉分析（基于 MoodRecord）
+- 安全守护（异常状态预警）
+
+### AuthService
+- Apple Sign In + Keychain credential 存储
+- `isSignedIn` 状态控制 app gate
 
 ---
 
 ## 数据流
 
-### 1. 开始断食流程
-
+### App 启动
 ```
-用户点击"开始断食"
-       ↓
-PresetSelectionSheet 显示
-       ↓
-用户选择方案
-       ↓
-FastingService.startFasting()
-       ↓
-创建 FastingRecord (状态: inProgress)
-       ↓
-存入 SwiftData
-       ↓
-保存 ID 到 UserDefaults (防止应用被杀)
-       ↓
-UI 更新显示计时器
+FastingApp.body
+  → AuthService.isSignedIn?
+    → No: AuthView (Apple Sign In)
+    → Yes: TabView
+      → Tab 0: TimerView
+        → onAppear: FastingService.configure(modelContext)
+        → 恢复进行中的断食（如有）
+      → Tab 1: PlanView
 ```
 
-### 2. 结束断食流程
-
+### Widget 数据同步
 ```
-用户点击"结束断食"
-       ↓
-确认对话框
-       ↓
-FastingService.endFasting()
-       ↓
-更新 FastingRecord (状态: completed)
-       ↓
-计算实际时长
-       ↓
-存入 SwiftData
-       ↓
-清除 UserDefaults 中的 ID
-       ↓
-触发成功反馈 (Haptic)
-       ↓
-UI 更新显示空闲状态
+FastingService.syncToWidget()
+  → SharedFastingData (App Groups UserDefaults)
+    → FastingWidget reads via SharedFastingData
 ```
 
-### 3. 应用恢复流程
-
+### 主题切换
 ```
-应用启动/前台恢复
-       ↓
-FastingService.refresh()
-       ↓
-从 UserDefaults 读取保存的断食 ID
-       ↓
-从 SwiftData 查询对应记录
-       ↓
-如果存在且状态为 inProgress
-       ↓
-恢复 currentFast
-       ↓
-UI 继续显示计时器
+ThemeManager.shared.currentTheme = newTheme
+  → UserDefaults["selectedThemeId"] 持久化
+  → @Observable 触发 TimerView 重绘
+  → TableclothBackground 更新背景
+  → Dial views 读取新 progressColor
+  → Timer card themeColor 更新
 ```
 
 ---
 
 ## 未来扩展
 
-### 1. Apple Watch 应用
+### 已实现
+- ✅ Widget（Small）
+- ✅ 主题系统（5 built-in themes）
+- ✅ 身心签到（布辛格量表）
+- ✅ 复食指南
+- ✅ 日历集成（EventKit）
+- ✅ HealthKit（运动/活动）
+- ✅ Apple Sign In
 
-```
-FastingWatch/
-├── FastingWatchApp.swift
-├── ContentView.swift
-├── ComplicationController.swift
-└── ExtensionDelegate.swift
-```
-
-需要共享：
-- Core/Models
-- Core/Services (部分)
-
-### 2. Widget
-
-```
-FastingWidget/
-├── FastingWidget.swift
-├── FastingWidgetBundle.swift
-└── Provider.swift
-```
-
-支持：
-- Small: 显示当前状态和进度
-- Medium: 显示状态 + 本周统计
-- Lock Screen: 进度环
-
-### 3. Live Activities
-
-```swift
-struct FastingLiveActivity: Widget {
-    var body: some WidgetConfiguration {
-        ActivityConfiguration(for: FastingAttributes.self) { context in
-            // Live Activity UI
-        } dynamicIsland: { context in
-            // Dynamic Island UI
-        }
-    }
-}
-```
-
-### 4. Siri Shortcuts
-
-```swift
-// App Intents
-struct StartFastingIntent: AppIntent {
-    static var title: LocalizedStringResource = "开始断食"
-    
-    func perform() async throws -> some IntentResult {
-        FastingService.shared.startFasting(preset: .sixteen8)
-        return .result()
-    }
-}
-```
-
----
-
-## 测试策略
-
-### 单元测试
-
-- `FastingServiceTests`: 测试断食服务逻辑
-- `FastingRecordTests`: 测试模型计算属性
-- `StatisticsCalculatorTests`: 测试统计计算
-
-### UI 测试
-
-- 断食流程 E2E 测试
-- 历史记录浏览测试
-- 设置变更测试
-
-### 性能测试
-
-- 启动时间
-- 内存占用
-- 图表渲染性能
-
----
-
-## 依赖管理
-
-本项目**不使用第三方依赖**，全部使用 Apple 原生框架：
-
-- SwiftUI
-- SwiftData
-- Swift Charts
-- Observation
-- CloudKit
-- HealthKit
-- UserNotifications
-- WidgetKit (后续)
-- ActivityKit (后续)
+### 计划中
+- ⏳ TestFlight 上架
+- ⏳ Developer 账号激活 → Sign in with Apple 配置
+- ⏳ Apple Watch 应用
+- ⏳ Live Activities / Dynamic Island
+- ⏳ Siri Shortcuts (App Intents)
+- ⏳ 自定义主题（用户上传桌布图片）

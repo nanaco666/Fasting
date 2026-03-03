@@ -21,12 +21,13 @@ Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 - In dark mode, AVOID `.foregroundStyle(.tertiary)` for anything that needs to be read — use `.secondary` minimum.
 - Pill/inner backgrounds: `opacity(0.12)` minimum in dark mode (NOT `0.06` — invisible).
 - Opacity variations for backgrounds: `Color.fastingGreen.opacity(0.06)` for pill bg, `0.08` for section bg, `0.12` for track.
+- **Progress rings and dials read `ThemeManager.shared.currentTheme.progressColor`** — never hardcode `fastingGreen` in dial views.
 
 **Color assignments by domain:**
 
 | Domain | Color | Examples |
 |--------|-------|---------|
-| Fasting progress | Green | Timer ring, start button, goal checkmark |
+| Fasting progress | Theme `progressColor` | Timer ring, start button, goal checkmark |
 | Plan / Calendar | Teal | Calendar icon, connect prompts, fitness |
 | Nutrition / Warning | Orange | Calories, meal events, streaks, stop button |
 | Neutral | System grays | `.secondary`, `.tertiary`, `.quaternary` |
@@ -61,20 +62,35 @@ Color.fastingOrange  // Warning: streaks, calories, meal-related, alerts
 
 ---
 
-## 3. Card System — Glass Cards
+## 3. Card System — Glass & Opaque
 
-### GlassCard (primary container)
+### GlassCard (translucent — timer card only)
 
 ```swift
-.glassCard(cornerRadius: CornerRadius.extraLarge)  // 28pt — standard for all feature cards
+.glassCard(cornerRadius: CornerRadius.large)  // 20pt
 ```
 
 Implementation:
 - **Light mode**: `.ultraThinMaterial` background
 - **Dark mode**: `Color(white: 0.14)` solid elevated surface (NOT material — too dim)
 - Shadow: `0.08 light / 0.4 dark, radius: 8, y: 4`
+- **Use case**: Timer card only — allows tablecloth texture to show through
 
-Flighty pattern: dark mode cards are opaque, slightly elevated surfaces. Material blur makes text unreadable on dark backgrounds.
+### OpaqueCard (solid — all other cards)
+
+```swift
+.opaqueCard(cornerRadius: CornerRadius.large)  // 20pt
+```
+
+Implementation:
+- **Light mode**: `Color(.secondarySystemBackground)` — fully opaque
+- **Dark mode**: `Color(white: 0.14)` — same as glassCard dark
+- Shadow: same as glassCard
+- **Use case**: Mood card, body phase card, idle card, etc. — no transparency, clean separation from tablecloth
+
+### When to use which
+- **Timer card** → `glassCard` (hero element, part of the tablecloth + plate visual)
+- **Everything else** → `opaqueCard` (content cards should not show the tablecloth through)
 
 ### Card Header Pattern (mandatory for all cards)
 
@@ -106,13 +122,13 @@ HStack(alignment: .firstTextBaseline) {
 enum CornerRadius {
     static let small: CGFloat = 10    // Chips, badges, inline pills
     static let medium: CGFloat = 16   // Inner containers, record cards
-    static let large: CGFloat = 20    // Sheets (legacy)
-    static let extraLarge: CGFloat = 28  // ALL feature cards — the standard
+    static let large: CGFloat = 20    // Feature cards — the standard
+    static let extraLarge: CGFloat = 28  // Legacy / special cases
     static let full: CGFloat = 9999   // Capsule buttons
 }
 ```
 
-**Rule:** Feature cards always use `.extraLarge`. Inner elements use `.small` (12pt) or `.medium`.
+**Rule:** Feature cards use `.large` (20pt). Inner elements use `.small` (10pt) or `.medium` (16pt).
 
 ---
 
@@ -137,11 +153,11 @@ VStack(spacing: 4) {
 }
 .frame(maxWidth: .infinity)
 .padding(.vertical, 12)
-.background(Color.gray.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+.background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
 ```
 
 **Rules:**
-- Background: domain `color.opacity(0.12)` — visible in both light and dark mode
+- Background: `Color.gray.opacity(0.1)` — subtle, works in both modes
 - Corner radius: `12pt` for pills (hardcoded, not from CornerRadius enum)
 - Labels: UPPERCASE, tracking 0.5, `.tertiary`
 - Values: `.monospacedDigit()` always
@@ -203,8 +219,8 @@ Use `Haptic` enum from `HapticService.swift`:
 
 | Interaction | Call | When |
 |------------|------|------|
-| Toggling, expanding, chevron tap | `Haptic.light()` | Expand card, milestone tap |
-| Primary CTA | `Haptic.medium()` | Start fast, connect calendar |
+| Toggling, expanding, chevron tap | `Haptic.light()` | Expand card, milestone tap, theme switch |
+| Primary CTA | `Haptic.medium()` | Start fast, connect calendar, switch dial |
 | Achievement | `Haptic.success()` | Goal reached, plan created |
 | Picker / carousel / date selection | `Haptic.selection()` | Calendar date, month nav |
 
@@ -243,97 +259,149 @@ Cards show summary by default. Tap to expand detail.
 
 ```swift
 PlateTheme {
-    id: String                    // "minimal", "classic", "ironwood"...
+    id: String                    // "minimal", "ceramicPlaid", "terracottaWood"...
+    name: String                  // English name
+    localizedName: String         // Via "theme_xxx".localized
     background: ThemeBackground   // .solid / .image / .custom
-    plateImage: String?           // Asset name for plate texture
-    plateScale: CGFloat           // Plate size relative to dial
+    blendColor: Color             // Base color behind faded image
+    fadeStart: CGFloat            // Gradient mask start (0-1)
+    fadeEnd: CGFloat              // Gradient mask end (0-1)
+    plateImage: String?           // Asset name for plate (e.g. "Themes/CeramicPlaid/plate")
+    plateScale: CGFloat           // Plate size relative to dial (1.25 = 25% bigger)
+    foodImage: String?            // Asset name for food illustration
     progressColor: Color          // Theme-specific progress ring color
     progressTrackColor: Color     // Theme-specific track color
+    isPremium: Bool               // Requires unlock
 }
 ```
 
 ### Background Types
 - `.solid(light:dark:)` — Pure gradient, original style (Minimal)
-- `.image(assetName:)` — Built-in tablecloth texture
-- `.custom(fileName:)` — User-uploaded image (future)
+- `.image(assetName:)` — Built-in tablecloth texture from asset catalog
+- `.custom(fileName:)` — User-uploaded image (stored in documents dir)
 
 ### Built-in Themes
 
-| Theme | Background | Plate | Progress Color |
-|-------|-----------|-------|---------------|
-| Minimal | Solid gradient | None | Green |
-| Classic | Linen tablecloth | Cast iron | Green |
-| Ironwood | Dark wood | Cast iron | Orange |
-| Marble | Marble surface | None | Teal |
-| Washi | Japanese paper | Wood | Green |
+| ID | Name | Background | Plate | Progress Color | Premium |
+|----|------|-----------|-------|---------------|---------|
+| `minimal` | 极简 | Solid gradient | None | Green | No |
+| `ceramicPlaid` | 格纹陶瓷 | Plaid tablecloth | Ceramic plate | Green | No |
+| `terracottaWood` | 红陶木纹 | Wood texture | Terracotta plate | Orange | No |
+| `ceramicMarble` | 大理石 | Marble surface | Ceramic plate | Teal | Yes |
+| `woodLinen` | 木盘亚麻 | Linen tablecloth | Wood plate | Green | Yes |
+
+### Asset Naming Convention
+All theme assets are namespaced under `Themes/{ThemeId}/`:
+- `Themes/CeramicPlaid/tablecloth` — background image
+- `Themes/CeramicPlaid/plate` — plate image
+- `Themes/CeramicPlaid/food` — food illustration
+
+### Quick Theme Picker
+- Toolbar button (🎨 `paintpalette` icon) opens compact sheet
+- `QuickThemePickerSheet` — horizontal scroll of theme thumbnails
+- Presented at `.height(220)` with NavigationStack + inline title
+- Tap to switch and auto-dismiss
+
+### ThemeManager
+- Singleton: `ThemeManager.shared`
+- Persists to UserDefaults key `"selectedThemeId"`
+- `currentTheme` is `@Observable` — views react to changes automatically
 
 ### Rules
-- Plate IS the hero container — no glassCard wrapping the plate
+- Plate IS the hero container — no extra wrapping around the plate
 - `plateScale` controls plate-to-dial ratio (1.25 = 25% bigger)
 - Image backgrounds fade out via LinearGradient mask (`fadeStart` → `fadeEnd`)
 - Widget syncs theme via `themeId` in `SharedFastingState`
+- **All 4 dial views** (Simple, Watch, Plate, Solar) read `themeColor` from `ThemeManager.shared.currentTheme.progressColor`
+- Timer dial style: long press on dial to cycle (Simple → Clock → Plate → Solar)
 
 ---
 
-## 10. Page Architecture
+## 10. Dial Styles
+
+Four switchable timer dials, selectable via long-press gesture:
+
+| Style | File | Characteristics |
+|-------|------|----------------|
+| **Simple** | `SimpleDialView.swift` | Clean progress ring, large center digits |
+| **Clock** | `WatchDialView.swift` | Watch-style with hour ticks, gradient arc |
+| **Plate** | `PlateDialView.swift` | Filled sector with plate rim, hour marks |
+| **Solar** | `SolarDialView.swift` | Premium dark-mode dial, light wedge effect |
+
+### Rules
+- All dials use `themeColor` (from ThemeManager) for progress/accents
+- All dials support: progress, elapsed, target, startTime, isFasting, isGoalAchieved
+- Persisted via `@AppStorage("timerDialStyle")`
+- Transition: `.opacity.combined(with: .scale(scale: 0.95))`
+
+---
+
+## 11. Page Architecture
 
 ### Tab Structure
 ```
-Fasting (timer) | Plan (calendar + plan + nutrition + fitness)
+Timer (tab 0) | Plan (tab 1)
 ```
 
 ### TimerView Layout
 ```
 TableclothBackground
-└── ScrollView
-    ├── Timer Card (.extraLarge glass)
-    │   ├── plateWithDial (hero)
-    │   ├── STARTED / GOAL pills
-    │   └── Action button
-    ├── Mood Card (.extraLarge glass)
-    └── Body Phase Card (.extraLarge glass, expandable)
+└── NavigationStack
+    └── ScrollView
+        ├── Timer Card (.glassCard — hero, translucent)
+        │   ├── plateWithDial (theme plate + switchable dial)
+        │   ├── STARTED / GOAL pills (editable)
+        │   └── Action button (start/stop)
+        ├── [Fasting] Mood Card (.opaqueCard)
+        ├── [Fasting] Body Phase Card (.opaqueCard, expandable)
+        └── [Idle] Body Journey Idle Card (.opaqueCard)
+    Toolbar:
+        ├── 🎨 Theme Picker (paintpalette)
+        └── ⚙️ Settings (gearshape)
 ```
 
 ### PlanView Layout
 ```
 GradientBackground
 └── ScrollView
-    ├── Card 1: Plan Overview (.extraLarge glass)
+    ├── Card 1: Plan Overview (glass)
     │   ├── Header: target icon + "Plan Progress" (green)
     │   ├── Plan name + kg/wk
     │   ├── Stage progress bar + milestone nodes
     │   └── Expanded milestone (progressive disclosure)
-    ├── Card 2: Nutrition (.extraLarge glass)
+    ├── Card 2: Nutrition (glass)
     │   ├── Header: leaf icon + "Daily Nutrition" (orange)
     │   └── CALORIES / PROTEIN / CARB:FIBER pills
-    ├── Card 3: Calendar (.extraLarge glass)
+    ├── Card 3: Calendar (glass)
     │   ├── Header: calendar icon + "Upcoming" (teal) + "View All"
     │   └── 14-day event list OR connect prompt
-    ├── Card 4: Activity (.extraLarge glass)
+    ├── Card 4: Activity (glass)
     │   ├── Header: flame icon + "Today's Activity" (orange)
     │   └── ACTIVE CAL / STEPS pills + workouts
-    └── Card 5: Fitness (.extraLarge glass)
+    └── Card 5: Fitness (glass)
         ├── Header: figure.run icon + "Fitness Advice" (teal)
         └── Recommendation list
 ```
 
 ---
 
-## 11. Localization
+## 12. Localization
 
 - All user-facing strings go through `Strings.swift` inline dictionary
 - Format: `"key": ["en": "English", "zh-Hans": "中文"]`
 - `"key".localized` for simple, `"key".localized(arg1, arg2)` for format strings
 - NO hardcoded English in views — everything through `.localized`
 - NO emoji in UI — use SF Symbols exclusively
+- Theme names: `theme_minimal`, `theme_ceramic_plaid`, `theme_terracotta_wood`, `theme_ceramic_marble`, `theme_wood_linen`
 
 ---
 
-## 12. Checklist — Before Shipping Any Screen
+## 13. Checklist — Before Shipping Any Screen
 
 - [ ] Colors: only `fastingGreen`/`Teal`/`Orange` + system semantics
+- [ ] Progress: uses `themeColor` from ThemeManager, not hardcoded
 - [ ] Typography: max 3 levels visible at once
-- [ ] Cards: `.glassCard(cornerRadius: .extraLarge)` with standard header
+- [ ] Cards: timer → `.glassCard`, others → `.opaqueCard`, with standard header
 - [ ] Spacing: 20pt horizontal, 16pt internal, 20pt card gap
 - [ ] Animation: spring for user taps, no implicit animations
 - [ ] Haptics: every tap has feedback via `Haptic` enum
@@ -343,3 +411,4 @@ GradientBackground
 - [ ] Localization: all strings through `.localized`
 - [ ] One hero element per screen
 - [ ] Progressive disclosure for dense content
+- [ ] Theme color: dials and accent elements follow `progressColor`

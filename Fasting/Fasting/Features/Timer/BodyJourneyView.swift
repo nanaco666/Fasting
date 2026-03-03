@@ -203,7 +203,7 @@ struct BodyJourneyIdleCard: View {
         }
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity)
-        .glassCard(cornerRadius: CornerRadius.large)
+        .opaqueCard(cornerRadius: CornerRadius.large)
     }
 }
 

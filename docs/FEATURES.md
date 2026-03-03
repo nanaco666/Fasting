@@ -1,290 +1,232 @@
 # 功能规格文档
 
-## 核心功能详解
-
-### 1. 断食计时器 (Timer)
-
-#### 功能描述
-应用的核心功能，提供直观的断食计时体验。
-
-#### 用户故事
-- 作为用户，我想要一键开始断食，无需复杂设置
-- 作为用户，我想要实时查看断食进度和剩余时间
-- 作为用户，我想要在断食结束时收到通知
-
-#### UI 设计
-```
-┌─────────────────────────────┐
-│                             │
-│      [当前状态指示器]         │
-│                             │
-│    ┌───────────────────┐    │
-│    │                   │    │
-│    │   ⏱️ 12:34:56     │    │ ← 大号数字时钟
-│    │                   │    │
-│    │   ──────○──────   │    │ ← 圆形进度环
-│    │                   │    │
-│    │   16:8 断食模式    │    │
-│    │                   │    │
-│    └───────────────────┘    │
-│                             │
-│    [    开始断食    ]        │ ← 主操作按钮
-│                             │
-│    上次断食: 16h 23m        │
-│    本周完成: 5/7            │
-│                             │
-└─────────────────────────────┘
-```
-
-#### 状态流转
-```
-空闲 (Idle)
-    ↓ 点击"开始断食"
-进行中 (Fasting)
-    ↓ 点击"结束断食" 或 达到目标时间
-完成 (Completed)
-    ↓ 自动保存记录
-空闲 (Idle)
-```
-
-#### 技术实现
-- 使用 `Timer` 或 `CADisplayLink` 更新 UI
-- 断食开始时间存储在 `UserDefaults` (防止应用被杀)
-- 后台运行时使用 `BackgroundTasks` 框架
+> 对齐实际代码状态。虚线框 = 计划中未实现。
 
 ---
 
-### 2. 断食方案 (Presets)
+## Tab 结构
 
-#### 预设方案
-| 方案名称 | 断食时长 | 进食窗口 | 描述 |
-|---------|---------|---------|------|
-| 16:8 | 16小时 | 8小时 | 最流行的入门方案 |
-| 18:6 | 18小时 | 6小时 | 进阶方案 |
-| 20:4 | 20小时 | 4小时 | 战士饮食法 |
-| OMAD | 23小时 | 1小时 | 每日一餐 |
-| 自定义 | 用户设置 | 用户设置 | 完全自定义 |
-
-#### UI 设计
 ```
-┌─────────────────────────────┐
-│  选择断食方案               │
-├─────────────────────────────┤
-│  ┌─────────┐ ┌─────────┐   │
-│  │  16:8   │ │  18:6   │   │
-│  │ 16h断食  │ │ 18h断食  │   │
-│  │ ✓ 推荐  │ │         │   │
-│  └─────────┘ └─────────┘   │
-│  ┌─────────┐ ┌─────────┐   │
-│  │  20:4   │ │  OMAD   │   │
-│  │ 20h断食  │ │ 23h断食  │   │
-│  │         │ │ 挑战模式 │   │
-│  └─────────┘ └─────────┘   │
-│                             │
-│  [    自定义方案    ]       │
-└─────────────────────────────┘
+Tab 0: Timer (断食计时器)
+Tab 1: Plan (计划 + 营养 + 日历 + 健身)
 ```
 
 ---
 
-### 3. 历史记录 (History)
+## 1. 认证 (Auth)
 
-#### 功能描述
-以日历视图展示所有断食记录，支持查看详情和编辑。
+**入口**：App 启动 gate — 未登录时显示 AuthView
 
-#### UI 设计 - 日历视图
-```
-┌─────────────────────────────┐
-│  ◀  2026年1月  ▶           │
-├─────────────────────────────┤
-│  日  一  二  三  四  五  六  │
-│      1   2   3   4   5   6  │
-│      ●   ●   ○   ●   ●      │ ← ● 表示完成断食
-│  7   8   9  10  11  12  13  │
-│  ●   ●   ○   ●   ●   ●   ●  │
-│ 14  15  16  17  18  19  20  │
-│  ●   ●   ●   ●   ●   ●   ○  │
-│ 21  22  23  24  25  26  27  │
-│  ★                          │ ← ★ 今天
-│ 28  29  30  31              │
-└─────────────────────────────┘
+**功能**：
+- Apple Sign In（ASAuthorizationController）
+- Keychain credential 持久化
+- `AuthService.isSignedIn` 控制 app 可见性
 
-本月统计
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-完成 18 次 │ 总时长 288h │ 连续 7 天
-```
-
-#### UI 设计 - 记录详情
-```
-┌─────────────────────────────┐
-│  1月21日 断食记录           │
-├─────────────────────────────┤
-│                             │
-│  开始时间    20:00          │
-│  结束时间    12:00 (+1天)   │
-│  ─────────────────────────  │
-│  总时长      16小时 00分    │
-│  方案        16:8           │
-│  状态        ✅ 已完成      │
-│                             │
-│  [编辑]           [删除]    │
-└─────────────────────────────┘
-```
+**状态**：✅ UI 和逻辑已完成，Developer 账号未激活，Sign in with Apple capability 待配置
 
 ---
 
-### 4. 统计数据 (Statistics)
+## 2. 断食计时器 (Timer) — Tab 0
 
-#### 功能描述
-使用 Swift Charts 展示断食数据的可视化统计。
+### 2.1 计时器卡片
 
-#### 统计维度
-- **连续天数**: 当前连续断食天数
-- **最长连续**: 历史最长连续天数
-- **总断食时长**: 累计断食小时数
-- **平均时长**: 每次断食平均时长
-- **完成率**: 本周/本月完成率
+主页面 hero 元素。包含：
 
-#### UI 设计
-```
-┌─────────────────────────────┐
-│  统计                       │
-├─────────────────────────────┤
-│                             │
-│  ┌─────────────────────┐   │
-│  │  🔥 7               │   │
-│  │  当前连续天数        │   │
-│  │  ────────────────   │   │
-│  │  最长记录: 21天     │   │
-│  └─────────────────────┘   │
-│                             │
-│  本周断食趋势              │
-│  ┌─────────────────────┐   │
-│  │ ▁▂▅▇█▅▂            │   │ ← Swift Charts 条形图
-│  │ 一二三四五六日      │   │
-│  └─────────────────────┘   │
-│                             │
-│  本月概览                   │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  完成次数    18 次          │
-│  总时长      288 小时       │
-│  平均时长    16.2 小时      │
-│  完成率      85%            │
-│                             │
-└─────────────────────────────┘
-```
+- **餐盘 + Dial**：主题餐盘图片叠加可切换的 dial 样式
+- **时间信息 pills**：STARTED / GOAL，可点击编辑
+- **动作按钮**：Start（绿色渐变）/ Stop（灰色低调）
 
----
+**Dial 样式**（长按切换，`@AppStorage("timerDialStyle")` 持久化）：
 
-### 5. 设置 (Settings)
+| 样式 | 描述 |
+|------|------|
+| Simple | 简约进度环 + 大字居中 |
+| Clock | 手表风格，带 hour ticks 和渐变弧 |
+| Plate | 餐盘扇形填充，hour marks |
+| Solar | 日晷风格，光楔效果（暗色专属） |
 
-#### 功能列表
-- 默认断食方案
-- 通知设置
-  - 断食开始提醒
-  - 断食结束提醒
-  - 进食窗口结束提醒
-- 外观设置
-  - 跟随系统 / 浅色 / 深色
-- Apple Health 同步
-- iCloud 同步开关
-- 关于应用
+所有 dial 颜色跟随 `ThemeManager.shared.currentTheme.progressColor`。
 
----
+### 2.2 身心签到卡片 (Mood Card)
 
-## 数据模型
+断食中显示。点击打开 `MoodCheckInView`。
 
-### FastingRecord (断食记录)
+**基于布辛格断食监测量表**：
+- 情绪 (Mood)：emoji 选择
+- 能量 (Energy)：0-10 NRS
+- 饥饿 (Hunger)：0-10 NRS
+- 体感 (Physical)：症状标签多选
 
-```swift
-@Model
-final class FastingRecord {
-    var id: UUID
-    var startTime: Date
-    var endTime: Date?
-    var targetDuration: TimeInterval  // 目标时长（秒）
-    var actualDuration: TimeInterval? // 实际时长（秒）
-    var presetType: FastingPreset     // 使用的方案
-    var status: FastingStatus         // 状态
-    var notes: String?                // 备注
-    var createdAt: Date
-    var updatedAt: Date
-}
+数据存储为 `MoodRecord` (@Model)。
 
-enum FastingPreset: String, Codable {
-    case sixteen8 = "16:8"
-    case eighteen6 = "18:6"
-    case twenty4 = "20:4"
-    case omad = "OMAD"
-    case custom = "Custom"
-}
+### 2.3 身体旅程卡片 (Body Phase Card)
 
-enum FastingStatus: String, Codable {
-    case inProgress = "in_progress"
-    case completed = "completed"
-    case cancelled = "cancelled"
-}
-```
+断食中显示，可展开/折叠。
 
-### UserSettings (用户设置)
+- **折叠**：当前阶段名 + 陪伴消息 + 下一阶段倒计时
+- **展开**：完整阶段时间线，自动滚动到当前阶段
 
-```swift
-@Model
-final class UserSettings {
-    var defaultPreset: FastingPreset
-    var notificationsEnabled: Bool
-    var startReminderTime: Date?
-    var endReminderEnabled: Bool
-    var healthKitEnabled: Bool
-    var iCloudSyncEnabled: Bool
-}
-```
+阶段数据定义在 `FastingPhase.swift`（0-72h 代谢变化周期）。
+
+### 2.4 空闲状态卡片 (Body Journey Idle)
+
+非断食时显示，替代 mood + body phase 卡片。
+
+### 2.5 复食指南 (Refeed Guide)
+
+断食结束后自动弹出 sheet：
+- 根据断食时长推荐复食方案
+- 渐进式恢复建议（流质 → 轻食 → 正常）
+
+### 2.6 快速主题切换
+
+Toolbar 🎨 按钮 → compact sheet 横向滚动选择主题，选中即切换 + dismiss。
 
 ---
 
-## 页面导航结构
+## 3. 计划系统 (Plan) — Tab 1
 
-```
-TabView
-├── 首页 (Timer)
-│   └── 选择方案 Sheet
-├── 历史 (History)
-│   └── 记录详情
-│       └── 编辑记录
-└── 统计 (Statistics)
-    └── 详细图表
+### 3.1 Onboarding 引导
 
-设置 (通过 NavigationStack)
-├── 通知设置
-├── 外观设置
-├── Health 同步
-├── iCloud 同步
-└── 关于
-```
+首次使用 Plan 时弹出 `OnboardingFlow`：
+- 收集用户参数（身高/体重/年龄/性别/活动量/目标）
+- 存储为 `UserProfile` (@Model)
+- `PlanCalculator` 生成个性化 `FastingPlan`
+
+### 3.2 计划概览卡片
+
+- 计划名称 + 每周目标减重
+- 阶段进度条 + 里程碑节点（progressive disclosure）
+- 周计划视图 (`WeekScheduleView`)
+
+### 3.3 营养卡片
+
+基于 DGA 2025-2030 + TDEE 动态计算：
+- 每日热量目标
+- 蛋白质目标
+- 碳水:纤维比
+
+**PlanCalculator 引擎**：
+- BMR: Mifflin-St Jeor 公式
+- TDEE: BMR × 活动系数
+- DGA 食物份量按 TDEE 动态缩放
+
+### 3.4 日历卡片
+
+- EventKit 集成，读取用户日历事件
+- 14 天事件预览
+- 智能调度建议（有社交/餐饮事件时调整断食窗口）
+- 节假日识别 (`HolidayService`)
+
+### 3.5 活动卡片
+
+- HealthKit 集成
+- Active Calories / Steps / Workouts
+- 当日运动数据汇总
+
+### 3.6 健身建议卡片
+
+- 根据断食状态生成运动建议
+- 数据来源: `FitnessRecommendations.swift`
+- 基于断食生理机制匹配运动类型
 
 ---
 
-## 与 Zero 的功能对比
+## 4. 历史记录 (History)
 
-### 我们做的（MVP 核心）
-✅ 断食计时器
-✅ 预设方案
-✅ 历史记录
-✅ 基础统计
-✅ 通知提醒
+嵌入在 Plan tab 内（通过 NavigationLink 或 tab 内导航）。
 
-### 我们不做的（避免臃肿）
-❌ 营养/蛋白质追踪
-❌ 水分追踪
-❌ 心情记录
-❌ 教育内容/文章
+- 日历视图展示断食完成情况
+- 点击日期查看详情
+- 月度统计汇总
+
+---
+
+## 5. 设置 (Settings)
+
+从 Timer 页 toolbar ⚙️ 进入。
+
+| 设置项 | 说明 |
+|--------|------|
+| 默认断食方案 | 选择空闲时的默认 preset |
+| 表盘样式 | Simple / Clock / Plate / Solar |
+| 主题 | 5 个内置主题 |
+| 通知 | 断食完成/半程提醒 |
+| 外观 | 跟随系统 / 浅色 / 深色 |
+| 语言 | 英文 / 简体中文 |
+| HealthKit | 连接/断开 |
+| 日历 | 连接/断开 |
+
+---
+
+## 6. 主题系统
+
+5 个内置主题，每个包含：桌布背景 + 餐盘图 + 食物插图 + 配色。
+
+| 主题 | 进度色 | Premium |
+|------|--------|---------|
+| 极简 (Minimal) | Green | No |
+| 格纹陶瓷 (Ceramic Plaid) | Green | No |
+| 红陶木纹 (Terracotta Wood) | Orange | No |
+| 大理石 (Ceramic Marble) | Teal | Yes |
+| 木盘亚麻 (Wood Linen) | Green | Yes |
+
+切换方式：
+1. Toolbar 🎨 快速切换（`QuickThemePickerSheet`）
+2. Settings → 主题设置
+
+---
+
+## 7. Widget
+
+- **尺寸**：Small
+- **内容**：当前断食状态、进度环、剩余时间
+- **数据同步**：`SharedFastingData` via App Groups UserDefaults
+- **主题**：跟随 app 主题 (`themeId`)
+
+---
+
+## 8. 陪伴系统 (Companion)
+
+`CompanionEngine` 提供：
+- 断食阶段感知的鼓励消息
+- 身心福祉趋势分析
+- 安全守护（长时间断食/异常体感预警）
+
+---
+
+## 9. 本地化
+
+- 双语：English + 简体中文
+- 内联字典方式 (`Strings.swift`)
+- 130+ 翻译条目
+- 运行时切换，无需重启 app
+
+---
+
+## 与 Zero 的差异化
+
+### 我们做了
+✅ 断食计时器（4 种 dial 样式）
+✅ 个性化科学计划（DGA 2025-2030）
+✅ 身心签到（布辛格量表）
+✅ 复食指南
+✅ 日历智能调度
+✅ HealthKit 运动数据
+✅ 主题系统（5 主题 + 快速切换）
+✅ Widget
+✅ 双语
+
+### 我们不做
 ❌ 社区/挑战
-❌ AI 功能
-❌ 付费订阅墙
+❌ 付费订阅墙（核心功能免费）
+❌ 水分追踪
+❌ 教育文章/内容营销
+❌ AI chatbot
 
-### 我们的差异化优势
-⭐ 100% Apple 原生设计
-⭐ 零注册，即开即用
-⭐ 核心功能完全免费
+### 差异化优势
+⭐ 100% Apple 原生（零依赖）
+⭐ 科学引擎驱动（DGA + 布辛格 + 代谢研究）
+⭐ 主题化视觉体验（ADA 级设计）
 ⭐ 极致轻量 (< 20MB)
-⭐ 深度系统集成 (Widget, Watch, Siri)
+⭐ 零注册即用（Apple Sign In 可选）

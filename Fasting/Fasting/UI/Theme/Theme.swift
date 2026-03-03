@@ -166,6 +166,31 @@ extension View {
     func glassCard(cornerRadius: CGFloat = 16) -> some View {
         modifier(GlassCard(cornerRadius: cornerRadius))
     }
+    
+    /// Opaque card — solid background, no translucency.
+    func opaqueCard(cornerRadius: CGFloat = 16) -> some View {
+        modifier(OpaqueCard(cornerRadius: cornerRadius))
+    }
+}
+
+// MARK: - Opaque Card Style
+
+struct OpaqueCard: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    var cornerRadius: CGFloat = 16
+    
+    func body(content: Content) -> some View {
+        content
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(colorScheme == .dark
+                        ? Color(white: 0.14)
+                        : Color(.secondarySystemBackground)
+                    )
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.08), radius: 8, x: 0, y: 4)
+            }
+    }
 }
 
 // MARK: - Tinted Card Style

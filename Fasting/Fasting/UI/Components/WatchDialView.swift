@@ -17,6 +17,7 @@ struct WatchDialView: View {
     let isFasting: Bool
     let isGoalAchieved: Bool
     
+    private var themeColor: Color { ThemeManager.shared.currentTheme.progressColor }
     @State private var breathePhase: CGFloat = 0
     @State private var appeared = false
     
@@ -142,7 +143,7 @@ struct WatchDialView: View {
             if isFasting && !isGoalAchieved && arcProgress > 0.01 {
                 let endA = -Double.pi / 2 + arcProgress * 2 * .pi
                 Circle()
-                    .fill(Color.fastingGreen.opacity(0.25 + breathePhase * 0.15))
+                    .fill(themeColor.opacity(0.25 + breathePhase * 0.15))
                     .frame(width: ringWidth + 10, height: ringWidth + 10)
                     .blur(radius: 8)
                     .offset(
@@ -155,14 +156,10 @@ struct WatchDialView: View {
     
     private func arcColor(at t: Double) -> Color {
         if isGoalAchieved {
-            return Color.fastingGreen
+            return themeColor
         }
-        // t=0 → green (leading), t=1 → orange (trailing/start)
-        return Color(
-            red: 0.2 + t * 0.8,
-            green: 0.78 - t * 0.13,
-            blue: 0.35 - t * 0.15
-        )
+        // Leading edge (t=0) = full themeColor, trailing (t=1) = faded
+        return themeColor.opacity(1.0 - t * 0.5)
     }
     
     // MARK: - Goal Marker (at 100% = 12 o'clock = full circle)
@@ -177,7 +174,7 @@ struct WatchDialView: View {
                 if isGoalAchieved {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.fastingGreen)
+                        .foregroundStyle(themeColor)
                 } else {
                     // Small triangle at top pointing down
                     Image(systemName: "arrowtriangle.down.fill")
@@ -201,7 +198,7 @@ struct WatchDialView: View {
                 Circle()
                     .fill(Color.white)
                     .frame(width: 7, height: 7)
-                    .shadow(color: Color.fastingGreen.opacity(0.5), radius: 3)
+                    .shadow(color: themeColor.opacity(0.5), radius: 3)
                     .offset(
                         x: trackR * Foundation.cos(currentA),
                         y: trackR * Foundation.sin(currentA)
@@ -235,7 +232,7 @@ struct WatchDialView: View {
                         Text("COMPLETED")
                             .font(.caption2.weight(.bold))
                     }
-                    .foregroundStyle(Color.fastingGreen)
+                    .foregroundStyle(themeColor)
                     .tracking(1)
                 } else {
                     Text(formattedRemaining)

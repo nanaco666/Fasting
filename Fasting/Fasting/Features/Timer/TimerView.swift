@@ -29,6 +29,7 @@ struct TimerView: View {
     @State private var hasShownGoalCelebration = false
     @State private var showMoodCheckIn = false
     @State private var showRefeedGuide = false
+    @State private var showThemePicker = false
     @State private var lastFastDuration: TimeInterval = 0
     @State private var lastFastGoalMet = false
     @AppStorage("timerDialStyle") private var dialStyleRaw: String = TimerDialStyle.simple.rawValue
@@ -73,10 +74,11 @@ struct TimerView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        SettingsView()
+                    Button {
+                        showThemePicker = true
+                        Haptic.light()
                     } label: {
-                        Image(systemName: "gearshape")
+                        Image(systemName: "paintpalette")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -132,6 +134,11 @@ struct TimerView: View {
                 }
                 .presentationDetents([.medium])
             }
+            .sheet(isPresented: $showThemePicker) {
+                QuickThemePickerSheet()
+                    .presentationDetents([.height(220)])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
     
@@ -169,7 +176,7 @@ struct TimerView: View {
     }
     
     private var timerCard: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        TimelineView(.periodic(from: .now, by: 1)) { (context: TimelineViewDefaultContext) in
             let _ = context.date
             VStack(spacing: 8) {
                 // Timer dial (switchable styles)
@@ -187,7 +194,7 @@ struct TimerView: View {
                             showEditStart = true
                             Haptic.light()
                         } label: {
-                            timeInfoPill(label: L10n.Timer.started, value: formatTimeShort(start))
+                            timeInfoPill(label: L10n.Preset.started, value: formatTimeShort(start))
                         }
                         .buttonStyle(.plain)
                         
@@ -199,13 +206,13 @@ struct TimerView: View {
                                 showEditGoal = true
                                 Haptic.light()
                             } label: {
-                                timeInfoPill(label: "\(preset) \(L10n.Timer.goal)", value: formatTimeShort(start.addingTimeInterval(targetDur)))
+                                timeInfoPill(label: "\(preset) \(L10n.Preset.goal)", value: formatTimeShort(start.addingTimeInterval(targetDur)))
                             }
                             .buttonStyle(.plain)
                         }
                     } else {
                         // Idle: START = now
-                        timeInfoPill(label: L10n.Timer.start, value: formatTimeShort(Date()))
+                        timeInfoPill(label: L10n.Preset.start, value: formatTimeShort(Date()))
                         
                         // Idle: GOAL — tappable, opens preset picker & starts
                         Button {
@@ -213,7 +220,7 @@ struct TimerView: View {
                             Haptic.light()
                         } label: {
                             VStack(spacing: 4) {
-                                Text(L10n.Timer.goal)
+                                Text(L10n.Preset.goal)
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.tertiary)
                                     .tracking(0.5)
@@ -369,7 +376,7 @@ struct TimerView: View {
                 }
             }
             .padding(16)
-            .glassCard(cornerRadius: CornerRadius.large)
+            .opaqueCard(cornerRadius: CornerRadius.large)
         }
         .buttonStyle(.plain)
     }
@@ -462,7 +469,7 @@ struct TimerView: View {
                 .transition(.opacity)
             }
         }
-        .glassCard(cornerRadius: CornerRadius.large)
+        .opaqueCard(cornerRadius: CornerRadius.large)
         .animation(.fastSpring, value: isPhaseExpanded)
     }
     

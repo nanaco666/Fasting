@@ -14,6 +14,7 @@ struct SimpleDialView: View {
     let isFasting: Bool
     let isGoalAchieved: Bool
     
+    private var themeColor: Color { ThemeManager.shared.currentTheme.progressColor }
     private let dialSize: CGFloat = 250
     private let ringWidth: CGFloat = 14
     
@@ -27,7 +28,7 @@ struct SimpleDialView: View {
             Circle()
                 .trim(from: 0, to: min(progress, 1.0))
                 .stroke(
-                    isGoalAchieved ? Color.fastingTeal : Color.fastingGreen,
+                    isGoalAchieved ? themeColor.opacity(0.8) : themeColor,
                     style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -55,7 +56,7 @@ struct SimpleDialView: View {
                             Text("COMPLETED")
                                 .font(.caption.weight(.semibold))
                         }
-                        .foregroundStyle(Color.fastingGreen)
+                        .foregroundStyle(themeColor)
                         .tracking(1)
                     } else {
                         Text("\(formattedRemaining) · \(Int(progress * 100))%")

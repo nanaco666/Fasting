@@ -79,8 +79,13 @@ struct ContentView: View {
                     Label(L10n.Tab.plan, systemImage: "target")
                 }
                 .tag(1)
-            
 
+            // Me
+            MeView()
+                .tabItem {
+                    Label(L10n.Tab.me, systemImage: "person.crop.circle")
+                }
+                .tag(2)
         }
         .onAppear {
             UITabBar.appearance().tintColor = UIColor(Color.fastingGreen)
@@ -93,6 +98,7 @@ struct ContentView: View {
         .onOpenURL { url in
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "plan" || url.host == "history" { selectedTab = 1 }
+            else if url.host == "me" { selectedTab = 2 }
         }
         } // else (signed in)
     }
