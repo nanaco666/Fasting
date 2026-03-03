@@ -22,7 +22,7 @@ struct SimpleDialView: View {
             // Background ring
             Circle()
                 .stroke(Color.gray.opacity(0.08), lineWidth: ringWidth)
-            
+
             // Progress ring
             Circle()
                 .trim(from: 0, to: min(progress, 1.0))
@@ -32,7 +32,13 @@ struct SimpleDialView: View {
                 )
                 .rotationEffect(.degrees(-90))
                 .animation(.smoothSpring, value: progress)
-            
+
+            // Center backdrop — ensures text readability over plate images
+            Circle()
+                .fill(Color(.systemBackground).opacity(0.4))
+                .blur(radius: 12)
+                .frame(width: dialSize * 0.7, height: dialSize * 0.7)
+
             // Center content
             VStack(spacing: 6) {
                 Text(formattedElapsed)

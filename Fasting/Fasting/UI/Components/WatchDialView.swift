@@ -211,9 +211,16 @@ struct WatchDialView: View {
     }
     
     // MARK: - Center Content
-    
+
     private var centerContent: some View {
-        VStack(spacing: 4) {
+        ZStack {
+            // Backdrop — ensures text readability over plate images
+            Circle()
+                .fill(Color(.systemBackground).opacity(0.4))
+                .blur(radius: 12)
+                .frame(width: dialSize * 0.45, height: dialSize * 0.45)
+
+            VStack(spacing: 4) {
             Text(formattedElapsed)
                 .font(.system(size: 38, weight: .bold, design: .rounded))
                 .monospacedDigit()
@@ -247,8 +254,9 @@ struct WatchDialView: View {
                     .tracking(1)
             }
         }
+        }
     }
-    
+
     // MARK: - Formatting
     
     private var formattedElapsed: String {

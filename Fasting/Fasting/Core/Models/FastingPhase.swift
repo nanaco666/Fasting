@@ -61,7 +61,7 @@ enum FastingPhaseManager {
         FastingPhase(
             id: 1,
             nameKey: "phase_absorbing_name",
-            icon: "stomach",
+            icon: "drop.fill",
             color: .fastingOrange,
             startHour: 2, endHour: 6,
             keyEvents: [
