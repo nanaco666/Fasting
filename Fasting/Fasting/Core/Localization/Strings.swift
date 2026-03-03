@@ -16,6 +16,7 @@ enum L10n {
         static var plan: String { "Plan".localized }
         static var history: String { "History".localized }
         static var insights: String { "Insights".localized }
+        static var me: String { "Me".localized }
     }
     
     // MARK: - Timer View
@@ -202,7 +203,8 @@ static let all: [String: [String: String]] = [
     "Timer": ["en": "Fasting", "zh-Hans": "空盘"],
     "History": ["en": "History", "zh-Hans": "历史"],
     "Insights": ["en": "Insights", "zh-Hans": "统计"],
-    
+    "Me": ["en": "Me", "zh-Hans": "我"],
+
     // Timer
     "Fasting": ["en": "Fasting", "zh-Hans": "断食"],
     "Start Fast": ["en": "Start Fast", "zh-Hans": "开始断食"],
@@ -266,6 +268,15 @@ static let all: [String: [String: String]] = [
     "Month": ["en": "Month", "zh-Hans": "本月"],
     "Year": ["en": "Year", "zh-Hans": "今年"],
     
+    // Me Tab
+    "Plate Cabinet": ["en": "Plate Cabinet", "zh-Hans": "盘子壁橱"],
+    "Unlock more plates by completing plans": ["en": "Unlock more plates by completing plans", "zh-Hans": "完成计划解锁更多盘子"],
+    "Collected": ["en": "Collected", "zh-Hans": "已收集"],
+    "Tap to set name": ["en": "Tap to set name", "zh-Hans": "点击设置名称"],
+    "Edit Name": ["en": "Edit Name", "zh-Hans": "编辑名称"],
+    "Enter your name": ["en": "Enter your name", "zh-Hans": "输入你的名称"],
+    "Coming Soon": ["en": "Coming Soon", "zh-Hans": "即将开放"],
+
     // Settings
     "Settings": ["en": "Settings", "zh-Hans": "设置"],
     "Default Plan": ["en": "Default Plan", "zh-Hans": "默认方案"],
@@ -1137,7 +1148,12 @@ static let all: [String: [String: String]] = [
     "theme_section_title": ["en": "Table Setting", "zh-Hans": "餐桌布置"],
     "theme_current": ["en": "Current", "zh-Hans": "当前"],
 
+    "theme_picker_title": ["en": "Theme", "zh-Hans": "主题"],
     "theme_minimal": ["en": "Minimal", "zh-Hans": "极简"],
+    "theme_ceramic_plaid": ["en": "Ceramic Plaid", "zh-Hans": "格纹陶瓷"],
+    "theme_terracotta_wood": ["en": "Terracotta Wood", "zh-Hans": "红陶木纹"],
+    "theme_ceramic_marble": ["en": "Ceramic Marble", "zh-Hans": "大理石"],
+    "theme_wood_linen": ["en": "Wood Linen", "zh-Hans": "木盘亚麻"],
     "plan_suggested_window": ["en": "Suggested: %@ — eating window %@", "zh-Hans": "建议: %@ — 进食窗口 %@"],
     "edit_goal": ["en": "Edit Goal", "zh-Hans": "修改目标"],
     "goal_current": ["en": "Current Goal", "zh-Hans": "当前目标"],
