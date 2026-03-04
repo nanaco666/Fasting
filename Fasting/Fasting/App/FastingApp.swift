@@ -59,6 +59,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var languageRefresh = UUID()
     @AppStorage("appearanceMode") private var appearanceMode: Int = 0
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         if !auth.isSignedIn {
@@ -95,6 +96,12 @@ struct ContentView: View {
             languageRefresh = UUID()
         }
         .preferredColorScheme(appearanceMode == 1 ? .light : appearanceMode == 2 ? .dark : nil)
+        .onChange(of: scenePhase) { _, phase in
+            // Keep widget shared state aligned when returning from background / after SwiftData+CloudKit updates
+            if phase == .active {
+                FastingService.shared.refresh()
+            }
+        }
         .onOpenURL { url in
             if url.host == "timer" { selectedTab = 0 }
             else if url.host == "plan" || url.host == "history" { selectedTab = 1 }

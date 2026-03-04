@@ -146,6 +146,8 @@ final class FastingService {
     /// 刷新当前断食状态（用于从后台恢复）
     func refresh() {
         loadCurrentFast()
+        // Ensure widget stays consistent after background/CloudKit/model reloads
+        syncToWidget()
     }
     
     // MARK: - Private Methods
