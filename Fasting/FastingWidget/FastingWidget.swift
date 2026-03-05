@@ -25,18 +25,17 @@ struct FastingTimelineProvider: TimelineProvider {
         var entries: [FastingEntry] = []
         let now = Date()
         
-        if state.isFasting {
-            for minuteOffset in 0..<60 {
-                let date = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: now)!
-                entries.append(FastingEntry(date: date, state: state))
-            }
-        } else {
-            entries.append(FastingEntry(date: now, state: state))
+        let refreshWindow: TimeInterval = 60
+        let step: TimeInterval = state.isFasting ? 1 : refreshWindow
+        let end = now.addingTimeInterval(refreshWindow)
+        var cursor = now
+        
+        while cursor <= end {
+            entries.append(FastingEntry(date: cursor, state: state))
+            cursor = cursor.addingTimeInterval(step)
         }
         
-        let policy: TimelineReloadPolicy = .after(
-            Calendar.current.date(byAdding: .minute, value: state.isFasting ? 30 : 15, to: now)!
-        )
+        let policy: TimelineReloadPolicy = .after(now.addingTimeInterval(refreshWindow))
         completion(Timeline(entries: entries, policy: policy))
     }
 }
