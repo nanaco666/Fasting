@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 private enum TimerFormatters {
     static let timeShort: DateFormatter = {
@@ -32,7 +33,9 @@ struct TimerView: View {
     @State private var showThemePicker = false
     @State private var lastFastDuration: TimeInterval = 0
     @State private var lastFastGoalMet = false
+    @State private var now = Date()
     @AppStorage("timerDialStyle") private var dialStyleRaw: String = TimerDialStyle.simple.rawValue
+    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     private var dialStyle: TimerDialStyle {
         TimerDialStyle(rawValue: dialStyleRaw) ?? .simple
@@ -52,14 +55,12 @@ struct TimerView: View {
                         
                         // Health-style cards
                         if fastingService.isFasting {
-                            TimelineView(.periodic(from: .now, by: 1)) { _ in
-                                VStack(spacing: 20) {
-                                    moodCard
-                                    
-                                    bodyPhaseCard
-                                }
-                                .padding(.horizontal, 20)
+                            VStack(spacing: 20) {
+                                moodCard
+                                
+                                bodyPhaseCard
                             }
+                            .padding(.horizontal, 20)
                         } else {
                             BodyJourneyIdleCard()
                                 .padding(.horizontal, 20)
@@ -139,6 +140,9 @@ struct TimerView: View {
                     .presentationDetents([.height(220)])
                     .presentationDragIndicator(.visible)
             }
+            .onReceive(ticker) { date in
+                now = date
+            }
         }
     }
     
@@ -176,83 +180,80 @@ struct TimerView: View {
     }
     
     private var timerCard: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { (context: TimelineViewDefaultContext) in
-            let _ = context.date
-            VStack(spacing: 8) {
-                // Timer dial (switchable styles)
-                plateWithDial
+        VStack(spacing: 8) {
+            // Timer dial (switchable styles)
+            plateWithDial
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(timerAccessibilityLabel)
                 .onLongPressGesture(perform: switchDialStyle)
-                
-                // STARTED / GOAL row — always visible
-                HStack(spacing: 12) {
-                    if fastingService.isFasting, let start = fastingService.currentFast?.startTime {
-                        // Fasting: STARTED tappable to edit
+            
+            // STARTED / GOAL row — always visible
+            HStack(spacing: 12) {
+                if fastingService.isFasting, let start = fastingService.currentFast?.startTime {
+                    // Fasting: STARTED tappable to edit
+                    Button {
+                        editedStartTime = start
+                        showEditStart = true
+                        Haptic.light()
+                    } label: {
+                        timeInfoPill(label: L10n.Preset.started, value: formatTimeShort(start))
+                    }
+                    .buttonStyle(.plain)
+                    
+                    // Fasting: GOAL — tappable to edit
+                    if let targetDur = fastingService.currentFast?.targetDuration {
+                        let preset = fastingService.currentFast?.presetType.displayName ?? ""
                         Button {
-                            editedStartTime = start
-                            showEditStart = true
+                            editedGoalHours = targetDur / 3600
+                            showEditGoal = true
                             Haptic.light()
                         } label: {
-                            timeInfoPill(label: L10n.Preset.started, value: formatTimeShort(start))
-                        }
-                        .buttonStyle(.plain)
-                        
-                        // Fasting: GOAL — tappable to edit
-                        if let targetDur = fastingService.currentFast?.targetDuration {
-                            let preset = fastingService.currentFast?.presetType.displayName ?? ""
-                            Button {
-                                editedGoalHours = targetDur / 3600
-                                showEditGoal = true
-                                Haptic.light()
-                            } label: {
-                                timeInfoPill(label: "\(preset) \(L10n.Preset.goal)", value: formatTimeShort(start.addingTimeInterval(targetDur)))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    } else {
-                        // Idle: START = now
-                        timeInfoPill(label: L10n.Preset.start, value: formatTimeShort(Date()))
-                        
-                        // Idle: GOAL — tappable, opens preset picker & starts
-                        Button {
-                            showPresetSheet = true
-                            Haptic.light()
-                        } label: {
-                            VStack(spacing: 4) {
-                                Text(L10n.Preset.goal)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                                    .tracking(0.5)
-                                HStack(spacing: 4) {
-                                    Text(idlePresetLabel)
-                                        .font(.callout.weight(.semibold))
-                                        .foregroundStyle(themeColor)
-                                    Image(systemName: "chevron.down")
-                                        .font(.caption)
-                                        .foregroundStyle(themeColor.opacity(0.6))
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                            timeInfoPill(label: "\(preset) \(L10n.Preset.goal)", value: formatTimeShort(start.addingTimeInterval(targetDur)))
                         }
                         .buttonStyle(.plain)
                     }
+                } else {
+                    // Idle: START = now
+                    timeInfoPill(label: L10n.Preset.start, value: formatTimeShort(Date()))
+                    
+                    // Idle: GOAL — tappable, opens preset picker & starts
+                    Button {
+                        showPresetSheet = true
+                        Haptic.light()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(L10n.Preset.goal)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .tracking(0.5)
+                            HStack(spacing: 4) {
+                                Text(idlePresetLabel)
+                                    .font(.callout.weight(.semibold))
+                                    .foregroundStyle(themeColor)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption)
+                                    .foregroundStyle(themeColor.opacity(0.6))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.gray.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
-                
-                // Action button inside card
-                actionButton
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
             }
-            .glassCard(cornerRadius: CornerRadius.large)
-            .onChange(of: isGoalAchieved) { _, achieved in
-                if achieved && !hasShownGoalCelebration {
-                    hasShownGoalCelebration = true
-                    Haptic.success()
-                }
+            .padding(.horizontal, 16)
+            
+            // Action button inside card
+            actionButton
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+        }
+        .glassCard(cornerRadius: CornerRadius.large)
+        .onChange(of: isGoalAchieved) { _, achieved in
+            if achieved && !hasShownGoalCelebration {
+                hasShownGoalCelebration = true
+                Haptic.success()
             }
         }
     }
@@ -505,7 +506,7 @@ struct TimerView: View {
     private var elapsed: TimeInterval {
         guard let start = fastingService.currentFast?.startTime,
               fastingService.isFasting else { return 0 }
-        return Date().timeIntervalSince(start)
+        return max(now.timeIntervalSince(start), 0)
     }
     
     private var progress: Double {
